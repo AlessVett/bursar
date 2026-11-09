@@ -114,13 +114,23 @@ export class JobQueue {
 
   recoverStale(olderThanMs: number): number {
     const ts = this.now();
-    const result = this.sqlite
-      .prepare(
-        `UPDATE jobs SET status = 'queued', locked_at = NULL, updated_at = ?
-         WHERE status = 'running' AND locked_at < ?`,
-      )
-      .run(ts, ts - olderThanMs);
-    return result.changes;
+    const cutoff = ts - olderThanMs;
+    return this.sqlite.transaction(() => {
+      const exhausted = this.sqlite
+        .prepare(
+          `UPDATE jobs SET status = 'failed', locked_at = NULL, updated_at = ?,
+             last_error = 'Interrupted while running; attempts exhausted'
+           WHERE status = 'running' AND locked_at < ? AND attempts >= max_attempts`,
+        )
+        .run(ts, cutoff);
+      const requeued = this.sqlite
+        .prepare(
+          `UPDATE jobs SET status = 'queued', locked_at = NULL, updated_at = ?
+           WHERE status = 'running' AND locked_at < ? AND attempts < max_attempts`,
+        )
+        .run(ts, cutoff);
+      return exhausted.changes + requeued.changes;
+    })();
   }
 
   get(id: number): JobState | null {

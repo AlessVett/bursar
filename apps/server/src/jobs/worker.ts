@@ -58,9 +58,17 @@ export class JobWorker {
   }
 
   private async drain(): Promise<void> {
-    while (!this.stopped) {
-      const ran = await this.runOnce();
-      if (!ran) break;
+    try {
+      while (!this.stopped) {
+        const ran = await this.runOnce();
+        if (!ran) break;
+      }
+    } catch (error) {
+      // Queue/database errors outside the handler: log and retry on the next poll.
+      this.logger.error(
+        { error: error instanceof Error ? error.message : String(error) },
+        "Job worker drain failed",
+      );
     }
   }
 }

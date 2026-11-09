@@ -63,6 +63,16 @@ describe("JobQueue", () => {
     expect(queue.recoverStale(10 * 60_000)).toBe(1);
     expect(queue.get(id)?.status).toBe("queued");
   });
+
+  it("fails stale jobs that have used all their attempts instead of requeueing", () => {
+    const id = queue.enqueue("a", null, { maxAttempts: 1 });
+    queue.claimNext();
+    now += 11 * 60_000;
+    expect(queue.recoverStale(10 * 60_000)).toBe(1);
+    expect(queue.get(id)).toMatchObject({ status: "failed" });
+    expect(queue.get(id)?.lastError).toContain("attempts exhausted");
+    expect(queue.claimNext()).toBeNull();
+  });
 });
 
 describe("backoffMs", () => {

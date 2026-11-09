@@ -74,4 +74,21 @@ describe("JobWorker", () => {
     await vi.waitFor(() => expect(count).toBe(2));
     await worker.stop();
   });
+
+  it("survives queue errors during drain without an unhandled rejection", async () => {
+    const claim = vi.spyOn(queue, "claimNext").mockImplementationOnce(() => {
+      throw new Error("db locked");
+    });
+    const unhandled = vi.fn();
+    process.on("unhandledRejection", unhandled);
+    const worker = new JobWorker(queue, new Map([["ok", async () => {}]]), logger, 10);
+    const id = queue.enqueue("ok", null);
+    worker.start();
+    await vi.waitFor(() => expect(queue.get(id)?.status).toBe("succeeded"));
+    expect(claim).toHaveBeenCalled();
+    await expect(worker.stop()).resolves.toBeUndefined();
+    await new Promise((resolve) => setImmediate(resolve));
+    process.off("unhandledRejection", unhandled);
+    expect(unhandled).not.toHaveBeenCalled();
+  });
 });
