@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { isIP } from "node:net";
 import path from "node:path";
 
 export class ConfigError extends Error {
@@ -12,6 +13,29 @@ export type ClaudeCredential = {
   envName: "ANTHROPIC_API_KEY" | "CLAUDE_CODE_OAUTH_TOKEN";
   value: string;
 };
+
+const HOSTNAME_PATTERN =
+  /^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$/;
+
+function isLoopbackHost(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "[::1]" || /^127(\.\d{1,3}){3}$/.test(hostname);
+}
+
+/** Returns why a public URL is unusable, or undefined when it is acceptable. */
+function publicUrlProblem(url: URL): string | undefined {
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    return "must use https (or http on a loopback host)";
+  }
+  if (url.origin === "null" || !url.hostname) return "must have a host";
+  if (url.protocol === "http:" && !isLoopbackHost(url.hostname)) {
+    return "must use https (http is allowed only on a loopback host)";
+  }
+  if (url.username || url.password) return "must not contain credentials";
+  if (url.pathname !== "/" || url.search || url.hash) {
+    return "must not contain a path, query or fragment";
+  }
+  return undefined;
+}
 
 const LOG_LEVELS = ["fatal", "error", "warn", "info", "debug", "trace"] as const;
 
@@ -83,12 +107,24 @@ export function loadConfig(env: Env = process.env, readFile: ReadFile = defaultR
     problems.push("BURSAR_PORT must be an integer between 1 and 65535");
   }
 
+  // An empty value counts as unset, so a blank line in .env cannot change a default.
+  const setting = (name: string): string | undefined => env[name]?.trim() || undefined;
+
+  const host = setting("BURSAR_HOST") ?? "127.0.0.1";
+  if (isIP(host.replace(/^\[|\]$/g, "")) === 0 && !HOSTNAME_PATTERN.test(host)) {
+    problems.push("BURSAR_HOST must be an IP address or a hostname");
+  }
+
   let publicUrl: URL | undefined;
-  if (!env.BURSAR_PUBLIC_URL) {
+  const rawPublicUrl = setting("BURSAR_PUBLIC_URL");
+  if (!rawPublicUrl) {
     problems.push("BURSAR_PUBLIC_URL is required");
   } else {
     try {
-      publicUrl = new URL(env.BURSAR_PUBLIC_URL);
+      const candidate = new URL(rawPublicUrl);
+      const urlProblem = publicUrlProblem(candidate);
+      if (urlProblem) problems.push(`BURSAR_PUBLIC_URL ${urlProblem}`);
+      else publicUrl = candidate;
     } catch {
       problems.push("BURSAR_PUBLIC_URL must be an absolute URL");
     }
@@ -134,15 +170,17 @@ export function loadConfig(env: Env = process.env, readFile: ReadFile = defaultR
   }
 
   return {
-    host: env.BURSAR_HOST ?? "127.0.0.1",
+    host,
     port,
     publicUrl,
-    dataDir: path.resolve(env.BURSAR_DATA_DIR ?? "./data"),
+    dataDir: path.resolve(setting("BURSAR_DATA_DIR") ?? "./data"),
     timezone,
     logLevel: logLevel as Config["logLevel"],
     masterKey,
-    migrationsDir: path.resolve(env.BURSAR_MIGRATIONS_DIR ?? "./drizzle"),
-    webDistDir: env.BURSAR_WEB_DIST ? path.resolve(env.BURSAR_WEB_DIST) : null,
+    migrationsDir: path.resolve(setting("BURSAR_MIGRATIONS_DIR") ?? "./drizzle"),
+    webDistDir: setting("BURSAR_WEB_DIST")
+      ? path.resolve(setting("BURSAR_WEB_DIST") as string)
+      : null,
     cfAccess: teamDomain && audience ? { teamDomain, audience } : null,
     claude,
   };

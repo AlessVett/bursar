@@ -1,3 +1,4 @@
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { ConfigError, loadConfig, readSecret } from "./config";
 
@@ -22,6 +23,55 @@ describe("loadConfig", () => {
     expect(config.cfAccess).toBeNull();
     expect(config.claude).toBeNull();
     expect(config.webDistDir).toBeNull();
+  });
+
+  it.each([
+    "bursar.example.test:8080",
+    "http://bursar.example.test",
+    "ftp://bursar.example.test",
+    "https://user:pw@bursar.example.test",
+    "https://bursar.example.test/app",
+    "https://bursar.example.test/?x=1",
+    "not a url",
+  ])("rejects the public URL %s", (url) => {
+    expect(() => loadConfig({ ...baseEnv, BURSAR_PUBLIC_URL: url }, noFiles)).toThrow(
+      /BURSAR_PUBLIC_URL/,
+    );
+  });
+
+  it("accepts http on a loopback public URL and a trailing slash", () => {
+    expect(
+      loadConfig({ ...baseEnv, BURSAR_PUBLIC_URL: "http://127.0.0.1:8080" }, noFiles).publicUrl
+        .origin,
+    ).toBe("http://127.0.0.1:8080");
+    expect(
+      loadConfig({ ...baseEnv, BURSAR_PUBLIC_URL: "https://bursar.example.test/" }, noFiles)
+        .publicUrl.origin,
+    ).toBe("https://bursar.example.test");
+  });
+
+  it("treats empty or blank host and directories as unset", () => {
+    const config = loadConfig(
+      {
+        ...baseEnv,
+        BURSAR_HOST: "",
+        BURSAR_DATA_DIR: "  ",
+        BURSAR_MIGRATIONS_DIR: "",
+        BURSAR_WEB_DIST: "",
+      },
+      noFiles,
+    );
+    expect(config.host).toBe("127.0.0.1");
+    expect(config.dataDir).toBe(path.resolve("./data"));
+    expect(config.migrationsDir).toBe(path.resolve("./drizzle"));
+    expect(config.webDistDir).toBeNull();
+  });
+
+  it("rejects a malformed host and accepts an explicit one", () => {
+    expect(() => loadConfig({ ...baseEnv, BURSAR_HOST: "bad host!" }, noFiles)).toThrow(
+      /BURSAR_HOST/,
+    );
+    expect(loadConfig({ ...baseEnv, BURSAR_HOST: "0.0.0.0" }, noFiles).host).toBe("0.0.0.0");
   });
 
   it("reports every problem at once", () => {
