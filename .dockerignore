@@ -1,11 +1,29 @@
+# Allowlist: the build context holds only what the image build reads.
+# Add a new top-level build input here explicitly.
+*
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!tsconfig.base.json
+!apps
+!packages
+
+# Never send these, even from inside the allowed directories (mirrors .gitignore).
 **/node_modules
 **/dist
+**/build
+**/coverage
+**/*.tsbuildinfo
 **/data
 **/secrets
 **/.env
 **/.env.*
-.git
-coverage
-playwright-report
-test-results
-docs
+**/*.pem
+**/*.key
+**/*.p12
+**/*.db
+**/*.db-wal
+**/*.db-shm
+**/*.sqlite
+**/*.log
+**/.DS_Store
