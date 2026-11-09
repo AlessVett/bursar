@@ -1,0 +1,32 @@
+# Dependencies and build output
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+.turbo/
+
+# Test artifacts
+playwright-report/
+test-results/
+
+# Local configuration and secrets — never commit
+.env
+.env.*
+!.env.example
+secrets/
+*.pem
+*.key
+*.p12
+
+# Runtime data (database, documents, backups)
+data/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+
+# Local tooling
+.claude/settings.local.json
+.DS_Store
+*.log
