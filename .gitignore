@@ -30,3 +30,6 @@ data/
 .claude/settings.local.json
 .DS_Store
 *.log
+
+# Agent worktrees
+.claude/worktrees/
