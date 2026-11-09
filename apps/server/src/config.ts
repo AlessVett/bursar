@@ -105,16 +105,20 @@ export function loadConfig(env: Env = process.env, readFile: ReadFile = defaultR
     }
   };
 
-  const port = Number(env.BURSAR_PORT ?? "8080");
+  // An empty value counts as unset, so a blank line in .env cannot change a default.
+  const setting = (name: string): string | undefined => env[name]?.trim() || undefined;
+
+  const rawPort = setting("BURSAR_PORT") ?? "8080";
+  const port = /^\d{1,5}$/.test(rawPort) ? Number(rawPort) : Number.NaN;
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
     problems.push("BURSAR_PORT must be an integer between 1 and 65535");
   }
 
-  // An empty value counts as unset, so a blank line in .env cannot change a default.
-  const setting = (name: string): string | undefined => env[name]?.trim() || undefined;
-
-  const host = setting("BURSAR_HOST") ?? "127.0.0.1";
-  if (isIP(host.replace(/^\[|\]$/g, "")) === 0 && !HOSTNAME_PATTERN.test(host)) {
+  // Brackets are URL syntax for IPv6; the socket API needs the bare address.
+  const rawHost = setting("BURSAR_HOST") ?? "127.0.0.1";
+  const bracketed = /^\[(.*)\]$/.exec(rawHost);
+  const host = bracketed ? (bracketed[1] as string) : rawHost;
+  if (bracketed ? isIP(host) !== 6 : isIP(host) === 0 && !HOSTNAME_PATTERN.test(host)) {
     problems.push("BURSAR_HOST must be an IP address or a hostname");
   }
 
@@ -133,18 +137,26 @@ export function loadConfig(env: Env = process.env, readFile: ReadFile = defaultR
     }
   }
 
-  const timezone = env.TZ;
-  if (!timezone) {
+  let timezone: string | undefined;
+  const rawTimezone = setting("TZ");
+  if (!rawTimezone) {
     problems.push("TZ is required (an IANA timezone such as Europe/Rome)");
   } else {
     try {
-      new Intl.DateTimeFormat("en", { timeZone: timezone });
+      // Keep the canonical name: Intl accepts "europe/rome", which other consumers may not.
+      const canonical = new Intl.DateTimeFormat("en", { timeZone: rawTimezone }).resolvedOptions()
+        .timeZone;
+      if (/^[+-]/.test(canonical)) {
+        problems.push(`TZ "${rawTimezone}" is an offset; use an IANA timezone such as Europe/Rome`);
+      } else {
+        timezone = canonical;
+      }
     } catch {
-      problems.push(`TZ "${timezone}" is not a valid IANA timezone`);
+      problems.push(`TZ "${rawTimezone}" is not a valid IANA timezone`);
     }
   }
 
-  const logLevel = env.BURSAR_LOG_LEVEL ?? "info";
+  const logLevel = setting("BURSAR_LOG_LEVEL") ?? "info";
   if (!LOG_LEVELS.includes(logLevel as Config["logLevel"])) {
     problems.push(`BURSAR_LOG_LEVEL must be one of ${LOG_LEVELS.join(", ")}`);
   }

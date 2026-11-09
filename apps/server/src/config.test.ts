@@ -76,6 +76,56 @@ describe("loadConfig", () => {
     expect(loadConfig({ ...baseEnv, BURSAR_HOST: "0.0.0.0" }, noFiles).host).toBe("0.0.0.0");
   });
 
+  it("stores an IPv6 host without brackets so it can be bound", () => {
+    expect(loadConfig({ ...baseEnv, BURSAR_HOST: "[::1]" }, noFiles).host).toBe("::1");
+    expect(loadConfig({ ...baseEnv, BURSAR_HOST: "::" }, noFiles).host).toBe("::");
+    expect(() => loadConfig({ ...baseEnv, BURSAR_HOST: "[localhost]" }, noFiles)).toThrow(
+      /BURSAR_HOST/,
+    );
+    expect(() => loadConfig({ ...baseEnv, BURSAR_HOST: "[127.0.0.1]" }, noFiles)).toThrow(
+      /BURSAR_HOST/,
+    );
+  });
+
+  it("treats empty port and log level as unset", () => {
+    const config = loadConfig({ ...baseEnv, BURSAR_PORT: "", BURSAR_LOG_LEVEL: " " }, noFiles);
+    expect(config.port).toBe(8080);
+    expect(config.logLevel).toBe("info");
+  });
+
+  it("reads an explicit port and log level", () => {
+    const config = loadConfig(
+      { ...baseEnv, BURSAR_PORT: " 9090 ", BURSAR_LOG_LEVEL: "debug" },
+      noFiles,
+    );
+    expect(config.port).toBe(9090);
+    expect(config.logLevel).toBe("debug");
+  });
+
+  it.each(["0", "65536", "80.5", "8080abc", "0x1F90", "-1"])("rejects the port %s", (port) => {
+    expect(() => loadConfig({ ...baseEnv, BURSAR_PORT: port }, noFiles)).toThrow(/BURSAR_PORT/);
+  });
+
+  it("rejects an unknown log level", () => {
+    expect(() => loadConfig({ ...baseEnv, BURSAR_LOG_LEVEL: "verbose" }, noFiles)).toThrow(
+      /BURSAR_LOG_LEVEL/,
+    );
+  });
+
+  it("stores the canonical timezone name", () => {
+    expect(loadConfig({ ...baseEnv, TZ: "europe/rome" }, noFiles).timezone).toBe("Europe/Rome");
+    expect(loadConfig({ ...baseEnv, TZ: " Europe/Rome " }, noFiles).timezone).toBe("Europe/Rome");
+    expect(loadConfig({ ...baseEnv, TZ: "utc" }, noFiles).timezone).toBe("UTC");
+  });
+
+  it.each(["+01:00", "-05:00", "+0100"])("rejects the offset-only timezone %s", (tz) => {
+    expect(() => loadConfig({ ...baseEnv, TZ: tz }, noFiles)).toThrow(/TZ/);
+  });
+
+  it("treats an empty timezone as missing", () => {
+    expect(() => loadConfig({ ...baseEnv, TZ: " " }, noFiles)).toThrow(/TZ is required/);
+  });
+
   it("reports every problem at once", () => {
     let error: unknown;
     try {
