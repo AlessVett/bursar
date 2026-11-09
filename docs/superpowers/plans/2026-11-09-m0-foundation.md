@@ -4924,7 +4924,38 @@ The owner sets a GitHub Actions budget of $0 with "stop usage" under Billing →
 
 ## M0 exit checklist (spec §14)
 
-- [ ] Login works on the public hostname behind Access (Task 16 Step 6).
+- [x] Login works on the public hostname behind Access (Task 16 Step 6).
 - [ ] CI green on GitHub-hosted runners (Task 17 Step 4).
-- [ ] Gates recorded: V1 (`0001`), V2 local and host (`0002`), V3 (`0003`).
-- [ ] Memory usage of the idle app recorded (Tasks 12 and 16).
+- [x] Gates recorded: V1 (`0001`), V2 local and host (`0002`), V3 (`0003`).
+- [x] Memory usage of the idle app recorded (Tasks 12 and 16).
+
+## Verification (2026-11-09)
+
+Local pipeline on the M0 branch (Node 24.21.0, pnpm 12.18.0):
+
+| Check | Result |
+|-------|--------|
+| `pnpm lint` | Checked 87 files, no fixes applied, exit 0 |
+| `pnpm typecheck` | exit 0 |
+| `pnpm test` | shared 3/3 (1 file), web 4/4 (2 files), server 200/200 (21 files), exit 0 |
+| `pnpm build` | exit 0 |
+| `gitleaks git` | 86 commits scanned, no leaks found |
+
+Gates:
+
+- **V1** (SQLCipher with Drizzle and FTS5): passed, `docs/decisions/0001-sqlcipher.md`.
+- **V2** (Agent SDK isolation): `ok: true`, `answeredOk: true`, `transcripts: []`, exit 0, both on local Docker and on the production host, `docs/decisions/0002-agent-sdk-container.md`.
+- **V3** (SDK redistribution): no published image, images built from source on the host, `docs/decisions/0003-sdk-redistribution.md`.
+
+Container checks (Task 12, local Docker): image built, container healthy, `/healthz` `{"ok":true}`, auth status `{"setupRequired":true,"authenticated":false}`, setup code present, read-only root filesystem, uid 1000, `GET /` served `index.html` with the `content-security-policy` header, memory 175.4 MiB of 3 GiB at idle.
+
+Production host (Task 16, Docker Compose with the `tunnel` profile, Cloudflare Access enabled):
+
+- cloudflared registered 4 tunnel connections; app healthy.
+- From outside: `GET https://<hostname>/healthz` returns `302` to the Access login.
+- From inside the Docker network, without an Access JWT: `/healthz` `200`, `/api/auth/status` `403`, `/` `403`.
+- No "Access is not configured" warning in the startup logs after the Access values were set.
+- The owner completed the first run behind Access (setup code, password, TOTP); the setup code file is gone.
+- Memory: app 174 MiB of 3 GiB after the first deploy and 49 MiB of 3 GiB idle after the restart; cloudflared 37–38 MiB of 128 MiB.
+
+Open: CI green on GitHub-hosted runners (Task 17), after the repository is published.
