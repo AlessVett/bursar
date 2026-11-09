@@ -116,15 +116,86 @@ describe("loadConfig", () => {
     );
   });
 
-  it("refuses a non-loopback public URL without Cloudflare Access (fail closed)", () => {
+  it("treats Cloudflare Access as optional for an HTTPS public URL", () => {
     const { CF_ACCESS_TEAM_DOMAIN: _t, CF_ACCESS_AUD: _a, ...noAccess } = baseEnv;
-    expect(() => loadConfig(noAccess, noFiles)).toThrow(/are required unless/);
+    const config = loadConfig(noAccess, noFiles);
+    expect(config.publicUrl.origin).toBe("https://bursar.example.test");
+    expect(config.cfAccess).toBeNull();
+  });
+
+  it("treats empty Cloudflare Access values as unset", () => {
+    const config = loadConfig(
+      { ...baseEnv, CF_ACCESS_TEAM_DOMAIN: "", CF_ACCESS_AUD: " " },
+      noFiles,
+    );
+    expect(config.cfAccess).toBeNull();
   });
 
   it("allows a loopback public URL without Cloudflare Access", () => {
     const { CF_ACCESS_TEAM_DOMAIN: _t, CF_ACCESS_AUD: _a, ...noAccess } = baseEnv;
     const config = loadConfig({ ...noAccess, BURSAR_PUBLIC_URL: "http://localhost:5173" }, noFiles);
     expect(config.cfAccess).toBeNull();
+  });
+
+  it.each([
+    "https://team.example.test",
+    "team.example.test/",
+    "team.example.test/cdn-cgi",
+    "team example.test",
+    "localhost",
+  ])("rejects the Cloudflare Access team domain %s", (teamDomain) => {
+    expect(() => loadConfig({ ...baseEnv, CF_ACCESS_TEAM_DOMAIN: teamDomain }, noFiles)).toThrow(
+      /CF_ACCESS_TEAM_DOMAIN must be a bare hostname/,
+    );
+  });
+
+  it.each([
+    "http://localhost.attacker.example",
+    "http://localhostx",
+    "http://127.0.0.1.nip.io",
+    "http://127.0.0.1.attacker.example",
+    "http://128.0.0.1",
+    "http://[::2]",
+  ])("rejects http on the look-alike loopback URL %s", (url) => {
+    expect(() => loadConfig({ ...baseEnv, BURSAR_PUBLIC_URL: url }, noFiles)).toThrow(
+      /only on a loopback host/,
+    );
+  });
+
+  it.each([
+    ["http://localhost:5173", "http://localhost:5173"],
+    ["http://127.0.0.1", "http://127.0.0.1"],
+    ["http://127.1.2.3:8080", "http://127.1.2.3:8080"],
+    ["http://[::1]:8080", "http://[::1]:8080"],
+  ])("accepts http on the loopback URL %s", (url, origin) => {
+    expect(loadConfig({ ...baseEnv, BURSAR_PUBLIC_URL: url }, noFiles).publicUrl.origin).toBe(
+      origin,
+    );
+  });
+
+  it("does not trust CF-Connecting-IP unless it is enabled explicitly", () => {
+    expect(loadConfig(baseEnv, noFiles).trustCfConnectingIp).toBe(false);
+    expect(
+      loadConfig({ ...baseEnv, BURSAR_TRUST_CF_CONNECTING_IP: "" }, noFiles).trustCfConnectingIp,
+    ).toBe(false);
+    expect(
+      loadConfig({ ...baseEnv, BURSAR_TRUST_CF_CONNECTING_IP: "false" }, noFiles)
+        .trustCfConnectingIp,
+    ).toBe(false);
+    expect(
+      loadConfig({ ...baseEnv, BURSAR_TRUST_CF_CONNECTING_IP: "true" }, noFiles)
+        .trustCfConnectingIp,
+    ).toBe(true);
+    expect(
+      loadConfig({ ...baseEnv, BURSAR_TRUST_CF_CONNECTING_IP: " TRUE " }, noFiles)
+        .trustCfConnectingIp,
+    ).toBe(true);
+  });
+
+  it("rejects a malformed CF-Connecting-IP trust setting", () => {
+    expect(() => loadConfig({ ...baseEnv, BURSAR_TRUST_CF_CONNECTING_IP: "yes" }, noFiles)).toThrow(
+      /BURSAR_TRUST_CF_CONNECTING_IP must be true or false/,
+    );
   });
 
   it("enables Cloudflare Access when both settings are present", () => {

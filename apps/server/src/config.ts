@@ -17,7 +17,8 @@ export type ClaudeCredential = {
 const HOSTNAME_PATTERN =
   /^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$/;
 
-function isLoopbackHost(hostname: string): boolean {
+/** True for localhost, 127.0.0.0/8 and [::1], as `URL.hostname` spells them. */
+export function isLoopbackHost(hostname: string): boolean {
   return hostname === "localhost" || hostname === "[::1]" || /^127(\.\d{1,3}){3}$/.test(hostname);
 }
 
@@ -50,6 +51,8 @@ export interface Config {
   migrationsDir: string;
   webDistDir: string | null;
   cfAccess: { teamDomain: string; audience: string } | null;
+  /** Use the CF-Connecting-IP header as the client address (only behind Cloudflare). */
+  trustCfConnectingIp: boolean;
   claude: ClaudeCredential | null;
 }
 
@@ -157,16 +160,21 @@ export function loadConfig(env: Env = process.env, readFile: ReadFile = defaultR
     problems.push("BURSAR_MASTER_KEY (or BURSAR_MASTER_KEY_FILE) is required");
   }
 
-  const teamDomain = env.CF_ACCESS_TEAM_DOMAIN?.trim();
-  const audience = env.CF_ACCESS_AUD?.trim();
+  // Cloudflare Access is optional defence in depth on top of the app login.
+  const teamDomain = setting("CF_ACCESS_TEAM_DOMAIN");
+  const audience = setting("CF_ACCESS_AUD");
   if (Boolean(teamDomain) !== Boolean(audience)) {
     problems.push("CF_ACCESS_TEAM_DOMAIN and CF_ACCESS_AUD must be set together");
   }
-
-  if (publicUrl && !isLoopbackHost(publicUrl.hostname) && !(teamDomain && audience)) {
+  if (teamDomain && !(HOSTNAME_PATTERN.test(teamDomain) && teamDomain.includes("."))) {
     problems.push(
-      "CF_ACCESS_TEAM_DOMAIN and CF_ACCESS_AUD are required unless BURSAR_PUBLIC_URL is a loopback address",
+      "CF_ACCESS_TEAM_DOMAIN must be a bare hostname such as <team>.cloudflareaccess.com (no scheme or path)",
     );
+  }
+
+  const trustCfConnectingIp = setting("BURSAR_TRUST_CF_CONNECTING_IP")?.toLowerCase() ?? "false";
+  if (trustCfConnectingIp !== "true" && trustCfConnectingIp !== "false") {
+    problems.push("BURSAR_TRUST_CF_CONNECTING_IP must be true or false");
   }
 
   const claude = attempt(() => loadClaudeCredential(env, readFile)) ?? null;
@@ -188,6 +196,7 @@ export function loadConfig(env: Env = process.env, readFile: ReadFile = defaultR
       ? path.resolve(setting("BURSAR_WEB_DIST") as string)
       : null,
     cfAccess: teamDomain && audience ? { teamDomain, audience } : null,
+    trustCfConnectingIp: trustCfConnectingIp === "true",
     claude,
   };
 }

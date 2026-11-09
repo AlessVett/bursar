@@ -8,7 +8,7 @@ import { OwnerStore } from "./auth/owner";
 import { FailureLimiter } from "./auth/rate-limit";
 import { SessionStore } from "./auth/sessions";
 import { SetupCode } from "./auth/setup-code";
-import type { Config } from "./config";
+import { type Config, isLoopbackHost } from "./config";
 import { deriveKey } from "./crypto";
 import { openDatabase, runMigrations } from "./db";
 import { createApp } from "./http/app";
@@ -23,6 +23,12 @@ export interface RunningBursar {
 }
 
 export async function startBursar(config: Config, logger: Logger): Promise<RunningBursar> {
+  if (!config.cfAccess && !isLoopbackHost(config.publicUrl.hostname)) {
+    logger.warn(
+      { publicUrl: config.publicUrl.origin },
+      "Cloudflare Access is not configured: the panel is protected by the app login alone",
+    );
+  }
   mkdirSync(config.dataDir, { recursive: true });
   const database = openDatabase(
     path.join(config.dataDir, "bursar.db"),
@@ -61,9 +67,10 @@ export async function startBursar(config: Config, logger: Logger): Promise<Runni
       limiter: new FailureLimiter(),
       secureCookies: config.publicUrl.protocol === "https:",
       now: Date.now,
+      // CF-Connecting-IP is set by Cloudflare's edge; any other client could forge it.
       getClientIp: (c) =>
-        (config.cfAccess ? c.req.header("cf-connecting-ip") : undefined) ??
-        getConnInfo(c).remote.address ??
+        (config.trustCfConnectingIp ? c.req.header("cf-connecting-ip")?.trim() : undefined) ||
+        getConnInfo(c).remote.address ||
         "unknown",
     },
   });
