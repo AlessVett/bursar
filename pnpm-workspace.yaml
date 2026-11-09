@@ -5,3 +5,6 @@ packages:
 allowBuilds:
   esbuild: true
   lefthook: true
+
+minimumReleaseAgeExclude:
+  - jose@6.2.16
