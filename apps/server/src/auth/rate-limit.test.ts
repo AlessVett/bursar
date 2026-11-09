@@ -1,5 +1,31 @@
 import { describe, expect, it } from "vitest";
-import { FailureLimiter } from "./rate-limit";
+import { FailureLimiter, rateLimitKey } from "./rate-limit";
+
+describe("rateLimitKey", () => {
+  it.each([
+    ["203.0.113.7", "203.0.113.7"],
+    ["2001:db8::1", "2001:db8:0:0::/64"],
+    ["2001:db8:0:0:ffff:ffff:ffff:ffff", "2001:db8:0:0::/64"],
+    ["2001:DB8:0:1::1", "2001:db8:0:1::/64"],
+    ["[2001:db8::1]", "2001:db8:0:0::/64"],
+    ["fe80::1%eth0", "fe80:0:0:0::/64"],
+    ["::1", "0:0:0:0::/64"],
+    ["::ffff:203.0.113.7", "203.0.113.7"],
+    ["::ffff:cb00:7107", "203.0.113.7"],
+    ["64:ff9b::203.0.113.7", "64:ff9b:0:0::/64"],
+    ["unknown", "unknown"],
+  ])("maps %s to %s", (address, key) => {
+    expect(rateLimitKey(address)).toBe(key);
+  });
+
+  it("gives every address in one IPv6 /64 the same key", () => {
+    const keys = new Set(
+      Array.from({ length: 7 }, (_, i) => rateLimitKey(`2001:db8:abcd:12::${i.toString(16)}`)),
+    );
+    expect(keys.size).toBe(1);
+    expect(rateLimitKey("2001:db8:abcd:13::1")).not.toBe([...keys][0]);
+  });
+});
 
 describe("FailureLimiter", () => {
   it("blocks a key after the maximum failures within the window", () => {

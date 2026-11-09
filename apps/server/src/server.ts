@@ -64,7 +64,9 @@ export async function startBursar(config: Config, logger: Logger): Promise<Runni
       owners,
       sessions,
       setupCode,
-      limiter: new FailureLimiter(),
+      // 5 failures per client and 20 for the account per 15 minutes; sessions stay valid.
+      limiter: new FailureLimiter(5),
+      accountLimiter: new FailureLimiter(20),
       secureCookies: config.publicUrl.protocol === "https:",
       now: Date.now,
       // CF-Connecting-IP is set by Cloudflare's edge; any other client could forge it.

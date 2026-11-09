@@ -1,6 +1,47 @@
+import { isIP } from "node:net";
+
 interface Window {
   count: number;
   startedAt: number;
+}
+
+/** Expands a valid IPv6 address (optionally ending in dotted IPv4) to its eight groups. */
+function ipv6Groups(address: string): number[] {
+  let text = address;
+  const dotted = /(\d+)\.(\d+)\.(\d+)\.(\d+)$/.exec(text);
+  if (dotted) {
+    const [a, b, c, d] = dotted.slice(1).map(Number) as [number, number, number, number];
+    text = `${text.slice(0, dotted.index)}${((a << 8) | b).toString(16)}:${((c << 8) | d).toString(16)}`;
+  }
+  const parse = (part: string | undefined): number[] =>
+    part ? part.split(":").map((group) => Number.parseInt(group, 16)) : [];
+  const [head, tail] = text.split("::");
+  const left = parse(head);
+  if (tail === undefined) return left;
+  const right = parse(tail);
+  return [...left, ...Array<number>(8 - left.length - right.length).fill(0), ...right];
+}
+
+/**
+ * Maps a client address to the key the login limiter counts against. An IPv6
+ * client usually controls a whole /64, so IPv6 addresses collapse to their /64
+ * prefix; IPv4-mapped IPv6 addresses become plain IPv4; IPv4 addresses and
+ * anything that is not an IP address are returned unchanged.
+ */
+export function rateLimitKey(address: string): string {
+  const bare = address.replace(/^\[(.*)\]$/, "$1").split("%")[0] ?? "";
+  const version = isIP(bare);
+  if (version === 4) return bare;
+  if (version !== 6) return address;
+  const groups = ipv6Groups(bare);
+  if (groups.slice(0, 5).every((group) => group === 0) && groups[5] === 0xffff) {
+    const [high, low] = [groups[6] ?? 0, groups[7] ?? 0];
+    return `${high >> 8}.${high & 0xff}.${low >> 8}.${low & 0xff}`;
+  }
+  return `${groups
+    .slice(0, 4)
+    .map((group) => group.toString(16))
+    .join(":")}::/64`;
 }
 
 export class FailureLimiter {

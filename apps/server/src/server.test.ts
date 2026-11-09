@@ -150,4 +150,14 @@ describe("startBursar", () => {
     for (let i = 0; i < 5; i += 1) await wrongLogin(base, origin, "198.51.100.200");
     expect((await wrongLogin(base, origin, "198.51.100.200")).status).toBe(429);
   });
+
+  it("limits a client that rotates addresses inside one IPv6 /64", async () => {
+    const { base, origin } = await boot({ BURSAR_TRUST_CF_CONNECTING_IP: "true" });
+    const statuses: number[] = [];
+    for (let i = 0; i < 7; i += 1) {
+      statuses.push((await wrongLogin(base, origin, `2001:db8::${i}`)).status);
+    }
+    expect(statuses.slice(0, 5).every((status) => status !== 429)).toBe(true);
+    expect(statuses.slice(5)).toEqual([429, 429]);
+  });
 });

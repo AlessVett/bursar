@@ -26,6 +26,7 @@ describe("auth routes", () => {
   let now: number;
   let code: string;
   let codeFile: string;
+  let clientIp: string;
   let app: ReturnType<typeof createApp>;
 
   const post = (route: string, body: unknown, cookie?: string) =>
@@ -60,14 +61,16 @@ describe("auth routes", () => {
     const setupCode = new SetupCode(codeFile);
     setupCode.issue();
     code = readFileSync(codeFile, "utf8").trim();
+    clientIp = "203.0.113.7";
     const auth: AuthDeps = {
       owners: new OwnerStore(t.db, Buffer.alloc(32, 1)),
       sessions: new SessionStore(t.db, () => now),
       setupCode,
       limiter: new FailureLimiter(5, 15 * 60_000, () => now),
+      accountLimiter: new FailureLimiter(20, 15 * 60_000, () => now),
       secureCookies: true,
       now: () => now,
-      getClientIp: () => "203.0.113.7",
+      getClientIp: () => clientIp,
     };
     app = createApp({
       config: { publicUrl: new URL(ORIGIN), cfAccess: null, webDistDir: null },
@@ -171,6 +174,72 @@ describe("auth routes", () => {
       code: generateTotpCode(secret, now),
     });
     expect(res.status).toBe(429);
+  });
+
+  it("treats rotating addresses inside one IPv6 /64 as one client", async () => {
+    await completeSetup();
+    const statuses: number[] = [];
+    for (let i = 0; i < 7; i += 1) {
+      clientIp = `2001:db8::${i}`;
+      statuses.push((await post("/api/auth/login", { password: "wrong", code: "000000" })).status);
+    }
+    expect(statuses).toEqual([401, 401, 401, 401, 401, 429, 429]);
+    clientIp = "2001:db8:0:1::1";
+    expect((await post("/api/auth/login", { password: "wrong", code: "000000" })).status).toBe(401);
+  });
+
+  it("caps failed logins across all addresses for the owner account", async () => {
+    const { secret } = await completeSetup();
+    for (let i = 0; i < 20; i += 1) {
+      clientIp = `198.51.100.${i}`;
+      expect((await post("/api/auth/login", { password: "wrong", code: "000000" })).status).toBe(
+        401,
+      );
+    }
+    clientIp = "198.51.100.200";
+    now += 30_000;
+    const blocked = await post("/api/auth/login", {
+      password: PASSWORD,
+      code: generateTotpCode(secret, now),
+    });
+    expect(blocked.status).toBe(429);
+    now += 15 * 60_000;
+    const login = await post("/api/auth/login", {
+      password: PASSWORD,
+      code: generateTotpCode(secret, now),
+    });
+    expect(login.status).toBe(200);
+  });
+
+  it("clears the account-wide count after a successful login", async () => {
+    const { secret } = await completeSetup();
+    for (let i = 0; i < 19; i += 1) {
+      clientIp = `198.51.100.${i}`;
+      await post("/api/auth/login", { password: "wrong", code: "000000" });
+    }
+    now += 30_000;
+    const login = await post("/api/auth/login", {
+      password: PASSWORD,
+      code: generateTotpCode(secret, now),
+    });
+    expect(login.status).toBe(200);
+    clientIp = "198.51.100.100";
+    for (let i = 0; i < 2; i += 1) {
+      expect((await post("/api/auth/login", { password: "wrong", code: "000000" })).status).toBe(
+        401,
+      );
+    }
+  });
+
+  it("limits setup attempts per IPv6 /64", async () => {
+    const statuses: number[] = [];
+    for (let i = 0; i < 6; i += 1) {
+      clientIp = `2001:db8::${i}`;
+      statuses.push(
+        (await post("/api/auth/setup/start", { setupCode: "wrong", password: PASSWORD })).status,
+      );
+    }
+    expect(statuses).toEqual([401, 401, 401, 401, 401, 429]);
   });
 
   it("revokes the session on logout", async () => {
