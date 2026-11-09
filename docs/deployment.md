@@ -17,12 +17,18 @@ Cloudflare Access is optional. Set `CF_ACCESS_TEAM_DOMAIN` and `CF_ACCESS_AUD` t
 
 The app runs as uid 1000 inside the container, so every secret file must be owned by uid 1000 with mode 600 (under rootless Docker, Podman or userns-remap, use the mapped uid instead).
 
+The commands below and `deploy/deploy.sh` expect to log in as root on the host: setting ownership to uid 1000 needs root, and the deploy reads the root-owned `.env`. With a sudo user instead, prefix the preparation commands with `sudo` and run the deploy as a user that can read `<dir>/.env`, write `<dir>/releases` and `<dir>/current`, and use Docker.
+
     ssh <host> 'install -d -m 755 <dir> <dir>/releases && install -d -m 700 -o 1000 -g 1000 <dir>/secrets'
-    ssh <host> 'umask 077; head -c 32 /dev/urandom | base64 > <dir>/secrets/master_key; chown 1000:1000 <dir>/secrets/master_key; chmod 600 <dir>/secrets/master_key'
+    ssh <host> 'set -C; umask 077; head -c 32 /dev/urandom | base64 > <dir>/secrets/master_key && chown 1000:1000 <dir>/secrets/master_key && chmod 600 <dir>/secrets/master_key'
 
-Keep an offline copy of `<dir>/secrets/master_key` (for example in a password manager): without it the data cannot be decrypted.
+`set -C` makes the second command fail instead of replacing an existing key: a new key makes the existing data unreadable. Keep an offline copy of `<dir>/secrets/master_key` (for example in a password manager): without it the data cannot be decrypted.
 
-Create `<dir>/.env` (mode 600) from `deploy/env.example` with:
+Copy the template to `<dir>/.env` with mode 600, again without overwriting an existing file, then edit it on the host:
+
+    ssh <host> 'set -C; umask 077; cat > <dir>/.env' < deploy/env.example
+
+Set these values in `<dir>/.env`:
 
 - `BURSAR_PUBLIC_URL=https://<hostname>`
 - `TZ` (your time zone)
