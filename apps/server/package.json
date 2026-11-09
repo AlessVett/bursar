@@ -21,7 +21,7 @@
     "better-sqlite3-multiple-ciphers": "^13.0.3",
     "drizzle-orm": "^0.45.4",
     "hono": "^4.13.17",
-    "jose": "^6.2.16",
+    "jose": "6.2.15",
     "otpauth": "^9.6.0",
     "pino": "^10.4.0",
     "zod": "^4.6.7"

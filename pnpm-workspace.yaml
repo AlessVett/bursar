@@ -6,7 +6,6 @@ allowBuilds:
   esbuild: true
   lefthook: true
 
-minimumReleaseAgeExclude:
-  - jose@6.2.16
-  - "@vitejs/plugin-react@6.3.0"
-  - react-i18next@18.0.1
+# Install only versions published at least one day ago (pnpm's default, stated explicitly so the
+# policy is visible). Add no exclusions: wait for a release to age instead.
+minimumReleaseAge: 1440
