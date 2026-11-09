@@ -6,7 +6,12 @@ Bursar is a self-hosted personal finance assistant. It reads your bank accounts 
 
 ## Where your data goes
 
-Bursar stores everything on your own server, encrypted at rest. Processing still involves third parties: Anthropic receives what the agents read, Enable Banking brokers bank data, and Cloudflare terminates TLS if you use a Cloudflare Tunnel.
+Bursar stores everything on your own server, encrypted at rest. Processing still involves third parties:
+
+- Anthropic receives everything the agents read.
+- Enable Banking brokers bank data.
+- Cloudflare terminates TLS if you use a Cloudflare Tunnel.
+- Your hosting provider holds the disk, together with the master key that decrypts it. Encryption at rest protects copies of the data volume and backups that leave the host without the key; it does not protect against whoever controls the host.
 
 ## Development
 
@@ -17,4 +22,4 @@ Requirements: Node 24, pnpm (via `packageManager`), Docker, gitleaks.
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
