@@ -8,7 +8,7 @@ import type { AuthDeps } from "../auth/routes";
 import { SessionStore } from "../auth/sessions";
 import { SetupCode } from "../auth/setup-code";
 import { createTestDatabase, type TestDatabase } from "../test/db";
-import { createApp } from "./app";
+import { API_BODY_LIMIT_BYTES, createApp } from "./app";
 
 const ORIGIN = "https://bursar.example.test";
 const config = { publicUrl: new URL(ORIGIN), cfAccess: null, webDistDir: null };
@@ -112,6 +112,53 @@ describe("createApp with auth routes", () => {
     expect((await send({ origin: "https://bursar.example.test.evil.test" })).status).toBe(403);
     expect((await send({})).status).toBe(403);
     expect((await send({ origin: ORIGIN })).status).not.toBe(403);
+  });
+
+  const oversized = JSON.stringify({ password: "x".repeat(API_BODY_LIMIT_BYTES), code: "000000" });
+
+  it("refuses an oversized body announced by Content-Length before parsing it", async () => {
+    const res = await app.request("/api/auth/login", {
+      method: "POST",
+      headers: {
+        origin: ORIGIN,
+        "content-type": "application/json",
+        "content-length": String(Buffer.byteLength(oversized)),
+      },
+      body: oversized,
+    });
+    expect(res.status).toBe(413);
+    expect(await res.json()).toEqual({ error: "Request body too large" });
+  });
+
+  it("refuses an oversized streamed body", async () => {
+    const encoded = new TextEncoder().encode(oversized);
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (let offset = 0; offset < encoded.length; offset += 8192) {
+          controller.enqueue(encoded.subarray(offset, offset + 8192));
+        }
+        controller.close();
+      },
+    });
+    const res = await app.request("/api/auth/login", {
+      method: "POST",
+      headers: { origin: ORIGIN, "content-type": "application/json" },
+      body: stream,
+      duplex: "half",
+    } as RequestInit);
+    expect(res.status).toBe(413);
+  });
+
+  it("passes bodies within the limit on to the route", async () => {
+    const send = (password: string) =>
+      app.request("/api/auth/login", {
+        method: "POST",
+        headers: { origin: ORIGIN, "content-type": "application/json" },
+        body: JSON.stringify({ password, code: "000000" }),
+      });
+    // Just under the limit: the route's schema rejects the long password, not the body limit.
+    expect((await send("x".repeat(API_BODY_LIMIT_BYTES - 100))).status).toBe(400);
+    expect((await send("a valid password")).status).toBe(409);
   });
 });
 

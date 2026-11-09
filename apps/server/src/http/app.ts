@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { secureHeaders } from "hono/secure-headers";
 import type { JWTVerifyGetKey } from "jose";
 import type { Logger } from "pino";
@@ -9,6 +10,9 @@ import { originCheck } from "./origin";
 import { webAppHandler } from "./static";
 
 export type AppEnv = { Variables: { sessionId: number } };
+
+/** Maximum /api request body: requests are small JSON documents. Uploads get their own limit. */
+export const API_BODY_LIMIT_BYTES = 64 * 1024;
 
 export interface AppDeps {
   config: Pick<Config, "publicUrl" | "cfAccess" | "webDistDir">;
@@ -62,6 +66,13 @@ export function createApp(deps: AppDeps): Hono<AppEnv> {
   );
 
   app.use("/api/*", originCheck(deps.config.publicUrl));
+  app.use(
+    "/api/*",
+    bodyLimit({
+      maxSize: API_BODY_LIMIT_BYTES,
+      onError: (c) => c.json({ error: "Request body too large" }, 413),
+    }),
+  );
   if (deps.auth) {
     app.route("/api/auth", authRoutes(deps.auth));
     app.use("/api/*", requireSession(deps.auth.sessions));
