@@ -1,0 +1,10 @@
+services:
+  app:
+    environment:
+      - ${BURSAR_CLAUDE_CREDENTIAL_ENV:-ANTHROPIC_API_KEY}_FILE=/run/secrets/claude_credential
+    secrets:
+      - claude_credential
+
+secrets:
+  claude_credential:
+    file: ${BURSAR_SECRETS_DIR:-./secrets}/claude_credential
