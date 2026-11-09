@@ -1,3 +1,4 @@
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { ConfigError, loadConfig, readSecret } from "./config";
@@ -274,5 +275,47 @@ describe("readSecret", () => {
 
   it("rejects an empty secret file", () => {
     expect(() => readSecret({ A_FILE: "/f" }, "A", () => "  \n")).toThrow(/empty/);
+  });
+
+  it("names the variable when the secret file is not readable", () => {
+    const denied = () => {
+      throw Object.assign(new Error("EACCES: permission denied, open '/run/secrets/a'"), {
+        code: "EACCES",
+      });
+    };
+    expect(() => readSecret({ A_FILE: "/run/secrets/a" }, "A", denied)).toThrow(ConfigError);
+    expect(() => readSecret({ A_FILE: "/run/secrets/a" }, "A", denied)).toThrow(
+      /A_FILE points to \/run\/secrets\/a, which cannot be read \(EACCES\).*uid 1000/,
+    );
+  });
+
+  it("names the variable when the secret file is missing, using the real file system", () => {
+    const missing = path.join(tmpdir(), `bursar-missing-${process.pid}`, "master_key");
+    expect(() => readSecret({ A_FILE: missing }, "A")).toThrow(
+      /A_FILE .*cannot be read \(ENOENT\)/,
+    );
+  });
+
+  it("reports an unreadable master key file with the other configuration problems", () => {
+    const env = { BURSAR_MASTER_KEY_FILE: "/run/secrets/master_key" };
+    let error: unknown;
+    try {
+      loadConfig(env, () => {
+        throw Object.assign(new Error("denied"), { code: "EACCES" });
+      });
+    } catch (caught) {
+      error = caught;
+    }
+    expect(error).toBeInstanceOf(ConfigError);
+    const problems = (error as ConfigError).problems.join("\n");
+    expect(problems).toContain("BURSAR_MASTER_KEY_FILE points to /run/secrets/master_key");
+    expect(problems).toContain("BURSAR_PUBLIC_URL");
+  });
+
+  it("rethrows errors that are not file system errors", () => {
+    const boom = () => {
+      throw new TypeError("boom");
+    };
+    expect(() => readSecret({ A_FILE: "/f" }, "A", boom)).toThrow(TypeError);
   });
 });

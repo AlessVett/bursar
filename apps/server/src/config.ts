@@ -72,7 +72,20 @@ export function readSecret(
     throw new ConfigError([`${name} and ${name}_FILE are both set; use one`]);
   }
   if (filePath) {
-    const value = readFile(filePath).trim();
+    let value: string;
+    try {
+      value = readFile(filePath).trim();
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (typeof code !== "string") throw error;
+      const hint =
+        code === "EACCES" || code === "EPERM"
+          ? "; make it readable by the user that runs Bursar (uid 1000 in the container)"
+          : "";
+      throw new ConfigError([
+        `${name}_FILE points to ${filePath}, which cannot be read (${code})${hint}`,
+      ]);
+    }
     if (!value) throw new ConfigError([`${name}_FILE points to an empty file`]);
     return value;
   }
