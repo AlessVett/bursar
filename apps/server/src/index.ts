@@ -1,10 +1,10 @@
 import { ConfigError, loadConfig } from "./config";
-import { createLogger } from "./logger";
+import { configSecrets, createLogger } from "./logger";
 import { startBursar } from "./server";
 
 async function main(): Promise<void> {
   const config = loadConfig();
-  const logger = createLogger(config.logLevel);
+  const logger = createLogger(config.logLevel, undefined, configSecrets(config));
   const running = await startBursar(config, logger);
   logger.info({ host: config.host, port: running.port }, "Bursar is listening");
 
