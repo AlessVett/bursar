@@ -1,6 +1,13 @@
+import path from "node:path";
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from "jose";
 import { pino } from "pino";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { OwnerStore } from "../auth/owner";
+import { FailureLimiter } from "../auth/rate-limit";
+import type { AuthDeps } from "../auth/routes";
+import { SessionStore } from "../auth/sessions";
+import { SetupCode } from "../auth/setup-code";
+import { createTestDatabase, type TestDatabase } from "../test/db";
 import { createApp } from "./app";
 
 const ORIGIN = "https://bursar.example.test";
@@ -41,6 +48,70 @@ describe("createApp", () => {
     expect((await post({ origin: "https://evil.test" })).status).toBe(403);
     expect((await post({})).status).toBe(403);
     expect((await post({ origin: ORIGIN })).status).toBe(404);
+  });
+
+  it.each([
+    "https://bursar.example.test.evil.test",
+    "https://bursar.example.test:8443",
+    "http://bursar.example.test",
+    "https://sub.bursar.example.test",
+    `${ORIGIN}/`,
+    "null",
+  ])("requires an exact Origin match, rejecting %s", async (origin) => {
+    const app = createApp({ config, logger, healthCheck: () => true });
+    const res = await app.request("/api/nope", { method: "POST", headers: { origin } });
+    expect(res.status).toBe(403);
+  });
+
+  it.each(["PUT", "PATCH", "DELETE"])("checks the Origin on %s", async (method) => {
+    const app = createApp({ config, logger, healthCheck: () => true });
+    const send = (headers: Record<string, string>) => app.request("/api/nope", { method, headers });
+    expect((await send({ origin: "https://evil.test" })).status).toBe(403);
+    expect((await send({})).status).toBe(403);
+    expect((await send({ origin: ORIGIN })).status).toBe(404);
+  });
+});
+
+describe("createApp with auth routes", () => {
+  let t: TestDatabase;
+  let app: ReturnType<typeof createApp>;
+
+  beforeEach(() => {
+    t = createTestDatabase();
+    const setupCode = new SetupCode(path.join(t.dir, "setup-code"));
+    setupCode.issue();
+    const auth: AuthDeps = {
+      owners: new OwnerStore(t.db, Buffer.alloc(32, 1)),
+      sessions: new SessionStore(t.db),
+      setupCode,
+      limiter: new FailureLimiter(),
+      accountLimiter: new FailureLimiter(20),
+      secureCookies: true,
+      now: Date.now,
+      getClientIp: () => "203.0.113.7",
+    };
+    app = createApp({ config, logger, healthCheck: () => true, auth });
+  });
+  afterEach(() => t.dispose());
+
+  const routes = [
+    "/api/auth/login",
+    "/api/auth/setup/start",
+    "/api/auth/setup/confirm",
+    "/api/auth/logout",
+  ];
+
+  it.each(routes)("rejects %s from a foreign or missing Origin", async (route) => {
+    const send = (headers: Record<string, string>) =>
+      app.request(route, {
+        method: "POST",
+        headers: { "content-type": "application/json", ...headers },
+        body: "{}",
+      });
+    expect((await send({ origin: "https://evil.test" })).status).toBe(403);
+    expect((await send({ origin: "https://bursar.example.test.evil.test" })).status).toBe(403);
+    expect((await send({})).status).toBe(403);
+    expect((await send({ origin: ORIGIN })).status).not.toBe(403);
   });
 });
 
