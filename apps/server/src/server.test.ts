@@ -1,9 +1,11 @@
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Writable } from "node:stream";
+import type { SetupStartResponse } from "@bursar/shared";
 import { pino } from "pino";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { generateTotpCode } from "./auth/totp";
 import { loadConfig } from "./config";
 import { type RunningBursar, startBursar } from "./server";
 import { MIGRATIONS_DIR } from "./test/db";
@@ -59,6 +61,45 @@ describe("startBursar", () => {
 
   const accessWarnings = (lines: string[]) =>
     lines.filter((line) => line.includes("Cloudflare Access is not configured"));
+
+  /** Runs owner setup over HTTP and returns the Set-Cookie header of the confirmation. */
+  async function completeSetup(base: string, origin: string): Promise<string> {
+    const post = (route: string, body: unknown) =>
+      fetch(`${base}${route}`, {
+        method: "POST",
+        headers: { origin, "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    const setupCode = readFileSync(path.join(dir, "setup-code"), "utf8").trim();
+    const start = await post("/api/auth/setup/start", {
+      setupCode,
+      password: "correct horse battery staple",
+    });
+    expect(start.status).toBe(200);
+    const { setupToken, secret } = (await start.json()) as SetupStartResponse;
+    const confirm = await post("/api/auth/setup/confirm", {
+      setupToken,
+      code: generateTotpCode(secret, Date.now()),
+    });
+    expect(confirm.status).toBe(200);
+    return confirm.headers.get("set-cookie") ?? "";
+  }
+
+  it("marks the session cookie Secure when the public URL is HTTPS", async () => {
+    const { base, origin } = await boot({ BURSAR_PUBLIC_URL: "https://bursar.example.test" });
+    const setCookie = await completeSetup(base, origin);
+    expect(setCookie).toMatch(/^bursar_session=/);
+    expect(setCookie).toMatch(/;\s*Secure/i);
+    expect(setCookie).toContain("HttpOnly");
+    expect(setCookie).toContain("SameSite=Strict");
+  });
+
+  it("omits Secure on a plain-HTTP loopback public URL", async () => {
+    const { base, origin } = await boot({ BURSAR_PUBLIC_URL: "http://127.0.0.1" });
+    const setCookie = await completeSetup(base, origin);
+    expect(setCookie).toMatch(/^bursar_session=/);
+    expect(setCookie).not.toMatch(/;\s*Secure/i);
+  });
 
   it("boots, serves health and auth status, issues a setup code and shuts down", async () => {
     const { base } = await boot();
