@@ -9,7 +9,7 @@ import {
 import { type Context, Hono, type MiddlewareHandler } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { AppEnv } from "../http/app";
-import type { OwnerStore } from "./owner";
+import { type OwnerStore, TotpStepReusedError } from "./owner";
 import { hashPassword, verifyPassword } from "./passwords";
 import { type FailureLimiter, rateLimitKey } from "./rate-limit";
 import { SESSION_IDLE_MS, type SessionStore } from "./sessions";
@@ -125,7 +125,15 @@ export function authRoutes(deps: AuthDeps): Hono<AppEnv> {
     if (!passwordOk || !totp.ok) {
       return c.json({ error: "Invalid credentials" }, 401);
     }
-    deps.owners.setLastTotpStep(totp.step);
+    try {
+      deps.owners.setLastTotpStep(totp.step);
+    } catch (error) {
+      // A concurrent login consumed this step first; the attempt stays charged as a failure.
+      if (error instanceof TotpStepReusedError) {
+        return c.json({ error: "Invalid credentials" }, 401);
+      }
+      throw error;
+    }
     deps.limiter.reset(client);
     deps.accountLimiter.reset(ACCOUNT_KEY);
     startSession(c);

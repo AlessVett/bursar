@@ -5,6 +5,14 @@ import { owner } from "../db/schema";
 
 const OWNER_ID = 1;
 
+/** The TOTP step was already consumed, by an earlier or a concurrent login. */
+export class TotpStepReusedError extends Error {
+  constructor() {
+    super("TOTP step already used");
+    this.name = "TotpStepReusedError";
+  }
+}
+
 export interface OwnerRecord {
   passwordHash: string;
   totpSecret: string;
@@ -55,6 +63,6 @@ export class OwnerStore {
       .set({ lastTotpStep: step })
       .where(and(eq(owner.id, OWNER_ID), lt(owner.lastTotpStep, step)))
       .run();
-    if (result.changes === 0) throw new Error("TOTP step already used");
+    if (result.changes === 0) throw new TotpStepReusedError();
   }
 }

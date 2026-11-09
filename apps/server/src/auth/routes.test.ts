@@ -145,6 +145,32 @@ describe("auth routes", () => {
     expect((await post("/api/auth/login", { password: PASSWORD, code: totp })).status).toBe(401);
   });
 
+  it("accepts a code only once when two logins race with it", async () => {
+    const { secret } = await completeSetup();
+    now += 30_000;
+    const totp = generateTotpCode(secret, now);
+    const results = await Promise.all([
+      post("/api/auth/login", { password: PASSWORD, code: totp }),
+      post("/api/auth/login", { password: PASSWORD, code: totp }),
+    ]);
+    expect(results.map((r) => r.status).sort()).toEqual([200, 401]);
+    const cookies = results.filter((r) =>
+      /bursar_session=[^;]+/.test(r.headers.get("set-cookie") ?? ""),
+    );
+    expect(cookies).toHaveLength(1);
+  });
+
+  it("refuses the enrolment code at login", async () => {
+    const start = await post("/api/auth/setup/start", { setupCode: code, password: PASSWORD });
+    const { setupToken, secret } = (await start.json()) as SetupStartResponse;
+    const enrolmentCode = generateTotpCode(secret, now);
+    const confirm = await post("/api/auth/setup/confirm", { setupToken, code: enrolmentCode });
+    expect(confirm.status).toBe(200);
+    expect(
+      (await post("/api/auth/login", { password: PASSWORD, code: enrolmentCode })).status,
+    ).toBe(401);
+  });
+
   it("locks out after five failed logins", async () => {
     const { secret } = await completeSetup();
     for (let i = 0; i < 5; i += 1) {
