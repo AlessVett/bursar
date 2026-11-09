@@ -1,7 +1,7 @@
 # 0002 — Agent SDK isolation in the container (gate V2)
 
 - **Date:** 2026-11-09
-- **Status:** accepted for local Docker; host confirmation pending
+- **Status:** accepted
 
 ## Question
 
@@ -36,3 +36,29 @@ The run used Docker Desktop on a development machine. The temporary `CLAUDE_CONF
 ## Decision
 
 Agent runs use: `tools: []`, `settingSources: []`, `strictMcpConfig: true`, `persistSession: false`, `CLAUDE_CONFIG_DIR` and `HOME` in per-run temporary directories under the tmpfs, `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`, `CLAUDE_AGENT_SDK_DISABLE_BUILTIN_AGENTS=1`. Files listed under `filesWritten` live only on tmpfs.
+
+## Host confirmation
+
+Command, run on the production Docker host (Linux x86_64) from `<dir>/current/deploy`, with the image built from source there (ADR 0003): `docker compose --env-file <dir>/.env -f compose.yaml -f compose.claude.yaml run --rm --no-deps app node dist/sdk-gate.js`
+
+```json
+{
+  "ok": true,
+  "answeredOk": true,
+  "costUsd": 0.0001658,
+  "filesWritten": [
+    "claude-config-ONDYRy/.claude.json",
+    "claude-config-ONDYRy/policy-limits.json",
+    "claude-config-ONDYRy/policy-limits.json.signature.json",
+    "claude-config-ONDYRy/policy-limits.json.stamp.json",
+    "claude-config-ONDYRy/remote-settings.json",
+    "claude-config-ONDYRy/remote-settings.json.synced-at",
+    "claude-config-ONDYRy/backups/.claude.json.backup.1794241499477",
+    "claude-config-ONDYRy/plugins/store/cc-plugin-agents-md_builtin-b049b47b3618.json"
+  ],
+  "transcripts": []
+}
+exit=0
+```
+
+The host run matches the local one: the same settings and policy files on tmpfs, no transcripts.
