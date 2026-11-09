@@ -7,6 +7,8 @@ const baseEnv = {
   BURSAR_PUBLIC_URL: "https://bursar.example.test",
   TZ: "Europe/Rome",
   BURSAR_MASTER_KEY: KEY,
+  CF_ACCESS_TEAM_DOMAIN: "team.example.test",
+  CF_ACCESS_AUD: "aud",
 };
 const noFiles = (path: string): string => {
   throw new Error(`unexpected read of ${path}`);
@@ -20,7 +22,7 @@ describe("loadConfig", () => {
     expect(config.publicUrl.origin).toBe("https://bursar.example.test");
     expect(config.timezone).toBe("Europe/Rome");
     expect(config.masterKey).toEqual(Buffer.alloc(32, 7));
-    expect(config.cfAccess).toBeNull();
+    expect(config.cfAccess).toEqual({ teamDomain: "team.example.test", audience: "aud" });
     expect(config.claude).toBeNull();
     expect(config.webDistDir).toBeNull();
   });
@@ -109,9 +111,20 @@ describe("loadConfig", () => {
   });
 
   it("requires both Cloudflare Access settings together", () => {
-    expect(() => loadConfig({ ...baseEnv, CF_ACCESS_AUD: "aud" }, noFiles)).toThrow(
+    expect(() => loadConfig({ ...baseEnv, CF_ACCESS_TEAM_DOMAIN: "" }, noFiles)).toThrow(
       /must be set together/,
     );
+  });
+
+  it("refuses a non-loopback public URL without Cloudflare Access (fail closed)", () => {
+    const { CF_ACCESS_TEAM_DOMAIN: _t, CF_ACCESS_AUD: _a, ...noAccess } = baseEnv;
+    expect(() => loadConfig(noAccess, noFiles)).toThrow(/are required unless/);
+  });
+
+  it("allows a loopback public URL without Cloudflare Access", () => {
+    const { CF_ACCESS_TEAM_DOMAIN: _t, CF_ACCESS_AUD: _a, ...noAccess } = baseEnv;
+    const config = loadConfig({ ...noAccess, BURSAR_PUBLIC_URL: "http://localhost:5173" }, noFiles);
+    expect(config.cfAccess).toBeNull();
   });
 
   it("enables Cloudflare Access when both settings are present", () => {

@@ -163,6 +163,12 @@ export function loadConfig(env: Env = process.env, readFile: ReadFile = defaultR
     problems.push("CF_ACCESS_TEAM_DOMAIN and CF_ACCESS_AUD must be set together");
   }
 
+  if (publicUrl && !isLoopbackHost(publicUrl.hostname) && !(teamDomain && audience)) {
+    problems.push(
+      "CF_ACCESS_TEAM_DOMAIN and CF_ACCESS_AUD are required unless BURSAR_PUBLIC_URL is a loopback address",
+    );
+  }
+
   const claude = attempt(() => loadClaudeCredential(env, readFile)) ?? null;
 
   if (problems.length > 0 || !publicUrl || !timezone || !masterKey) {
