@@ -132,6 +132,7 @@ Tooling: pnpm workspaces, Biome (lint and format), Vitest, Playwright, Drizzle O
   - **Chat:** conversation with the Master.
   - **Settings:** report time, timezone, locale and language, budgets, notification settings, privacy terms for the outbound filter.
 - i18n: Italian and English from the start; report language follows the settings.
+- UX/UI rules for every page (navigation, iconic element, visual system, interaction rules, definition of done): `2026-11-09-panel-ux-design.md`.
 
 ### 6.2 Storage
 
