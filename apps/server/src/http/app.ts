@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { secureHeaders } from "hono/secure-headers";
 import type { JWTVerifyGetKey } from "jose";
 import type { Logger } from "pino";
+import { type AuthDeps, authRoutes, requireSession } from "../auth/routes";
 import type { Config } from "../config";
 import { accessGuard } from "./access";
 import { originCheck } from "./origin";
@@ -14,6 +15,7 @@ export interface AppDeps {
   logger: Logger;
   healthCheck: () => boolean;
   accessKeys?: JWTVerifyGetKey;
+  auth?: AuthDeps;
 }
 
 export function createApp(deps: AppDeps): Hono<AppEnv> {
@@ -60,6 +62,11 @@ export function createApp(deps: AppDeps): Hono<AppEnv> {
   );
 
   app.use("/api/*", originCheck(deps.config.publicUrl));
+  if (deps.auth) {
+    app.route("/api/auth", authRoutes(deps.auth));
+    app.use("/api/*", requireSession(deps.auth.sessions));
+    app.get("/api/me", (c) => c.json({ authenticated: true }));
+  }
   app.all("/api/*", (c) => c.json({ error: "Not found" }, 404));
 
   if (deps.config.webDistDir) {
