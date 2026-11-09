@@ -1,4 +1,6 @@
+import { createHash } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { authSessions } from "../db/schema";
 import { createTestDatabase, type TestDatabase } from "../test/db";
 import { SESSION_IDLE_MS, SessionStore } from "./sessions";
 
@@ -42,9 +44,23 @@ describe("SessionStore", () => {
     expect(store.validate(token)).toBeNull();
   });
 
-  it("purges expired sessions", () => {
-    store.create(null);
-    now += SESSION_IDLE_MS + 1;
+  it("stores only the SHA-256 hash of the token", () => {
+    const token = store.create("test-agent");
+    const rows = t.db.select().from(authSessions).all();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.tokenHash).not.toBe(token);
+    expect(rows[0]?.tokenHash).toBe(createHash("sha256").update(token).digest("hex"));
+    expect(JSON.stringify(rows)).not.toContain(token);
+  });
+
+  it("purges expired sessions and keeps valid ones", () => {
+    const expired = store.create(null);
+    now += SESSION_IDLE_MS / 2;
+    const valid = store.create(null);
+    now += SESSION_IDLE_MS / 2 + 1;
     expect(store.purgeExpired()).toBe(1);
+    expect(store.validate(valid)).not.toBeNull();
+    expect(store.validate(expired)).toBeNull();
+    expect(t.db.select().from(authSessions).all()).toHaveLength(1);
   });
 });
