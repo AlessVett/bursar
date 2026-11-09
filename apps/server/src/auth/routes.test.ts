@@ -155,6 +155,24 @@ describe("auth routes", () => {
     expect(res.status).toBe(429);
   });
 
+  it("caps a concurrent burst of wrong logins at five verifications", async () => {
+    const { secret } = await completeSetup();
+    const results = await Promise.all(
+      Array.from({ length: 12 }, () =>
+        post("/api/auth/login", { password: "wrong", code: "000000" }),
+      ),
+    );
+    const statuses = results.map((r) => r.status);
+    expect(statuses.filter((s) => s === 401)).toHaveLength(5);
+    expect(statuses.filter((s) => s === 429)).toHaveLength(7);
+    now += 30_000;
+    const res = await post("/api/auth/login", {
+      password: PASSWORD,
+      code: generateTotpCode(secret, now),
+    });
+    expect(res.status).toBe(429);
+  });
+
   it("revokes the session on logout", async () => {
     const { cookie } = await completeSetup();
     expect((await post("/api/auth/logout", {}, cookie)).status).toBe(200);

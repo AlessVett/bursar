@@ -66,13 +66,14 @@ export function authRoutes(deps: AuthDeps): Hono<AppEnv> {
   routes.post("/setup/start", async (c) => {
     if (deps.owners.exists()) return c.json({ error: "Already set up" }, 409);
     const ip = deps.getClientIp(c);
-    if (deps.limiter.isBlocked(ip)) return c.json({ error: "Too many attempts" }, 429);
+    // Charge the attempt synchronously, before any await, so a parallel burst cannot bypass the cap.
+    if (!deps.limiter.tryConsume(ip)) return c.json({ error: "Too many attempts" }, 429);
     const parsed = setupStartRequestSchema.safeParse(await readJson(c));
     if (!parsed.success) return c.json({ error: "Invalid request" }, 400);
     if (!deps.setupCode.verify(parsed.data.setupCode)) {
-      deps.limiter.recordFailure(ip);
       return c.json({ error: "Invalid setup code" }, 401);
     }
+    deps.limiter.reset(ip);
     const totp = createTotpSetup("owner");
     const setupToken = randomBytes(24).toString("base64url");
     pending.set(setupToken, {
@@ -107,7 +108,8 @@ export function authRoutes(deps: AuthDeps): Hono<AppEnv> {
 
   routes.post("/login", async (c) => {
     const ip = deps.getClientIp(c);
-    if (deps.limiter.isBlocked(ip)) return c.json({ error: "Too many attempts" }, 429);
+    // Charge the attempt synchronously, before any await, so a parallel burst cannot bypass the cap.
+    if (!deps.limiter.tryConsume(ip)) return c.json({ error: "Too many attempts" }, 429);
     const parsed = loginRequestSchema.safeParse(await readJson(c));
     if (!parsed.success) return c.json({ error: "Invalid request" }, 400);
     const record = deps.owners.get();
@@ -115,7 +117,6 @@ export function authRoutes(deps: AuthDeps): Hono<AppEnv> {
     const passwordOk = await verifyPassword(record.passwordHash, parsed.data.password);
     const totp = verifyTotp(record.totpSecret, parsed.data.code, record.lastTotpStep, deps.now());
     if (!passwordOk || !totp.ok) {
-      deps.limiter.recordFailure(ip);
       return c.json({ error: "Invalid credentials" }, 401);
     }
     deps.owners.setLastTotpStep(totp.step);
