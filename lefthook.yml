@@ -1,0 +1,8 @@
+pre-commit:
+  parallel: true
+  commands:
+    biome:
+      glob: "*.{ts,tsx,js,json,css}"
+      run: pnpm exec biome check --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+    gitleaks:
+      run: gitleaks git --pre-commit --staged --redact --no-banner

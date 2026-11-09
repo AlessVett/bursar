@@ -1,0 +1,23 @@
+{
+  "name": "bursar",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.18.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "prepare": "test -e .git && lefthook install || true",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "build": "pnpm --filter @bursar/web build && pnpm --filter @bursar/server build"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.6",
+    "lefthook": "^2.2.2",
+    "typescript": "^7.0.2"
+  }
+}
