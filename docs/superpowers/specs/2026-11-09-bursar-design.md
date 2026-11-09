@@ -71,7 +71,7 @@ Facts verified on 2026-11-06/09 that shape the design. Items still to be confirm
 | D5 | Web access only through the Researcher agent, which has no access to financial data | Limits what a malicious page can exfiltrate | Web tools for every agent |
 | D6 | SearXNG self-hosted with locale-aware engines | Results in the user's language, no browser, no per-query cost | SDK `WebSearch` (kept as fallback, see §15) |
 | D7 | Numbers in reports come from deterministic code; agents interpret | Avoids arithmetic errors; every figure is traceable | Letting the model compute |
-| D8 | CI on GitHub-hosted Linux runners only; deploy is pull-based (Watchtower) | Free on a public repository; no SSH keys in GitHub; no self-hosted runner exposed to pull requests | Self-hosted runners; push-based SSH deploy |
+| D8 | CI on GitHub-hosted Linux runners only; deployments build from source on the host (no published image, ADR 0003) | Free on a public repository; GitHub holds no SSH keys or host credentials; no self-hosted runner exposed to pull requests; the Agent SDK is not redistributed in a public image | Self-hosted runners; deploying from GitHub Actions over SSH; published images pulled by Watchtower |
 | D9 | Repository, docs and commits in English; UI in Italian and English | Open-source reach | Italian-only repository |
 | D10 | MIT licence | Simple and widely accepted for a portfolio project | AGPL |
 
@@ -98,7 +98,6 @@ Facts verified on 2026-11-06/09 that shape the design. Items still to be confirm
 │                   ┌──────────────▼─────┐                   │
 │                   │ searxng            │──────────────────────▶ search engines
 │                   └────────────────────┘                   │
-│  watchtower (optional, scoped to app)                      │
 └────────────────────────────────────────────────────────────┘
 ```
 
@@ -401,7 +400,7 @@ Without SMTP configured, alerts appear only in the panel.
 | Data exfiltration through search queries or URLs | Outbound privacy filter; Researcher has no data tools; every web request is logged |
 | SSRF through `fetch_page` | Public-IP check on every hop, scheme allowlist, caps |
 | CSRF or cross-site requests | `SameSite=Strict` and `Origin` check |
-| Supply chain (auto-update) | Watchtower follows only the `stable` tag, which is published only by the release workflow on version tags; dependencies pinned by the lockfile |
+| Supply chain | No automatic updates: the operator deploys a chosen git revision and the host builds the image from source (ADR 0003); dependencies pinned by the lockfile and installed only after a one-day release-age cooldown |
 | Secrets in the repository | `.gitignore`, gitleaks in pre-commit and CI, synthetic fixtures only |
 
 Claims about the effectiveness of these mitigations are design intent until tested. The tests in §12 cover the filter, the SSRF guard, the payment-path allowlist and the Access JWT check.
@@ -429,8 +428,8 @@ Claims about the effectiveness of these mitigations are design intent until test
   - `app`: volume `data`, Docker secrets, `mem_limit` from configuration (default 3 GB, to be measured in M2).
   - `searxng`: bind-mounted settings, `mem_limit` 512 MB.
   - `cloudflared`: profile `tunnel`.
-  - `watchtower`: profile `autoupdate`, label-scoped to `app`.
 - **`deploy/compose.dev.yaml`:** builds locally and binds `127.0.0.1:8080`.
+- **Updates (ADR 0003):** no image is published, so deployments build from source on the host. A deploy script run from the operator's machine copies a chosen git revision to the host over SSH; the host builds the image with `docker compose build` and restarts the stack. There is no Watchtower and no automatic update.
 - **Reference deployment guide** (`docs/deployment.md`): a Linux VPS with Docker Compose; Cloudflare Tunnel with a public hostname for the panel; a Cloudflare Access application with an email policy; R2 for backups; Enable Banking redirect URL set to `https://<hostname>/api/banks/callback`.
 - Operator-specific values (hostname, tunnel token, paths) live only in the operator's `.env` and secrets on the host, never in the repository.
 
@@ -443,9 +442,8 @@ Claims about the effectiveness of these mitigations are design intent until test
   - Pull requests from forks get a read-only token and no secrets.
 - **`release.yml`:**
   - Trigger: tags `v*`.
-  - Runs the Playwright smoke test against demo data, builds the image with Buildx and the GitHub Actions cache, and pushes it to GHCR as `vX.Y.Z` and `stable`.
-  - Image publication depends on the redistribution check in §15. If publishing is not allowed, the workflow builds without pushing, and deployments build from the tagged source instead.
-- **Deploy:** Watchtower on the host pulls `stable`. GitHub holds no SSH keys or host credentials.
+  - Runs the Playwright smoke test against demo data and builds the image to prove that the tagged source builds. It pushes no image: the SDK redistribution check (§15 V3) found no permission to publish one (ADR 0003).
+- **Deploy:** the operator builds from source on the host (§10). GitHub holds no SSH keys or host credentials.
 - **Before the repository goes public:** the history is clean by construction (gitleaks from the first commit). The owner sets an Actions budget of $0.
 - **Expected consumption:** one short CI run per push. On a public repository this costs nothing.
 
@@ -493,7 +491,7 @@ Each milestone ends deployed on the reference host and verified.
 | **M3 Documents** | Upload, encryption, password PDFs, Archivist ingestion, categories, relations and duplicates, documents page and search | Exact and semantic duplicates handled; categories created by the agent; facts searchable |
 | **M4 Reports** | Facts pack, phases, validator, catch-up scheduler, on-demand reports with focus, reports page, notifications | Daily report produced after a simulated downtime; on-demand report with focus; validator flags injected bad figures |
 | **M5 Search** | SearXNG, `web_search`, `fetch_page`, guards, Researcher | Researcher answers a question with sources; filter blocks a query containing an IBAN; SSRF tests pass |
-| **M6 Release** | README, docs, demo mode screenshots, `SECURITY.md`, `CONTRIBUTING.md`, first tagged release | Repository public; release workflow green; fresh install from the docs works |
+| **M6 Release** | README, docs, demo mode screenshots, `SECURITY.md`, `CONTRIBUTING.md`, first tagged release (source only, no published image; ADR 0003) | Repository public; release workflow (build and tests only) green; fresh install from source following the docs works |
 
 The repository stays local until the first deploy at the end of M0. Publishing it on GitHub happens then, with the owner's explicit go-ahead.
 

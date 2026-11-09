@@ -2,6 +2,7 @@
 
 - **Date:** 2026-11-09
 - **Status:** accepted
+- **Supersedes:** the published-image deployment in the design spec: §4 D8 (pull-based deploy with Watchtower), the §5 architecture diagram (watchtower service), the §8 supply-chain row (Watchtower following `stable`), §10 (watchtower profile), §11 (`release.yml` pushing to GHCR, Watchtower deploy) and §14 M6 (published release). The spec now describes source-based deployment.
 
 ## Question
 
