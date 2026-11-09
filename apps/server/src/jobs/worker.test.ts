@@ -9,12 +9,26 @@ const logger = pino({ level: "silent" });
 describe("JobWorker", () => {
   let t: TestDatabase;
   let queue: JobQueue;
+  let started: JobWorker[];
+
+  /** Starts a polling worker that afterEach stops, even when the test fails. */
+  const startWorker = (handlers: ReadonlyMap<string, JobHandler>): JobWorker => {
+    const worker = new JobWorker(queue, handlers, logger, 10);
+    started.push(worker);
+    worker.start();
+    return worker;
+  };
 
   beforeEach(() => {
     t = createTestDatabase();
     queue = new JobQueue(t.sqlite);
+    started = [];
   });
-  afterEach(() => t.dispose());
+  afterEach(async () => {
+    // Stop polling before the database goes away.
+    for (const worker of started) await worker.stop();
+    t.dispose();
+  });
 
   it("runs the handler and completes the job", async () => {
     const seen: unknown[] = [];
@@ -67,10 +81,9 @@ describe("JobWorker", () => {
         },
       ],
     ]);
-    const worker = new JobWorker(queue, handlers, logger, 10);
     queue.enqueue("count", null);
     queue.enqueue("count", null);
-    worker.start();
+    const worker = startWorker(handlers);
     await vi.waitFor(() => expect(count).toBe(2));
     await worker.stop();
   });
@@ -81,14 +94,16 @@ describe("JobWorker", () => {
     });
     const unhandled = vi.fn();
     process.on("unhandledRejection", unhandled);
-    const worker = new JobWorker(queue, new Map([["ok", async () => {}]]), logger, 10);
-    const id = queue.enqueue("ok", null);
-    worker.start();
-    await vi.waitFor(() => expect(queue.get(id)?.status).toBe("succeeded"));
-    expect(claim).toHaveBeenCalled();
-    await expect(worker.stop()).resolves.toBeUndefined();
-    await new Promise((resolve) => setImmediate(resolve));
-    process.off("unhandledRejection", unhandled);
+    try {
+      const id = queue.enqueue("ok", null);
+      const worker = startWorker(new Map([["ok", async () => {}]]));
+      await vi.waitFor(() => expect(queue.get(id)?.status).toBe("succeeded"));
+      expect(claim).toHaveBeenCalled();
+      await expect(worker.stop()).resolves.toBeUndefined();
+      await new Promise((resolve) => setImmediate(resolve));
+    } finally {
+      process.off("unhandledRejection", unhandled);
+    }
     expect(unhandled).not.toHaveBeenCalled();
   });
 });
