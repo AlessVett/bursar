@@ -1,4 +1,4 @@
-import { closeSync, openSync, readSync } from "node:fs";
+import { closeSync, existsSync, openSync, readSync } from "node:fs";
 import { eq } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 import { createTestDatabase, TEST_PASSPHRASE, type TestDatabase } from "../test/db";
@@ -48,6 +48,14 @@ describe("encrypted database (gate V1)", () => {
     const row = reopened.db.select().from(owner).where(eq(owner.id, 1)).get();
     expect(row?.passwordHash).toBe("hash");
     reopened.close();
+  });
+
+  it("rejects an empty or too short passphrase without creating a plaintext file", () => {
+    t = createTestDatabase();
+    const file = `${t.dir}/weak.db`;
+    expect(() => openDatabase(file, "")).toThrow(/passphrase must be at least/);
+    expect(() => openDatabase(file, "short")).toThrow(/passphrase must be at least/);
+    expect(existsSync(file)).toBe(false);
   });
 
   it("supports FTS5 full-text search", () => {

@@ -12,7 +12,14 @@ export interface OpenedDatabase {
   close(): void;
 }
 
+export const MIN_PASSPHRASE_LENGTH = 16;
+
 export function openDatabase(file: string, passphrase: string): OpenedDatabase {
+  if (passphrase.length < MIN_PASSPHRASE_LENGTH) {
+    throw new Error(
+      `Refusing to open ${file}: passphrase must be at least ${MIN_PASSPHRASE_LENGTH} characters (an empty key leaves the database unencrypted)`,
+    );
+  }
   const sqlite = new Database(file);
   try {
     sqlite.pragma("cipher = 'sqlcipher'");
