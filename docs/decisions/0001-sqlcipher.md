@@ -24,3 +24,4 @@ Use `better-sqlite3-multiple-ciphers` with Drizzle. The passphrase is the hex fo
 
 - Drizzle's `better-sqlite3` driver imports the `better-sqlite3` package by name, so `apps/server` aliases it to the fork: `"better-sqlite3": "npm:better-sqlite3-multiple-ciphers@^13.0.3"`.
 - The fork's `package.json` `exports` map has no `types` condition, so `apps/server/tsconfig.json` maps the module to its bundled `index.d.ts` through `paths`.
+- tsx applies `paths` at runtime and would load that `index.d.ts` as code (`ReferenceError: Database is not defined`). The tsx scripts (`dev`, `bursar`) therefore pass `--tsconfig tsconfig.runtime.json`, a config without `paths`; `apps/server/src/tsx-runtime.test.ts` guards this. Vitest and tsup do not apply `paths`.
