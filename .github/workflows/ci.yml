@@ -32,6 +32,14 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
+      - name: Check that the committed migrations match the schema
+        run: |
+          pnpm --filter @bursar/server db:generate
+          if [ -n "$(git status --porcelain -- apps/server/drizzle)" ]; then
+            echo "::error::apps/server/drizzle is out of date: run 'pnpm --filter @bursar/server db:generate' and commit the result"
+            git status --porcelain -- apps/server/drizzle
+            exit 1
+          fi
       - run: pnpm test
       - run: pnpm build
       - name: Scan for secrets
