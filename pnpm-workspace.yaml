@@ -8,3 +8,5 @@ allowBuilds:
 
 minimumReleaseAgeExclude:
   - jose@6.2.16
+  - "@vitejs/plugin-react@6.3.0"
+  - react-i18next@18.0.1

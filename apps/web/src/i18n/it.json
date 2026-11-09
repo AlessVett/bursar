@@ -1,0 +1,39 @@
+{
+  "app": { "name": "Bursar" },
+  "common": {
+    "loading": "Caricamento…",
+    "serverUnavailable": "Il server non risponde. Riprova tra poco.",
+    "language": "Lingua"
+  },
+  "setup": {
+    "title": "Configura Bursar",
+    "intro": "Crea l'account del proprietario. Il codice di setup si trova nel file setup-code, nella cartella dati del server.",
+    "setupCode": "Codice di setup",
+    "password": "Password",
+    "passwordConfirm": "Ripeti la password",
+    "passwordTooShort": "La password deve avere almeno {{min}} caratteri.",
+    "passwordMismatch": "Le password non coincidono.",
+    "startFailed": "Impossibile avviare il setup. Controlla il codice e riprova.",
+    "continue": "Continua",
+    "scanTitle": "Aggiungi Bursar all'app di autenticazione",
+    "scanHelp": "Inquadra il QR code con un'app di autenticazione, poi inserisci il codice a 6 cifre che mostra.",
+    "qrAlt": "QR code per l'app di autenticazione",
+    "manualSecret": "Chiave per l'inserimento manuale",
+    "code": "Codice di autenticazione",
+    "confirmFailed": "Codice non valido. Controlla l'ora del telefono e riprova.",
+    "confirm": "Completa il setup"
+  },
+  "login": {
+    "title": "Accedi",
+    "password": "Password",
+    "code": "Codice di autenticazione",
+    "submit": "Accedi",
+    "failed": "Password o codice errati.",
+    "tooMany": "Troppi tentativi. Attendi 15 minuti e riprova."
+  },
+  "home": {
+    "welcome": "Bursar è pronto",
+    "empty": "Non hai ancora collegato conti o caricato documenti.",
+    "logout": "Esci"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "app": { "name": "Bursar" },
+  "common": {
+    "loading": "Loading…",
+    "serverUnavailable": "The server is not reachable. Try again in a moment.",
+    "language": "Language"
+  },
+  "setup": {
+    "title": "Set up Bursar",
+    "intro": "Create the owner account. The setup code is in the file named setup-code inside the server's data directory.",
+    "setupCode": "Setup code",
+    "password": "Password",
+    "passwordConfirm": "Repeat password",
+    "passwordTooShort": "The password must be at least {{min}} characters.",
+    "passwordMismatch": "The passwords do not match.",
+    "startFailed": "Setup could not start. Check the setup code and try again.",
+    "continue": "Continue",
+    "scanTitle": "Add Bursar to your authenticator",
+    "scanHelp": "Scan the QR code with an authenticator app, then enter the 6-digit code it shows.",
+    "qrAlt": "QR code for the authenticator app",
+    "manualSecret": "Manual entry key",
+    "code": "Authenticator code",
+    "confirmFailed": "The code is not valid. Check the time on your phone and try again.",
+    "confirm": "Finish setup"
+  },
+  "login": {
+    "title": "Sign in",
+    "password": "Password",
+    "code": "Authenticator code",
+    "submit": "Sign in",
+    "failed": "Wrong password or code.",
+    "tooMany": "Too many attempts. Wait 15 minutes and try again."
+  },
+  "home": {
+    "welcome": "Bursar is ready",
+    "empty": "No bank accounts or documents yet.",
+    "logout": "Sign out"
+  }
+}
