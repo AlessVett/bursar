@@ -187,12 +187,15 @@ importers:
       '@node-rs/argon2':
         specifier: ^2.2.2
         version: 2.2.2
+      better-sqlite3:
+        specifier: npm:better-sqlite3-multiple-ciphers@^13.0.3
+        version: better-sqlite3-multiple-ciphers@13.0.3
       better-sqlite3-multiple-ciphers:
         specifier: ^13.0.3
         version: 13.0.3
       drizzle-orm:
         specifier: ^0.45.4
-        version: 0.45.4
+        version: 0.45.4(better-sqlite3-multiple-ciphers@13.0.3)
       hono:
         specifier: ^4.13.17
         version: 4.13.17
@@ -2536,7 +2539,9 @@ snapshots:
       esbuild: 0.25.12
       tsx: 4.23.15
 
-  drizzle-orm@0.45.4: {}
+  drizzle-orm@0.45.4(better-sqlite3-multiple-ciphers@13.0.3):
+    optionalDependencies:
+      better-sqlite3: better-sqlite3-multiple-ciphers@13.0.3
 
   es-module-lexer@2.3.2: {}
 
