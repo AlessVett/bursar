@@ -35,6 +35,18 @@ describe("OwnerStore", () => {
     expect(store.get()?.lastTotpStep).toBe(42);
   });
 
+  it("rejects replaying the same or an older TOTP step and keeps the stored one", () => {
+    store.create(RECORD, new Date(0));
+    store.setLastTotpStep(42);
+    expect(() => store.setLastTotpStep(42)).toThrow("TOTP step already used");
+    expect(() => store.setLastTotpStep(10)).toThrow("TOTP step already used");
+    expect(store.get()?.lastTotpStep).toBe(42);
+  });
+
+  it("throws when advancing the step without an owner", () => {
+    expect(() => store.setLastTotpStep(1)).toThrow();
+  });
+
   it("refuses a second owner", () => {
     store.create(RECORD, new Date(0));
     expect(() => store.create(RECORD, new Date(0))).toThrow();

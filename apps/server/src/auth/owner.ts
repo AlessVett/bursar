@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, lt } from "drizzle-orm";
 import { seal, unseal } from "../crypto";
 import type { BursarDb } from "../db";
 import { owner } from "../db/schema";
@@ -44,7 +44,17 @@ export class OwnerStore {
       .run();
   }
 
+  /**
+   * Advances the last used TOTP step atomically and only forwards. Throws when
+   * the step is not strictly greater than the stored one (replay or concurrent
+   * login that already consumed it) or when no owner exists.
+   */
   setLastTotpStep(step: number): void {
-    this.db.update(owner).set({ lastTotpStep: step }).where(eq(owner.id, OWNER_ID)).run();
+    const result = this.db
+      .update(owner)
+      .set({ lastTotpStep: step })
+      .where(and(eq(owner.id, OWNER_ID), lt(owner.lastTotpStep, step)))
+      .run();
+    if (result.changes === 0) throw new Error("TOTP step already used");
   }
 }
