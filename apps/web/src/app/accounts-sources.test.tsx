@@ -23,14 +23,14 @@ function serve(connections: ReturnType<typeof connectionFixture>[]) {
 }
 
 describe("accountDetailPath", () => {
-  it("is hidden until the account page ships, then builds the path", () => {
-    expect(accountDetailPath(12)).toBeNull();
+  it("builds the path of the account page once it ships and hides it otherwise", () => {
+    expect(accountDetailPath(12)).toBe("/accounts/12");
     const def = routeById("account");
-    def.shipped = true;
+    def.shipped = false;
     try {
-      expect(accountDetailPath(12)).toBe("/accounts/12");
+      expect(accountDetailPath(12)).toBeNull();
     } finally {
-      def.shipped = false;
+      def.shipped = true;
     }
   });
 });
@@ -107,7 +107,7 @@ describe("accounts palette source", () => {
       id: "account:1",
       subtitle: "Northwind Bank",
       group: "Accounts",
-      to: "/accounts",
+      to: "/accounts/1",
     });
     // UX doc §3 "Mini" form: the 30-day net chip of the account, in its currency.
     expect(isValidElement(item?.trailing)).toBe(true);

@@ -11,4 +11,8 @@ export const PAGE_LOADERS: Partial<Record<RouteId, PageLoader>> = {
   home: () => import("../pages/HomePage").then((module) => ({ Component: module.HomePage })),
   accounts: () =>
     import("../pages/AccountsPage").then((module) => ({ Component: module.AccountsPage })),
+  account: () =>
+    import("../pages/AccountDetailPage").then((module) => ({
+      Component: module.AccountDetailPage,
+    })),
 };

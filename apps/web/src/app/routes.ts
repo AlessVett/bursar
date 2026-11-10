@@ -73,7 +73,7 @@ function route(
 export const ROUTES: readonly RouteDef[] = [
   route("home", "/", House, "top", null, true),
   route("accounts", "/accounts", Landmark, "money", null, true),
-  route("account", "/accounts/:accountId", Wallet, null, "accounts", false),
+  route("account", "/accounts/:accountId", Wallet, null, "accounts", true),
   route("connect", "/connect", LinkIcon, null, "accounts", false),
   route("connectCallback", "/connect/callback", LinkIcon, null, "accounts", false),
   route("transactions", "/transactions", ArrowLeftRight, "money", null, false),

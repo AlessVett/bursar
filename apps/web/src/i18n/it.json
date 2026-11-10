@@ -600,5 +600,231 @@
         "not_found": "Questo elemento non esiste più. L’elenco è stato aggiornato."
       }
     }
+  },
+  "account": {
+    "retry": "Riprova",
+    "tabs": {
+      "label": "Sezioni del conto",
+      "overview": "Panoramica",
+      "transactions": "Movimenti",
+      "connection": "Collegamento"
+    },
+    "notFound": {
+      "crumb": "Non trovato",
+      "title": "Conto non trovato",
+      "description": "Questo conto non esiste o è stato rimosso.",
+      "back": "Torna ai conti"
+    },
+    "loadError": {
+      "crumb": "Errore",
+      "title": "Non riesco a caricare il conto",
+      "description": "Controlla la connessione e riprova."
+    },
+    "status": {
+      "active": "Attivo",
+      "expiring": "Consenso in scadenza",
+      "expired": "Consenso scaduto",
+      "revoked": "Accesso revocato",
+      "error": "Errore di collegamento",
+      "disabled": "Disattivato",
+      "unavailable": "Non disponibile",
+      "removed": "Scollegato"
+    },
+    "hero": {
+      "label": "Riepilogo del conto",
+      "balance": "Saldo",
+      "balanceAsOf": "Rilevato {{when}}",
+      "noBalance": "Saldo non ancora disponibile",
+      "updated": "Aggiornato {{when}}",
+      "neverUpdated": "Mai aggiornato",
+      "syncing": "Aggiornamento in corso…"
+    },
+    "actions": {
+      "sync": "Sincronizza ora",
+      "renew": "Rinnova il consenso",
+      "enable": "Riattiva il conto",
+      "disconnect": "Scollega la banca",
+      "blocked": {
+        "disabled": "Riattiva il conto per sincronizzarlo.",
+        "unavailable": "La banca non condivide più questo conto: non può essere sincronizzato.",
+        "syncing": "Il conto si sta aggiornando adesso.",
+        "rateLimited": "La banca ha messo in pausa gli aggiornamenti. Riprova più tardi."
+      }
+    },
+    "alerts": {
+      "label": "Da controllare",
+      "allGood": "Tutto in ordine: aggiornato {{when}} e consenso valido fino al {{date}}.",
+      "removed": {
+        "text": "Questo conto è stato scollegato da {{bank}}. I movimenti restano qui finché non li elimini.",
+        "cta": "Apri Conti"
+      },
+      "expired": {
+        "text": "L'accesso a {{bank}} è scaduto. Rinnova il consenso per riprendere gli aggiornamenti.",
+        "cta": "Rinnova il consenso"
+      },
+      "revoked": {
+        "text": "L'accesso a {{bank}} è stato revocato. Rinnova il consenso per riprendere gli aggiornamenti.",
+        "cta": "Rinnova il consenso"
+      },
+      "connectionError": {
+        "text": "Bursar non riesce a collegarsi a {{bank}}. Rinnova il consenso per riprovare.",
+        "cta": "Rinnova il consenso"
+      },
+      "expiringToday": {
+        "text": "Il consenso per {{bank}} scade oggi. Rinnovalo per continuare a ricevere aggiornamenti.",
+        "cta": "Rinnova il consenso"
+      },
+      "expiring": {
+        "text_one": "Il consenso per {{bank}} scade domani. Rinnovalo per continuare a ricevere aggiornamenti.",
+        "text_many": "Il consenso per {{bank}} scade tra {{count}} di giorni. Rinnovalo per continuare a ricevere aggiornamenti.",
+        "text_other": "Il consenso per {{bank}} scade tra {{count}} giorni. Rinnovalo per continuare a ricevere aggiornamenti.",
+        "cta": "Rinnova il consenso"
+      },
+      "unavailable": {
+        "text": "{{bank}} non condivide più questo conto, quindi non può essere aggiornato.",
+        "cta": "Vedi collegamento"
+      },
+      "disabled": {
+        "text": "Il conto è disattivato: non viene aggiornato e non rientra nei totali.",
+        "cta": "Riattiva il conto"
+      },
+      "syncFailed": {
+        "text": "L'ultimo aggiornamento non è riuscito. {{reason}}",
+        "cta": "Sincronizza ora"
+      },
+      "rateLimited": {
+        "text": "{{bank}} limita la frequenza degli aggiornamenti di questo conto e li ha messi in pausa. Potrai sincronizzare di nuovo {{when}}.",
+        "cta": "Vedi collegamento"
+      },
+      "neverSynced": {
+        "text": "Bursar non ha ancora scaricato i dati di questo conto.",
+        "cta": "Sincronizza ora"
+      },
+      "firstSync": {
+        "text": "Il primo aggiornamento è in corso. Saldo e movimenti compaiono tra un minuto."
+      }
+    },
+    "consent": {
+      "expires_one": "Il consenso scade tra {{count}} giorno",
+      "expires_many": "Il consenso scade tra {{count}} di giorni",
+      "expires_other": "Il consenso scade tra {{count}} giorni",
+      "expiresToday": "Il consenso scade oggi",
+      "expired_one": "Consenso scaduto {{count}} giorno fa",
+      "expired_many": "Consenso scaduto {{count}} di giorni fa",
+      "expired_other": "Consenso scaduto {{count}} giorni fa",
+      "expiredToday": "Consenso scaduto oggi"
+    },
+    "overview": {
+      "balanceTitle_one": "Saldo dell'ultimo giorno",
+      "balanceTitle_many": "Saldo degli ultimi {{count}} di giorni",
+      "balanceTitle_other": "Saldo degli ultimi {{count}} giorni",
+      "balanceChange_one": "rispetto a ieri",
+      "balanceChange_many": "rispetto a {{count}} di giorni fa",
+      "balanceChange_other": "rispetto a {{count}} giorni fa",
+      "balanceSummary": "Saldo dal {{from}} al {{to}}: {{start}} all'inizio, {{end}} alla fine, minimo {{low}}, massimo {{high}}.",
+      "noBalanceTitle": "Ancora nessuno storico del saldo",
+      "noBalanceDescription": "Il grafico compare dopo il primo aggiornamento riuscito.",
+      "chartErrorTitle": "Non riesco a caricare il grafico",
+      "chartErrorDescription": "Non si perde nulla: riprova tra un momento.",
+      "cashflowTitle_one": "Flusso di cassa dell'ultimo giorno",
+      "cashflowTitle_many": "Flusso di cassa degli ultimi {{count}} di giorni",
+      "cashflowTitle_other": "Flusso di cassa degli ultimi {{count}} giorni",
+      "cashflowSummary_one": "Flusso di cassa dal {{from}} al {{to}}: netto {{net}} su {{count}} movimento.",
+      "cashflowSummary_many": "Flusso di cassa dal {{from}} al {{to}}: netto {{net}} su {{count}} di movimenti.",
+      "cashflowSummary_other": "Flusso di cassa dal {{from}} al {{to}}: netto {{net}} su {{count}} movimenti.",
+      "cashflowEmptyTitle": "Nessun movimento in questo periodo",
+      "cashflowEmptyDescription": "I movimenti compaiono qui appena la banca li comunica."
+    },
+    "transactions": {
+      "caption": "Ultimi movimenti di questo conto",
+      "date": "Data",
+      "counterparty": "Controparte",
+      "description": "Descrizione",
+      "amount": "Importo",
+      "pending": "In sospeso",
+      "emptyTitle": "Ancora nessun movimento",
+      "emptyDescription": "Compaiono dopo il primo aggiornamento del conto.",
+      "showingLatest_one": "Mostro gli ultimi {{shown}} di {{count}} movimento",
+      "showingLatest_many": "Mostro gli ultimi {{shown}} di {{count}} di movimenti",
+      "showingLatest_other": "Mostro gli ultimi {{shown}} di {{count}} movimenti",
+      "errorTitle": "Non riesco a caricare i movimenti",
+      "errorDescription": "Riprova tra un momento."
+    },
+    "connection": {
+      "title": "Collegamento",
+      "bank": "Banca",
+      "status": "Stato",
+      "validUntil": "Consenso valido fino al",
+      "connectedOn": "Collegato il",
+      "renewedOn": "Ultimo rinnovo",
+      "notRenewed": "Mai rinnovato",
+      "lastUpdate": "Ultimo aggiornamento",
+      "never": "Mai",
+      "pausedUntil": "Aggiornamenti di nuovo possibili",
+      "lastError": "Ultimo errore",
+      "noError": "Nessun errore registrato.",
+      "connectionError": "Collegamento: {{reason}} ({{when}})",
+      "updateError": "Aggiornamento: {{reason}} ({{when}})",
+      "actionsTitle": "Azioni",
+      "removedNote": "Il conto è stato scollegato, quindi non c'è nulla da rinnovare o sincronizzare. I movimenti restano finché non li elimini da Conti."
+    },
+    "sync": {
+      "title": "Storico degli aggiornamenti",
+      "caption": "Storico degli aggiornamenti di questo conto",
+      "started": "Avviato",
+      "triggerHeader": "Origine",
+      "statusHeader": "Esito",
+      "changesHeader": "Modifiche",
+      "trigger": {
+        "initial": "Primo aggiornamento",
+        "manual": "Manuale",
+        "background": "Programmato",
+        "renewal": "Dopo il rinnovo"
+      },
+      "status": {
+        "running": "In corso",
+        "succeeded": "Riuscito",
+        "failed": "Non riuscito",
+        "skipped": "Saltato"
+      },
+      "inserted_one": "{{count}} nuovo",
+      "inserted_many": "{{count}} di nuovi",
+      "inserted_other": "{{count}} nuovi",
+      "updated_one": "{{count}} aggiornato",
+      "updated_many": "{{count}} di aggiornati",
+      "updated_other": "{{count}} aggiornati",
+      "removed_one": "{{count}} rimosso",
+      "removed_many": "{{count}} di rimossi",
+      "removed_other": "{{count}} rimossi",
+      "noChanges": "Nessuna modifica",
+      "emptyTitle": "Ancora nessun aggiornamento",
+      "emptyDescription": "Il primo compare qui appena parte."
+    },
+    "skip": {
+      "rate_limited": "Saltato: la banca sta limitando le richieste",
+      "daily_cap": "Saltato: raggiunto il limite giornaliero degli aggiornamenti automatici",
+      "connection_inactive": "Saltato: il consenso non è più valido",
+      "account_inactive": "Saltato: il conto è disattivato o non disponibile",
+      "no_provider_uid": "Saltato: la banca non permette di aggiornare questo conto"
+    },
+    "toast": {
+      "syncStarted": "Sincronizzazione avviata",
+      "syncStartedDetail": "Aggiorno {{account}}: i nuovi movimenti compaiono tra un minuto.",
+      "alreadySyncing": "Aggiornamento già in corso",
+      "alreadySyncingDetail": "{{account}} si sta già aggiornando.",
+      "paused": "Aggiornamenti in pausa",
+      "pausedDetail": "{{bank}} limita le richieste. Potrai sincronizzare di nuovo {{when}}.",
+      "pausedNoTime": "{{bank}} limita le richieste. Riprova più tardi.",
+      "needsRenewal": "Consenso da rinnovare",
+      "needsRenewalDetail": "Rinnova il consenso per {{bank}} per aggiornare {{account}}.",
+      "notSynced": "Conto non aggiornato",
+      "notSyncedDetail": "{{account}} è disattivato o non disponibile.",
+      "failed": "Azione non riuscita",
+      "failedDetail": "Bursar non è riuscito a completarla. Riprova tra un momento.",
+      "bankingOff": "Accesso alle banche non configurato",
+      "bankingOffDetail": "Inserisci prima le credenziali Enable Banking sul server: i passaggi sono nella documentazione.",
+      "enabled": "Conto riattivato",
+      "enabledDetail": "{{account}} tornerà ad aggiornarsi e rientra nei totali."
+    }
   }
 }

@@ -575,5 +575,220 @@
         "not_found": "This item no longer exists. The list was refreshed."
       }
     }
+  },
+  "account": {
+    "retry": "Try again",
+    "tabs": {
+      "label": "Account sections",
+      "overview": "Overview",
+      "transactions": "Transactions",
+      "connection": "Connection"
+    },
+    "notFound": {
+      "crumb": "Not found",
+      "title": "Account not found",
+      "description": "This account does not exist or was removed.",
+      "back": "Back to Accounts"
+    },
+    "loadError": {
+      "crumb": "Error",
+      "title": "The account could not be loaded",
+      "description": "Check your connection and try again."
+    },
+    "status": {
+      "active": "Active",
+      "expiring": "Consent expiring",
+      "expired": "Consent expired",
+      "revoked": "Access withdrawn",
+      "error": "Connection error",
+      "disabled": "Disabled",
+      "unavailable": "Unavailable",
+      "removed": "Disconnected"
+    },
+    "hero": {
+      "label": "Account summary",
+      "balance": "Balance",
+      "balanceAsOf": "Recorded {{when}}",
+      "noBalance": "No balance yet",
+      "updated": "Updated {{when}}",
+      "neverUpdated": "Never updated",
+      "syncing": "Syncing…"
+    },
+    "actions": {
+      "sync": "Sync now",
+      "renew": "Renew consent",
+      "enable": "Enable account",
+      "disconnect": "Disconnect bank",
+      "blocked": {
+        "disabled": "Enable the account to sync it.",
+        "unavailable": "The bank no longer shares this account, so it cannot be synced.",
+        "syncing": "This account is being updated right now.",
+        "rateLimited": "The bank paused updates for now. Try again later."
+      }
+    },
+    "alerts": {
+      "label": "Needs attention",
+      "allGood": "All good: updated {{when}} and the consent is valid until {{date}}.",
+      "removed": {
+        "text": "This account was disconnected from {{bank}}. Its transactions stay here until you purge them.",
+        "cta": "Open Accounts"
+      },
+      "expired": {
+        "text": "Access to {{bank}} has expired. Renew the consent to resume updates.",
+        "cta": "Renew consent"
+      },
+      "revoked": {
+        "text": "Access to {{bank}} was withdrawn. Renew the consent to resume updates.",
+        "cta": "Renew consent"
+      },
+      "connectionError": {
+        "text": "Bursar cannot reach {{bank}}. Renew the consent to try again.",
+        "cta": "Renew consent"
+      },
+      "expiringToday": {
+        "text": "The consent for {{bank}} expires today. Renew it to keep updates coming.",
+        "cta": "Renew consent"
+      },
+      "expiring": {
+        "text_one": "The consent for {{bank}} expires tomorrow. Renew it to keep updates coming.",
+        "text_other": "The consent for {{bank}} expires in {{count}} days. Renew it to keep updates coming.",
+        "cta": "Renew consent"
+      },
+      "unavailable": {
+        "text": "{{bank}} no longer shares this account, so it cannot be updated.",
+        "cta": "See connection"
+      },
+      "disabled": {
+        "text": "This account is disabled: it is not updated and it is left out of the totals.",
+        "cta": "Enable account"
+      },
+      "syncFailed": {
+        "text": "The last update failed. {{reason}}",
+        "cta": "Sync now"
+      },
+      "rateLimited": {
+        "text": "{{bank}} limits how often this account can be updated and paused updates. You can sync again {{when}}.",
+        "cta": "See connection"
+      },
+      "neverSynced": {
+        "text": "Bursar has not fetched this account yet.",
+        "cta": "Sync now"
+      },
+      "firstSync": {
+        "text": "The first update is running. Balance and transactions appear in a minute."
+      }
+    },
+    "consent": {
+      "expires_one": "Consent expires in {{count}} day",
+      "expires_other": "Consent expires in {{count}} days",
+      "expiresToday": "Consent expires today",
+      "expired_one": "Consent expired {{count}} day ago",
+      "expired_other": "Consent expired {{count}} days ago",
+      "expiredToday": "Consent expired today"
+    },
+    "overview": {
+      "balanceTitle_one": "Balance, last {{count}} day",
+      "balanceTitle_other": "Balance, last {{count}} days",
+      "balanceChange_one": "vs {{count}} day ago",
+      "balanceChange_other": "vs {{count}} days ago",
+      "balanceSummary": "Balance from {{from}} to {{to}}: {{start}} at the start, {{end}} at the end, lowest {{low}}, highest {{high}}.",
+      "noBalanceTitle": "No balance history yet",
+      "noBalanceDescription": "The chart appears after the first successful update.",
+      "chartErrorTitle": "The chart could not be loaded",
+      "chartErrorDescription": "Nothing is lost: try again in a moment.",
+      "cashflowTitle_one": "Cash flow, last {{count}} day",
+      "cashflowTitle_other": "Cash flow, last {{count}} days",
+      "cashflowSummary_one": "Cash flow from {{from}} to {{to}}: net {{net}} over {{count}} transaction.",
+      "cashflowSummary_other": "Cash flow from {{from}} to {{to}}: net {{net}} over {{count}} transactions.",
+      "cashflowEmptyTitle": "No transactions in this period",
+      "cashflowEmptyDescription": "Movements appear here as soon as the bank reports them."
+    },
+    "transactions": {
+      "caption": "Latest transactions of this account",
+      "date": "Date",
+      "counterparty": "Counterparty",
+      "description": "Description",
+      "amount": "Amount",
+      "pending": "Pending",
+      "emptyTitle": "No transactions yet",
+      "emptyDescription": "They appear after the first update of this account.",
+      "showingLatest_one": "Showing the latest {{shown}} of {{count}} transaction",
+      "showingLatest_other": "Showing the latest {{shown}} of {{count}} transactions",
+      "errorTitle": "The transactions could not be loaded",
+      "errorDescription": "Try again in a moment."
+    },
+    "connection": {
+      "title": "Connection",
+      "bank": "Bank",
+      "status": "Status",
+      "validUntil": "Consent valid until",
+      "connectedOn": "Connected on",
+      "renewedOn": "Last renewed",
+      "notRenewed": "Not renewed yet",
+      "lastUpdate": "Last update",
+      "never": "Never",
+      "pausedUntil": "Updates allowed again",
+      "lastError": "Last error",
+      "noError": "No errors recorded.",
+      "connectionError": "Connection: {{reason}} ({{when}})",
+      "updateError": "Update: {{reason}} ({{when}})",
+      "actionsTitle": "Actions",
+      "removedNote": "This account was disconnected, so there is nothing to renew or sync. Its transactions stay until you purge them from Accounts."
+    },
+    "sync": {
+      "title": "Sync history",
+      "caption": "Sync history of this account",
+      "started": "Started",
+      "triggerHeader": "Trigger",
+      "statusHeader": "Result",
+      "changesHeader": "Changes",
+      "trigger": {
+        "initial": "First sync",
+        "manual": "Manual",
+        "background": "Scheduled",
+        "renewal": "After renewal"
+      },
+      "status": {
+        "running": "Running",
+        "succeeded": "Succeeded",
+        "failed": "Failed",
+        "skipped": "Skipped"
+      },
+      "inserted_one": "{{count}} new",
+      "inserted_other": "{{count}} new",
+      "updated_one": "{{count}} updated",
+      "updated_other": "{{count}} updated",
+      "removed_one": "{{count}} removed",
+      "removed_other": "{{count}} removed",
+      "noChanges": "No changes",
+      "emptyTitle": "No syncs yet",
+      "emptyDescription": "The first sync appears here as soon as it starts."
+    },
+    "skip": {
+      "rate_limited": "Skipped: the bank is limiting requests",
+      "daily_cap": "Skipped: the daily limit for background updates was reached",
+      "connection_inactive": "Skipped: the consent is no longer valid",
+      "account_inactive": "Skipped: the account is disabled or unavailable",
+      "no_provider_uid": "Skipped: the bank gives no way to update this account"
+    },
+    "toast": {
+      "syncStarted": "Sync started",
+      "syncStartedDetail": "Updating {{account}}: new transactions appear in a minute.",
+      "alreadySyncing": "Already updating",
+      "alreadySyncingDetail": "{{account}} is being updated right now.",
+      "paused": "Updates paused",
+      "pausedDetail": "{{bank}} limits requests. You can sync again {{when}}.",
+      "pausedNoTime": "{{bank}} limits requests. Try again later.",
+      "needsRenewal": "Consent needs renewal",
+      "needsRenewalDetail": "Renew the consent for {{bank}} to update {{account}}.",
+      "notSynced": "Account not updated",
+      "notSyncedDetail": "{{account}} is disabled or unavailable.",
+      "failed": "Action failed",
+      "failedDetail": "Bursar could not complete it. Try again in a moment.",
+      "bankingOff": "Bank access is not set up",
+      "bankingOffDetail": "Add the Enable Banking credentials on the server first; the documentation lists the steps.",
+      "enabled": "Account enabled",
+      "enabledDetail": "{{account}} will be updated again and counted in the totals."
+    }
   }
 }

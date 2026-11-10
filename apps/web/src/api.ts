@@ -1,7 +1,9 @@
 import type {
+  AccountDetailResponse,
   AccountPatch,
   AccountSummary,
   AuthStatus,
+  BalanceHistoryResponse,
   CashFlowResponse,
   ConnectionsResponse,
   DisconnectResponse,
@@ -16,6 +18,7 @@ import type {
   SetupStartResponse,
   StartConnectionResponse,
   SyncQueuedResponse,
+  TransactionListResponse,
 } from "@bursar/shared";
 import { queryKeys } from "./lib/query-keys";
 
@@ -142,6 +145,12 @@ export const api = {
     );
     return data ?? null;
   },
+  account: (id: number) => request<AccountDetailResponse>("GET", `/api/accounts/${id}`),
+  balanceHistory: (id: number, days: 30 | 90 | 365) =>
+    request<BalanceHistoryResponse>("GET", `/api/accounts/${id}/balance-history?days=${days}`),
+  /** Task 21 reuses this for the full list: `params` are the query-string fields of the API. */
+  transactions: (params: Record<string, string>) =>
+    request<TransactionListResponse>("GET", `/api/transactions?${new URLSearchParams(params)}`),
 };
 
 /**

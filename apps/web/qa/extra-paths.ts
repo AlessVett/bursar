@@ -12,4 +12,41 @@ export interface QaExtraPath {
 export const QA_EXTRA_PATHS: QaExtraPath[] = [
   { path: "/qa-unknown-page", auth: true, note: "Not-found page inside the app shell" },
   { path: "/login?expired=1", auth: false, note: "Login after the session expired" },
+  {
+    path: "/accounts/999999",
+    auth: true,
+    note: "Account detail: not found (missing or purged id)",
+  },
+  { path: "/accounts/1?tab=transactions", auth: true, note: "Account detail: latest transactions" },
+  {
+    path: "/accounts/1?tab=connection",
+    auth: true,
+    note: "Account detail: consent, actions and sync history",
+  },
+  {
+    path: "/accounts/3",
+    auth: true,
+    note: "Account detail: expiring consent and updates paused by the bank",
+  },
+  { path: "/accounts/5", auth: true, note: "Account detail: unavailable account" },
+  {
+    path: "/accounts/6?tab=connection",
+    auth: true,
+    note: "Account detail: expired consent, blocked sync, failed history",
+  },
+  {
+    path: "/accounts/7",
+    auth: true,
+    note: "Account detail: disabled account, negative balance in danger",
+  },
+  {
+    path: "/accounts/8",
+    auth: true,
+    note: "Account detail: withdrawn consent, loan with a negative balance",
+  },
+  {
+    path: "/accounts/10?tab=connection",
+    auth: true,
+    note: "Account detail: disconnected account, no actions",
+  },
 ];

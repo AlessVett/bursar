@@ -240,28 +240,28 @@ describe("AccountsPage", () => {
     expect(await screen.findByText("Consent ended")).toBeTruthy();
   });
 
-  it("keeps the details link and menu item hidden until the account page ships", async () => {
+  it("links to the account page and hides the link and menu item when the page is not shipped", async () => {
     serve();
     const view = renderPage();
-    const northwind = await region("Northwind Bank");
-    expect(within(northwind).queryByRole("link", { name: "Household" })).toBeNull();
+    const shipped = await region("Northwind Bank");
+    const link = within(shipped).getByRole("link", { name: "Household" });
+    expect(link.getAttribute("href")).toBe("/accounts/1");
     await openMenu("Actions for Household");
-    expect(screen.queryByRole("menuitem", { name: /Open details/ })).toBeNull();
+    expect(await screen.findByRole("menuitem", { name: /Open details/ })).toBeTruthy();
     fireEvent.keyDown(document, { key: "Escape" });
 
     view.unmount();
 
     const def = routeById("account");
-    def.shipped = true;
+    def.shipped = false;
     try {
       renderPage();
-      const shipped = await region("Northwind Bank");
-      const link = within(shipped).getByRole("link", { name: "Household" });
-      expect(link.getAttribute("href")).toBe("/accounts/1");
+      const hidden = await region("Northwind Bank");
+      expect(within(hidden).queryByRole("link", { name: "Household" })).toBeNull();
       await openMenu("Actions for Household");
-      expect(await screen.findByRole("menuitem", { name: /Open details/ })).toBeTruthy();
+      expect(screen.queryByRole("menuitem", { name: /Open details/ })).toBeNull();
     } finally {
-      def.shipped = false;
+      def.shipped = true;
     }
   });
 
