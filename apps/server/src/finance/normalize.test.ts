@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { MoneyParseError } from "@bursar/shared";
+import { isValidIban, MoneyParseError } from "@bursar/shared";
 import { describe, expect, it } from "vitest";
 import type { EbBalance, EbTransaction } from "../eb/schemas";
 import {
@@ -10,10 +10,20 @@ import {
 } from "./normalize";
 
 const FALLBACK = "2026-11-09";
-// Fictional IBANs generated for the tests (valid mod-97 checksums, no real account behind them).
+// Fictional IBANs with valid mod-97 checksums on reserved test bank codes (ABI/CAB 99999 99999,
+// Bankleitzahl 99999999), like the QA seed's: no real bank or account behind them.
 const SUPPLIER_IBAN = "IT03X9999999999000000880001";
 const EMPLOYER_IBAN = "DE22999999990000880002";
 const REMITTANCE = "Card payment Northwind Grocers store 12";
+
+describe("the fixtures", () => {
+  it("use fictional IBANs on reserved test bank codes", () => {
+    expect(isValidIban(SUPPLIER_IBAN)).toBe(true);
+    expect(isValidIban(EMPLOYER_IBAN)).toBe(true);
+    expect(SUPPLIER_IBAN.slice(5, 15)).toBe("9999999999"); // ABI and CAB
+    expect(EMPLOYER_IBAN.slice(4, 12)).toBe("99999999"); // Bankleitzahl
+  });
+});
 
 function sha256(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
