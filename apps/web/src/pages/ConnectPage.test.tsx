@@ -265,6 +265,21 @@ describe("ConnectPage", () => {
     expect(urlParams(router).bank).toBeUndefined();
   });
 
+  it("falls back to the bank step with a retry when the bank list fails on a consent URL", async () => {
+    stubApi(
+      handlers({
+        "GET /api/banks/aspsps?country=IT": () => ({
+          status: 500,
+          body: { error: "Upstream failure", code: "internal" },
+        }),
+      }),
+    );
+    renderConnect(CONSENT_URL);
+    await screen.findByText("The banks could not be loaded");
+    expect(screen.getByRole("button", { name: "Try again" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Choose your bank" })).toBeTruthy();
+  });
+
   it("explains that credentials are missing when banking is not configured", async () => {
     stubApi(
       handlers(

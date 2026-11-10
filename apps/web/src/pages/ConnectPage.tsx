@@ -149,7 +149,8 @@ export function ConnectPage() {
   let step: WizardStepId = requestedStep;
   if (!hasCountry) step = "country";
   else if (requestedStep === "consent" && url.bank === "") step = "bank";
-  else if (requestedStep === "consent" && aspsps.isSuccess && bank === null) step = "bank";
+  else if (requestedStep === "consent" && (aspsps.isError || (aspsps.isSuccess && bank === null)))
+    step = "bank";
   const reachable: WizardStepId[] = ["country"];
   if (hasCountry) reachable.push("bank");
   if (bank) reachable.push("consent");
