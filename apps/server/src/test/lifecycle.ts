@@ -1,4 +1,9 @@
-import type { AccountStatus, StoredConnectionStatus, SyncRunStatus } from "@bursar/shared";
+import type {
+  AccountStatus,
+  SkipReason,
+  StoredConnectionStatus,
+  SyncRunStatus,
+} from "@bursar/shared";
 import { AuditLog } from "../audit";
 import type { EnableBankingApi } from "../eb/client";
 import sessionStatusFixture from "../eb/fixtures/session-status.json";
@@ -95,6 +100,7 @@ export interface AccountInput {
   cashAccountType?: string | null;
   last4?: string | null;
   lastSyncedAt?: number | null;
+  lastSyncErrorAt?: number | null;
   createdAt?: number;
   removedAt?: number | null;
 }
@@ -111,8 +117,8 @@ export function insertAccount(
     .prepare(
       `INSERT INTO accounts (connection_id, provider_account_uid, identification_hash, iban,
          masked_identifier, last4, product, details, nickname, currency, cash_account_type, status,
-         last_synced_at, created_at, updated_at, removed_at)
-       VALUES (?, NULL, ?, NULL, ?, ?, ?, NULL, ?, 'EUR', ?, ?, ?, ?, ?, ?)`,
+         last_synced_at, last_sync_error_at, created_at, updated_at, removed_at)
+       VALUES (?, NULL, ?, NULL, ?, ?, ?, NULL, ?, 'EUR', ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       connectionId,
@@ -124,6 +130,7 @@ export function insertAccount(
       input.cashAccountType === undefined ? "CACC" : input.cashAccountType,
       input.status ?? "active",
       input.lastSyncedAt ?? null,
+      input.lastSyncErrorAt ?? null,
       createdAt,
       createdAt,
       input.removedAt ?? null,
@@ -160,13 +167,21 @@ export function insertSyncRun(
   status: SyncRunStatus,
   startedAt: number,
   errorCode: string | null = null,
+  skipReason: SkipReason | null = null,
 ): number {
   const result = fx.t.sqlite
     .prepare(
-      `INSERT INTO sync_runs (account_id, "trigger", status, with_psu_headers, started_at, finished_at, error_code)
-       VALUES (?, 'background', ?, 0, ?, ?, ?)`,
+      `INSERT INTO sync_runs (account_id, "trigger", status, skip_reason, with_psu_headers, started_at, finished_at, error_code)
+       VALUES (?, 'background', ?, ?, 0, ?, ?, ?)`,
     )
-    .run(accountId, status, startedAt, status === "running" ? null : startedAt + 1_000, errorCode);
+    .run(
+      accountId,
+      status,
+      skipReason,
+      startedAt,
+      status === "running" ? null : startedAt + 1_000,
+      errorCode,
+    );
   return Number(result.lastInsertRowid);
 }
 

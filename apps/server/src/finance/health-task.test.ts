@@ -39,6 +39,22 @@ async function tick(): Promise<void> {
 
 const failingRows = () => notificationRows(fx).filter((row) => row.event === "sync_failing");
 
+/** A failed attempt as `finishRun` records it: the run row plus the account's sync error. */
+function failAttempt(accountId: number, startedAt: number, code = "ASPSP_ERROR"): void {
+  insertSyncRun(fx, accountId, "failed", startedAt, code);
+  fx.repo.updateAccount(accountId, { lastSyncErrorCode: code, lastSyncErrorAt: startedAt + 1_000 });
+}
+
+/** A successful run as `finishRun` records it: the sync time is set and the error cleared. */
+function succeed(accountId: number, startedAt: number): void {
+  insertSyncRun(fx, accountId, "succeeded", startedAt);
+  fx.repo.updateAccount(accountId, {
+    lastSyncedAt: startedAt + 1_000,
+    lastSyncErrorCode: null,
+    lastSyncErrorAt: null,
+  });
+}
+
 describe("syncHealthTask", () => {
   it("is the sync-health task with a 48 hour threshold", () => {
     expect(makeTask().name).toBe("sync-health");
@@ -50,7 +66,7 @@ describe("syncHealthTask", () => {
       nickname: "Conto spese",
       createdAt: NOW - 49 * HOUR_MS,
     });
-    insertSyncRun(fx, id, "failed", NOW - HOUR_MS, "ASPSP_ERROR");
+    failAttempt(id, NOW - HOUR_MS);
     await tick();
     expect(failingRows()).toEqual([
       {
@@ -68,51 +84,104 @@ describe("syncHealthTask", () => {
       createdAt: NOW - 30 * DAY_MS,
       lastSyncedAt: NOW - 47 * HOUR_MS,
     });
-    insertSyncRun(fx, fresh, "failed", NOW - HOUR_MS);
-    insertSyncRun(fx, recent, "failed", NOW - HOUR_MS);
+    failAttempt(fresh, NOW - HOUR_MS);
+    failAttempt(recent, NOW - HOUR_MS);
     await tick();
     expect(failingRows()).toEqual([]);
   });
 
   it("keys the warning by the local date of the last success", async () => {
     const lastSyncedAt = Date.UTC(2026, 10, 6, 23, 30); // 7 November, 00:30 in Rome
-    const id = insertAccount(fx, connectionId, { createdAt: NOW - 30 * DAY_MS, lastSyncedAt });
-    insertSyncRun(fx, id, "succeeded", lastSyncedAt - 60_000);
-    insertSyncRun(fx, id, "failed", NOW - 2 * HOUR_MS);
+    const id = insertAccount(fx, connectionId, { createdAt: NOW - 30 * DAY_MS });
+    succeed(id, lastSyncedAt - 1_000);
+    failAttempt(id, NOW - 2 * HOUR_MS);
     await tick();
     expect(failingRows().map((row) => row.dedupeKey)).toEqual([`sync-failing:${id}:2026-11-07`]);
   });
 
-  it.each(["skipped", "running", null] as const)(
-    "stays quiet when the latest run is %s",
-    async (latest) => {
-      const id = insertAccount(fx, connectionId, {
-        createdAt: NOW - 30 * DAY_MS,
-        lastSyncedAt: NOW - 3 * DAY_MS,
+  it("raises when the background cap refused the last retry of a failing day", async () => {
+    // Cap 2: the first two attempts fail and the third is refused as `daily_cap`.
+    const id = insertAccount(fx, connectionId, { createdAt: NOW - 30 * DAY_MS });
+    succeed(id, NOW - 3 * DAY_MS);
+    failAttempt(id, NOW - 3 * HOUR_MS);
+    failAttempt(id, NOW - 3 * HOUR_MS + 30_000);
+    insertSyncRun(fx, id, "skipped", NOW - 3 * HOUR_MS + 150_000, null, "daily_cap");
+    await tick();
+    expect(failingRows().map((row) => row.dedupeKey)).toEqual([`sync-failing:${id}:2026-11-06`]);
+  });
+
+  it("raises when the bank keeps answering with a rate limit", async () => {
+    const id = insertAccount(fx, connectionId, { createdAt: NOW - 30 * DAY_MS });
+    succeed(id, NOW - 3 * DAY_MS);
+    for (const at of [NOW - 2 * DAY_MS, NOW - DAY_MS, NOW - HOUR_MS]) {
+      insertSyncRun(fx, id, "skipped", at, "ASPSP_RATE_LIMIT_EXCEEDED", "rate_limited");
+      fx.repo.updateAccount(id, {
+        lastSyncErrorCode: "ASPSP_RATE_LIMIT_EXCEEDED",
+        lastSyncErrorAt: at + 1_000,
+        rateLimitedUntil: at + 6 * HOUR_MS,
       });
-      if (latest !== null) {
-        insertSyncRun(fx, id, "failed", NOW - 2 * HOUR_MS);
-        insertSyncRun(fx, id, latest, NOW - HOUR_MS);
+    }
+    await tick();
+    expect(failingRows().map((row) => row.dedupeKey)).toEqual([`sync-failing:${id}:2026-11-06`]);
+  });
+
+  it.each(["no attempt", "only daily_cap skips", "a sync in progress"] as const)(
+    "stays quiet without a sync error after the last success (%s)",
+    async (latest) => {
+      const id = insertAccount(fx, connectionId, { createdAt: NOW - 30 * DAY_MS });
+      succeed(id, NOW - 3 * DAY_MS);
+      if (latest === "only daily_cap skips") {
+        insertSyncRun(fx, id, "skipped", NOW - 2 * HOUR_MS, null, "daily_cap");
+        insertSyncRun(fx, id, "skipped", NOW - HOUR_MS, null, "daily_cap");
+      } else if (latest === "a sync in progress") {
+        insertSyncRun(fx, id, "running", NOW - HOUR_MS);
       }
       await tick();
       expect(failingRows()).toEqual([]);
     },
   );
 
-  it("raises once per outage and again after a new success", async () => {
-    const id = insertAccount(fx, connectionId, {
+  it("stays quiet when the recorded error is older than the last success", async () => {
+    insertAccount(fx, connectionId, {
       createdAt: NOW - 30 * DAY_MS,
       lastSyncedAt: NOW - 3 * DAY_MS,
+      lastSyncErrorAt: NOW - 4 * DAY_MS,
     });
-    insertSyncRun(fx, id, "failed", NOW - HOUR_MS);
+    await tick();
+    expect(failingRows()).toEqual([]);
+  });
+
+  it("warns about an account the bank reported unavailable", async () => {
+    const id = insertAccount(fx, connectionId, {
+      createdAt: NOW - 30 * DAY_MS,
+      nickname: "Conto carta",
+      status: "unavailable",
+    });
+    succeed(id, NOW - 49 * HOUR_MS);
+    failAttempt(id, NOW - 48 * HOUR_MS, "ASPSP_ACCOUNT_NOT_ACCESSIBLE");
+    await tick();
+    await tick();
+    expect(failingRows()).toEqual([
+      {
+        event: "sync_failing",
+        dedupeKey: `sync-failing:${id}:2026-11-07`,
+        params: { accountName: "Conto carta", bankName: BANK_NAME },
+        link: `/accounts/${id}`,
+      },
+    ]);
+  });
+
+  it("raises once per outage and again after a new success", async () => {
+    const id = insertAccount(fx, connectionId, { createdAt: NOW - 30 * DAY_MS });
+    succeed(id, NOW - 3 * DAY_MS - 1_000);
+    failAttempt(id, NOW - HOUR_MS);
     await tick();
     await tick();
     expect(failingRows()).toHaveLength(1);
 
-    insertSyncRun(fx, id, "succeeded", NOW + HOUR_MS);
-    fx.repo.updateAccount(id, { lastSyncedAt: NOW + HOUR_MS });
+    succeed(id, NOW + HOUR_MS - 1_000);
     fx.clock.now += 3 * DAY_MS;
-    insertSyncRun(fx, id, "failed", fx.clock.now - HOUR_MS);
+    failAttempt(id, fx.clock.now - HOUR_MS);
     await tick();
     expect(failingRows().map((row) => row.dedupeKey)).toEqual([
       `sync-failing:${id}:2026-11-06`,
@@ -120,7 +189,7 @@ describe("syncHealthTask", () => {
     ]);
   });
 
-  it("ignores accounts that are not active and connections that cannot sync", async () => {
+  it("ignores disabled and removed accounts and connections that cannot sync", async () => {
     const old = { createdAt: NOW - 30 * DAY_MS, lastSyncedAt: NOW - 5 * DAY_MS };
     const lapsed = insertConnection(fx, { validUntil: NOW - HOUR_MS });
     const revoked = insertConnection(fx, { validUntil: NOW + 90 * DAY_MS, status: "revoked" });
@@ -131,12 +200,12 @@ describe("syncHealthTask", () => {
     const ids = [
       insertAccount(fx, connectionId, { ...old, status: "disabled" }),
       insertAccount(fx, connectionId, { ...old, status: "removed", removedAt: NOW - DAY_MS }),
-      insertAccount(fx, connectionId, { ...old, status: "unavailable" }),
       insertAccount(fx, lapsed, old),
       insertAccount(fx, revoked, old),
       insertAccount(fx, removed, old),
+      insertAccount(fx, lapsed, { ...old, status: "unavailable" }),
     ];
-    for (const id of ids) insertSyncRun(fx, id, "failed", NOW - HOUR_MS);
+    for (const id of ids) failAttempt(id, NOW - HOUR_MS);
     await tick();
     expect(failingRows()).toEqual([]);
   });
@@ -150,7 +219,7 @@ describe("syncHealthTask", () => {
       cashAccountType: "CACC",
       last4: "4821",
     });
-    insertSyncRun(fx, id, "failed", NOW - HOUR_MS);
+    failAttempt(id, NOW - HOUR_MS);
     await tick();
     expect(failingRows()[0]?.params).toEqual({
       accountName: accountDisplayName(

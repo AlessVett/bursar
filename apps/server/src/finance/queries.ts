@@ -43,6 +43,7 @@ import type { BursarDb, Sqlite } from "../db";
 import type { JobQueue } from "../jobs/queue";
 import { syncDedupeKey } from "../jobs/types";
 import { buildCashFlow, type CashFlowRow, defaultCurrency } from "./cashflow";
+import { isSyncFailing, SYNC_HEALTH_STATUSES } from "./health-task";
 
 export interface QueryDeps {
   db: BursarDb;
@@ -59,7 +60,6 @@ type SqlParam = string | number;
 const FALLBACK_CURRENCY = "EUR";
 /** Accounts whose transactions count in lists, totals, the summary and the search. */
 const INCLUDED_ACCOUNTS_SQL = "a.status IN ('active', 'unavailable')";
-const SYNC_FAILING_AFTER_MS = 48 * 3_600_000;
 const NET_WINDOW_DAYS = 30;
 const SEARCH_LIMIT = 6;
 const SYNC_RUN_LIMIT = 20;
@@ -1019,25 +1019,22 @@ function buildAlerts(
   }
   expiring.sort((a, b) => a.days - b.days);
 
-  const lastRunStatus = new Map(
-    all<{ id: number; last_status: SyncRunStatus | null }>(
-      deps,
-      `SELECT a.id, (SELECT r.status FROM sync_runs r WHERE r.account_id = a.id
-                      ORDER BY r.started_at DESC, r.id DESC LIMIT 1) AS last_status
-         FROM accounts a WHERE a.status = 'active'`,
-    ).map((row) => [row.id, row.last_status]),
-  );
-  const cutoff = now - SYNC_FAILING_AFTER_MS;
   const syncFailing: HomeAlert[] = [];
   const rateLimited: HomeAlert[] = [];
   for (const account of accounts) {
-    if (account.status !== "active" || !usable.has(account.connection_id)) continue;
+    if (!SYNC_HEALTH_STATUSES.includes(account.status) || !usable.has(account.connection_id)) {
+      continue;
+    }
     const name = displayName(account, deps);
-    const stale =
-      account.last_synced_at !== null
-        ? account.last_synced_at < cutoff
-        : account.created_at < cutoff;
-    if (stale && lastRunStatus.get(account.id) === "failed") {
+    const failing = isSyncFailing(
+      {
+        lastSyncedAt: account.last_synced_at,
+        lastSyncErrorAt: account.last_sync_error_at,
+        createdAt: account.created_at,
+      },
+      now,
+    );
+    if (failing) {
       syncFailing.push({
         kind: "sync_failing",
         accountId: account.id,
@@ -1045,7 +1042,11 @@ function buildAlerts(
         since: account.last_synced_at,
       });
     }
-    if (account.rate_limited_until !== null && account.rate_limited_until > now) {
+    if (
+      account.status === "active" &&
+      account.rate_limited_until !== null &&
+      account.rate_limited_until > now
+    ) {
       rateLimited.push({
         kind: "rate_limited",
         accountId: account.id,

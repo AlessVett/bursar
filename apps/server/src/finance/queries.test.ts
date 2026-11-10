@@ -823,39 +823,70 @@ describe("homeSummary", () => {
     ]);
   });
 
-  it("raises sync_failing after 48 hours without success and a failed latest run", () => {
-    const failedRun = (
+  it("raises sync_failing after 48 hours without success and a sync error since", () => {
+    const run = (
       accountId: number,
       startedAt: number,
-      status: "failed" | "succeeded" = "failed",
-    ) =>
+      status: "failed" | "succeeded" | "skipped" = "failed",
+    ) => {
       fx.repo.startSyncRun({
         accountId,
         trigger: "background",
         startedAt,
         status,
+        skipReason: status === "skipped" ? "daily_cap" : null,
         finishedAt: startedAt + 1_000,
       });
+      // What `finishRun` records on the account: a failure sets the error, a success clears it,
+      // a `daily_cap` skip leaves both alone.
+      if (status === "failed") {
+        fx.repo.updateAccount(accountId, {
+          lastSyncErrorCode: "ASPSP_ERROR",
+          lastSyncErrorAt: startedAt + 1_000,
+        });
+      } else if (status === "succeeded") {
+        fx.repo.updateAccount(accountId, {
+          lastSyncedAt: startedAt + 1_000,
+          lastSyncErrorCode: null,
+          lastSyncErrorAt: null,
+        });
+      }
+    };
     const stale = fx.account(w.bankA, { product: "Stale", lastSyncedAt: NOW - 49 * HOUR_MS });
-    failedRun(stale, NOW - HOUR_MS);
+    run(stale, NOW - HOUR_MS);
     const recent = fx.account(w.bankA, { product: "Recent", lastSyncedAt: NOW - 47 * HOUR_MS });
-    failedRun(recent, NOW - HOUR_MS);
+    run(recent, NOW - HOUR_MS);
     const never = fx.account(w.bankA, { product: "Never", createdAt: NOW - 3 * DAY_MS });
-    failedRun(never, NOW - HOUR_MS);
+    run(never, NOW - HOUR_MS);
     const newborn = fx.account(w.bankA, { product: "Newborn", createdAt: NOW - 3 * HOUR_MS });
-    failedRun(newborn, NOW - HOUR_MS);
+    run(newborn, NOW - HOUR_MS);
     const recovered = fx.account(w.bankA, {
       product: "Recovered",
       lastSyncedAt: NOW - 49 * HOUR_MS,
     });
-    failedRun(recovered, NOW - 2 * HOUR_MS);
-    failedRun(recovered, NOW - HOUR_MS, "succeeded");
+    run(recovered, NOW - 2 * HOUR_MS);
+    run(recovered, NOW - HOUR_MS, "succeeded");
+    // The default cap of 2 refuses the third attempt of a failing day: still failing.
+    const capped = fx.account(w.bankA, { product: "Capped", lastSyncedAt: NOW - 3 * DAY_MS });
+    run(capped, NOW - 3 * HOUR_MS);
+    run(capped, NOW - 3 * HOUR_MS + 30_000);
+    run(capped, NOW - 3 * HOUR_MS + 150_000, "skipped");
+    // Only cap skips since the last success: nothing failed.
+    const idle = fx.account(w.bankA, { product: "Idle", lastSyncedAt: NOW - 3 * DAY_MS });
+    run(idle, NOW - HOUR_MS, "skipped");
+    // Reported unavailable by the bank: no longer synced, so it keeps failing.
+    const gone = fx.account(w.bankA, {
+      product: "Gone",
+      status: "unavailable",
+      lastSyncedAt: NOW - 50 * HOUR_MS,
+    });
+    run(gone, NOW - 49 * HOUR_MS);
     const off = fx.account(w.bankA, {
       product: "Off",
       status: "disabled",
       lastSyncedAt: NOW - 49 * HOUR_MS,
     });
-    failedRun(off, NOW - HOUR_MS);
+    run(off, NOW - HOUR_MS);
 
     const alerts = homeSummary(queryDeps(t), backupOk).alerts.filter(
       (a) => a.kind === "sync_failing",
@@ -863,6 +894,8 @@ describe("homeSummary", () => {
     expect(alerts).toEqual([
       { kind: "sync_failing", accountId: stale, accountName: "Stale", since: NOW - 49 * HOUR_MS },
       { kind: "sync_failing", accountId: never, accountName: "Never", since: null },
+      { kind: "sync_failing", accountId: capped, accountName: "Capped", since: NOW - 3 * DAY_MS },
+      { kind: "sync_failing", accountId: gone, accountName: "Gone", since: NOW - 50 * HOUR_MS },
     ]);
   });
 
@@ -876,6 +909,7 @@ describe("homeSummary", () => {
       status: "failed",
       finishedAt: NOW,
     });
+    fx.repo.updateAccount(account, { lastSyncErrorCode: "ASPSP_ERROR", lastSyncErrorAt: NOW });
     const kinds = homeSummary(queryDeps(t), backupOk).alerts.map((a) => a.kind);
     expect(kinds).not.toContain("sync_failing");
   });
