@@ -1,6 +1,9 @@
 import type {
   AuthStatus,
+  CashFlowResponse,
+  HomeSummary,
   LoginRequest,
+  SettingsResponse,
   SetupConfirmRequest,
   SetupStartRequest,
   SetupStartResponse,
@@ -97,4 +100,24 @@ export const api = {
     request<{ ok: true }>("POST", "/api/auth/setup/confirm", body),
   login: (body: LoginRequest) => request<{ ok: true }>("POST", "/api/auth/login", body),
   logout: () => request<{ ok: true }>("POST", "/api/auth/logout"),
+  summary: () => request<HomeSummary>("GET", "/api/summary"),
+  settings: () => request<SettingsResponse>("GET", "/api/settings"),
+  /** 204 (no data for the filters) becomes `null`. Task 19 reuses this function. */
+  cashflow: async (params: {
+    accountId?: number;
+    from?: string;
+    to?: string;
+    currency?: string;
+  }): Promise<CashFlowResponse | null> => {
+    const search = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined) search.set(key, String(value));
+    }
+    const query = search.toString();
+    const data = await request<CashFlowResponse | undefined>(
+      "GET",
+      query ? `/api/cashflow?${query}` : "/api/cashflow",
+    );
+    return data ?? null;
+  },
 };

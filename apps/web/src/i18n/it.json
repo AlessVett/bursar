@@ -89,10 +89,65 @@
     "failedDetail": "Il browser ha bloccato l’accesso agli appunti."
   },
   "home": {
+    "loading": "Caricamento della panoramica…",
     "greeting": {
       "morning": "Buongiorno",
       "afternoon": "Buon pomeriggio",
       "evening": "Buonasera"
+    },
+    "summary": {
+      "attention_one": "{{count}} cosa richiede attenzione. La più urgente:",
+      "attention_many": "{{count}} di cose richiedono attenzione. La più urgente:",
+      "attention_other": "{{count}} cose richiedono attenzione. La più urgente:",
+      "allGood": "Tutto in ordine: ogni conto è stato aggiornato oggi.",
+      "calm": "Niente richiede attenzione. L’aggiornamento più vecchio risale a {{when}}.",
+      "calmNever": "Niente richiede attenzione, ma alcuni conti non sono ancora stati sincronizzati."
+    },
+    "kpi": {
+      "label": "Dati principali",
+      "balance": "Saldo",
+      "accounts_one": "{{count}} conto",
+      "accounts_many": "{{count}} di conti",
+      "accounts_other": "{{count}} conti",
+      "noBalance": "Saldo non ancora disponibile",
+      "in": "Entrate, ultimi 30 giorni",
+      "out": "Uscite, ultimi 30 giorni",
+      "net": "Netto, ultimi 30 giorni",
+      "transactions_one": "{{count}} movimento",
+      "transactions_many": "{{count}} di movimenti",
+      "transactions_other": "{{count}} movimenti",
+      "mixedCurrencies": "I saldi sono mostrati per valuta: Bursar non converte tra valute diverse."
+    },
+    "cashflow": {
+      "title": "Flusso di cassa, ultimi 30 giorni",
+      "currency": "Valuta",
+      "hint": "Seleziona un giorno per vederne i dati.",
+      "see_one": "Vedi {{count}} movimento del {{date}}",
+      "see_many": "Vedi {{count}} di movimenti del {{date}}",
+      "see_other": "Vedi {{count}} movimenti del {{date}}",
+      "none": "Nessun movimento il {{date}}",
+      "clear": "Annulla la selezione",
+      "error": "Non è stato possibile caricare il flusso di cassa in {{currency}}.",
+      "retry": "Riprova",
+      "loading": "Caricamento del flusso di cassa…"
+    },
+    "accounts": {
+      "title": "Conti",
+      "empty": "Nessun conto in sincronizzazione.",
+      "noBalance": "Saldo non ancora disponibile"
+    },
+    "alerts": {
+      "title": "Richiede attenzione",
+      "empty": "Niente richiede attenzione."
+    },
+    "empty": {
+      "title": "Nessuna banca collegata",
+      "description": "Bursar legge saldi e movimenti dei tuoi conti bancari e mostra dove vanno i tuoi soldi. Si limita a leggere: non può fare pagamenti né spostare denaro."
+    },
+    "error": {
+      "title": "Non è stato possibile caricare la panoramica",
+      "description": "Il server non ha risposto. Non è andato perso nulla: riprova tra poco.",
+      "retry": "Riprova"
     }
   },
   "routes": {
@@ -236,5 +291,118 @@
     },
     "reload": "Ricarica la pagina",
     "backHome": "Torna alla Home"
+  },
+  "cashflow": {
+    "in": "Entrate",
+    "out": "Uscite",
+    "net": "Netto",
+    "balance": "Saldo",
+    "count_one": "{{count}} movimento",
+    "count_many": "{{count}} di movimenti",
+    "count_other": "{{count}} movimenti",
+    "periods": "{{label}}: scegli un periodo",
+    "bucket_one": "{{date}}: entrate {{in}}, uscite {{out}}, netto {{net}}, {{count}} movimento",
+    "bucket_many": "{{date}}: entrate {{in}}, uscite {{out}}, netto {{net}}, {{count}} di movimenti",
+    "bucket_other": "{{date}}: entrate {{in}}, uscite {{out}}, netto {{net}}, {{count}} movimenti",
+    "srSummary": "{{label}}, dal {{from}} al {{to}}: entrate {{in}}, uscite {{out}}, netto {{net}}.",
+    "srBalance": "Saldo a fine periodo: {{balance}}.",
+    "srEmpty": "{{label}}: nessun dato per questo periodo.",
+    "netChip": "Netto, ultimi 30 giorni: {{amount}}"
+  },
+  "live": {
+    "unknownAccount": "Conto",
+    "syncCompleted": "Sincronizzazione completata",
+    "syncCompletedDetail_one": "{{account}}: {{count}} movimento nuovo.",
+    "syncCompletedDetail_many": "{{account}}: {{count}} di movimenti nuovi.",
+    "syncCompletedDetail_other": "{{account}}: {{count}} movimenti nuovi.",
+    "syncNoNew": "{{account}} è aggiornato: nessun movimento nuovo.",
+    "rateLimited": "Sincronizzazione sospesa dalla banca",
+    "rateLimitedDetail": "{{account}}: la banca limita la frequenza con cui Bursar può leggerlo. Prossimo tentativo: {{time}}.",
+    "rateLimitedNoTime": "{{account}}: la banca limita la frequenza con cui Bursar può leggerlo. Riprova più tardi.",
+    "dailyCap": "Limite giornaliero raggiunto",
+    "dailyCapDetail": "{{account}}: la banca consente poche letture in background al giorno. La prossima sincronizzazione avviene domani.",
+    "syncSkipped": "Sincronizzazione saltata",
+    "syncSkippedDetail": "{{account}}: {{reason}}",
+    "syncFailed": "Sincronizzazione non riuscita",
+    "syncFailedDetail": "{{account}}: {{reason}}"
+  },
+  "syncErrors": {
+    "generic": "La banca non ha completato la richiesta. Bursar riprova alla prossima sincronizzazione.",
+    "EXPIRED_SESSION": "Il consenso della banca è scaduto. Rinnovalo per riprendere la sincronizzazione.",
+    "REVOKED_SESSION": "Il consenso della banca è stato revocato. Rinnovalo per riprendere la sincronizzazione.",
+    "CLOSED_SESSION": "La banca ha chiuso il consenso. Rinnovalo per riprendere la sincronizzazione.",
+    "SESSION_DOES_NOT_EXIST": "La banca non riconosce più il consenso. Rinnovalo per riprendere la sincronizzazione.",
+    "WRONG_SESSION_STATUS": "Il consenso della banca non è attivo. Rinnovalo per riprendere la sincronizzazione.",
+    "ACCOUNT_DOES_NOT_EXIST": "La banca non mostra più questo conto.",
+    "ASPSP_ACCOUNT_NOT_ACCESSIBLE": "Al momento la banca non consente l’accesso a questo conto.",
+    "ASPSP_ERROR": "La banca ha risposto con un errore. Bursar riprova più tardi.",
+    "ASPSP_TIMEOUT": "La banca non ha risposto in tempo. Bursar riprova più tardi.",
+    "ASPSP_RATE_LIMIT_EXCEEDED": "La banca limita la frequenza con cui Bursar può leggere questo conto.",
+    "PAGINATION_LOOP": "La banca ha restituito due volte la stessa pagina di movimenti, quindi la sincronizzazione è stata interrotta.",
+    "ACCESS_DENIED": "La banca ha rifiutato l’accesso ai dati del conto.",
+    "PSU_HEADER_NOT_PROVIDED": "La banca ha chiesto dettagli sulla richiesta che non sono stati inviati.",
+    "PSU_HEADER_INVALID": "La banca ha rifiutato i dettagli della richiesta.",
+    "INVALID_PROVIDER_DATA": "La banca ha inviato dati che Bursar non sa leggere, quindi la sincronizzazione è stata interrotta.",
+    "banking_not_configured": "Enable Banking non è configurato su questo server.",
+    "rate_limited": "La banca limita la frequenza con cui Bursar può leggere questo conto.",
+    "daily_cap": "Il limite giornaliero di letture in background è esaurito.",
+    "connection_inactive": "Il consenso della banca non è attivo. Rinnovalo per riprendere la sincronizzazione.",
+    "account_inactive": "Il conto è disattivato o non disponibile.",
+    "no_provider_uid": "La banca non ha fornito un identificativo per questo conto. Rinnova il consenso.",
+    "sync_in_progress": "Per questo conto è già in corso una sincronizzazione.",
+    "nothing_to_sync": "Non c’è nessun conto attivo da sincronizzare."
+  },
+  "alerts": {
+    "consentExpiring_one": "Il consenso per {{bank}} scade tra {{count}} giorno",
+    "consentExpiring_many": "Il consenso per {{bank}} scade tra {{count}} di giorni",
+    "consentExpiring_other": "Il consenso per {{bank}} scade tra {{count}} giorni",
+    "consentExpiresToday": "Il consenso per {{bank}} scade oggi",
+    "consentExpiringDetail": "Rinnovalo prima della scadenza, altrimenti Bursar smette di leggere questa banca.",
+    "consentExpired": "Il consenso per {{bank}} è scaduto",
+    "consentExpiredDetail": "Bursar non può più leggere questa banca. Rinnova il consenso per riprendere la sincronizzazione.",
+    "connectionError": "{{bank}} ha rifiutato l’accesso",
+    "connectionErrorDetail": "La banca ha chiuso il consenso. Rinnovalo oppure scollega la banca.",
+    "syncFailing": "{{account}} non si sincronizza",
+    "syncFailingDetail": "Ultima sincronizzazione riuscita {{when}}; l’ultimo tentativo non è andato a buon fine.",
+    "syncFailingNeverDetail": "Non si è mai sincronizzato; l’ultimo tentativo non è andato a buon fine.",
+    "rateLimited": "{{account}} è in pausa fino a {{time}}",
+    "rateLimitedDetail": "La banca limita la frequenza con cui Bursar può leggere questo conto.",
+    "backupLocalOnly": "I backup sono solo su questo server",
+    "backupLocalOnlyDetail": "Aggiungi una destinazione compatibile S3, così un guasto del disco non porta via anche i backup.",
+    "backupFailing_one": "L’ultimo backup non è riuscito",
+    "backupFailing_many": "Gli ultimi {{count}} di backup non sono riusciti",
+    "backupFailing_other": "Gli ultimi {{count}} backup non sono riusciti",
+    "backupFailingDetail": "Controlla le impostazioni dei backup e il log del server.",
+    "renewConsent": "Rinnova il consenso",
+    "reviewConnection": "Controlla il collegamento",
+    "openAccount": "Apri il conto",
+    "openBackups": "Apri le impostazioni dei backup"
+  },
+  "consent": {
+    "expiresIn_one": "Il consenso scade tra {{count}} giorno",
+    "expiresIn_many": "Il consenso scade tra {{count}} di giorni",
+    "expiresIn_other": "Il consenso scade tra {{count}} giorni",
+    "expiresToday": "Il consenso scade oggi",
+    "expired": "Consenso scaduto {{when}}"
+  },
+  "freshness": {
+    "updated": "Aggiornato {{when}}",
+    "never": "Mai aggiornato",
+    "syncing": "Sincronizzazione…"
+  },
+  "status": {
+    "connection": {
+      "active": "Attivo",
+      "expiring": "In scadenza",
+      "expired": "Scaduto",
+      "revoked": "Revocato",
+      "error": "Errore"
+    },
+    "account": {
+      "active": "Attivo",
+      "disabled": "Disattivato",
+      "unavailable": "Non disponibile",
+      "removed": "Scollegato"
+    }
   }
 }

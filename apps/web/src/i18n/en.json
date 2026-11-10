@@ -89,10 +89,61 @@
     "failedDetail": "Your browser blocked access to the clipboard."
   },
   "home": {
+    "loading": "Loading your overview…",
     "greeting": {
       "morning": "Good morning",
       "afternoon": "Good afternoon",
       "evening": "Good evening"
+    },
+    "summary": {
+      "attention_one": "{{count}} thing needs your attention. Most urgent:",
+      "attention_other": "{{count}} things need your attention. Most urgent:",
+      "allGood": "All good: every account was updated today.",
+      "calm": "Nothing needs your attention. The oldest update was {{when}}.",
+      "calmNever": "Nothing needs your attention, but some accounts have not synced yet."
+    },
+    "kpi": {
+      "label": "Key figures",
+      "balance": "Balance",
+      "accounts_one": "{{count}} account",
+      "accounts_other": "{{count}} accounts",
+      "noBalance": "No balance yet",
+      "in": "In, last 30 days",
+      "out": "Out, last 30 days",
+      "net": "Net, last 30 days",
+      "transactions_one": "{{count}} transaction",
+      "transactions_other": "{{count}} transactions",
+      "mixedCurrencies": "Balances are shown per currency: Bursar does not convert between currencies."
+    },
+    "cashflow": {
+      "title": "Cash flow, last 30 days",
+      "currency": "Currency",
+      "hint": "Select a day to see its figures.",
+      "see_one": "See {{count}} transaction on {{date}}",
+      "see_other": "See {{count}} transactions on {{date}}",
+      "none": "No transactions on {{date}}",
+      "clear": "Clear selection",
+      "error": "The cash flow in {{currency}} could not be loaded.",
+      "retry": "Try again",
+      "loading": "Loading the cash flow…"
+    },
+    "accounts": {
+      "title": "Accounts",
+      "empty": "No account is being synced.",
+      "noBalance": "No balance yet"
+    },
+    "alerts": {
+      "title": "Needs attention",
+      "empty": "Nothing needs attention."
+    },
+    "empty": {
+      "title": "No bank connected yet",
+      "description": "Bursar reads the balances and transactions of your bank accounts and shows where your money goes. It only reads: it cannot make payments or move money."
+    },
+    "error": {
+      "title": "The overview could not be loaded",
+      "description": "The server did not answer. Nothing was lost: try again in a moment.",
+      "retry": "Try again"
     }
   },
   "routes": {
@@ -232,5 +283,112 @@
     },
     "reload": "Reload the page",
     "backHome": "Back to Home"
+  },
+  "cashflow": {
+    "in": "In",
+    "out": "Out",
+    "net": "Net",
+    "balance": "Balance",
+    "count_one": "{{count}} transaction",
+    "count_other": "{{count}} transactions",
+    "periods": "{{label}}: choose a period",
+    "bucket_one": "{{date}}: in {{in}}, out {{out}}, net {{net}}, {{count}} transaction",
+    "bucket_other": "{{date}}: in {{in}}, out {{out}}, net {{net}}, {{count}} transactions",
+    "srSummary": "{{label}}, from {{from}} to {{to}}: in {{in}}, out {{out}}, net {{net}}.",
+    "srBalance": "Balance at the end of the period: {{balance}}.",
+    "srEmpty": "{{label}}: no data for this period.",
+    "netChip": "Net, last 30 days: {{amount}}"
+  },
+  "live": {
+    "unknownAccount": "Account",
+    "syncCompleted": "Sync completed",
+    "syncCompletedDetail_one": "{{account}}: {{count}} new transaction.",
+    "syncCompletedDetail_other": "{{account}}: {{count}} new transactions.",
+    "syncNoNew": "{{account}} is up to date: no new transactions.",
+    "rateLimited": "Sync paused by the bank",
+    "rateLimitedDetail": "{{account}}: the bank limits how often Bursar can read it. Next attempt: {{time}}.",
+    "rateLimitedNoTime": "{{account}}: the bank limits how often Bursar can read it. Try again later.",
+    "dailyCap": "Daily sync limit reached",
+    "dailyCapDetail": "{{account}}: the bank allows only a few background reads a day. The next sync runs tomorrow.",
+    "syncSkipped": "Sync skipped",
+    "syncSkippedDetail": "{{account}}: {{reason}}",
+    "syncFailed": "Sync failed",
+    "syncFailedDetail": "{{account}}: {{reason}}"
+  },
+  "syncErrors": {
+    "generic": "The bank did not complete the request. Bursar will try again at the next sync.",
+    "EXPIRED_SESSION": "The bank consent has expired. Renew it to resume syncing.",
+    "REVOKED_SESSION": "The bank consent was revoked. Renew it to resume syncing.",
+    "CLOSED_SESSION": "The bank closed the consent. Renew it to resume syncing.",
+    "SESSION_DOES_NOT_EXIST": "The bank no longer recognises the consent. Renew it to resume syncing.",
+    "WRONG_SESSION_STATUS": "The bank consent is not active. Renew it to resume syncing.",
+    "ACCOUNT_DOES_NOT_EXIST": "The bank no longer shows this account.",
+    "ASPSP_ACCOUNT_NOT_ACCESSIBLE": "The bank does not allow access to this account right now.",
+    "ASPSP_ERROR": "The bank answered with an error. Bursar will try again later.",
+    "ASPSP_TIMEOUT": "The bank did not answer in time. Bursar will try again later.",
+    "ASPSP_RATE_LIMIT_EXCEEDED": "The bank limits how often Bursar can read this account.",
+    "PAGINATION_LOOP": "The bank returned the same page of transactions twice, so the sync was stopped.",
+    "ACCESS_DENIED": "The bank refused access to the account data.",
+    "PSU_HEADER_NOT_PROVIDED": "The bank asked for details about the request that were not sent.",
+    "PSU_HEADER_INVALID": "The bank rejected the request details.",
+    "INVALID_PROVIDER_DATA": "The bank sent data Bursar cannot read, so the sync was stopped.",
+    "banking_not_configured": "Enable Banking is not configured on this server.",
+    "rate_limited": "The bank limits how often Bursar can read this account.",
+    "daily_cap": "The daily limit for background reads is used up.",
+    "connection_inactive": "The bank consent is not active. Renew it to resume syncing.",
+    "account_inactive": "The account is disabled or unavailable.",
+    "no_provider_uid": "The bank did not provide an identifier for this account. Renew the consent.",
+    "sync_in_progress": "A sync is already running for this account.",
+    "nothing_to_sync": "There is no active account to sync."
+  },
+  "alerts": {
+    "consentExpiring_one": "Consent for {{bank}} expires in {{count}} day",
+    "consentExpiring_other": "Consent for {{bank}} expires in {{count}} days",
+    "consentExpiresToday": "Consent for {{bank}} expires today",
+    "consentExpiringDetail": "Renew it before it ends, or Bursar stops reading this bank.",
+    "consentExpired": "Consent for {{bank}} has expired",
+    "consentExpiredDetail": "Bursar can no longer read this bank. Renew the consent to resume syncing.",
+    "connectionError": "{{bank}} refused access",
+    "connectionErrorDetail": "The bank ended the consent. Renew it, or disconnect the bank.",
+    "syncFailing": "{{account}} is not syncing",
+    "syncFailingDetail": "Last successful sync {{when}}; the latest attempt failed.",
+    "syncFailingNeverDetail": "It has never synced successfully; the latest attempt failed.",
+    "rateLimited": "{{account}} is paused until {{time}}",
+    "rateLimitedDetail": "The bank limits how often Bursar can read this account.",
+    "backupLocalOnly": "Backups are kept on this server only",
+    "backupLocalOnlyDetail": "Add an S3-compatible target so that a disk failure does not take the backups with it.",
+    "backupFailing_one": "The last backup failed",
+    "backupFailing_other": "The last {{count}} backups failed",
+    "backupFailingDetail": "Check the backup settings and the server log.",
+    "renewConsent": "Renew consent",
+    "reviewConnection": "Review the connection",
+    "openAccount": "Open the account",
+    "openBackups": "Open the backup settings"
+  },
+  "consent": {
+    "expiresIn_one": "Consent expires in {{count}} day",
+    "expiresIn_other": "Consent expires in {{count}} days",
+    "expiresToday": "Consent expires today",
+    "expired": "Consent expired {{when}}"
+  },
+  "freshness": {
+    "updated": "Updated {{when}}",
+    "never": "Never updated",
+    "syncing": "Syncing…"
+  },
+  "status": {
+    "connection": {
+      "active": "Active",
+      "expiring": "Expiring",
+      "expired": "Expired",
+      "revoked": "Revoked",
+      "error": "Error"
+    },
+    "account": {
+      "active": "Active",
+      "disabled": "Disabled",
+      "unavailable": "Unavailable",
+      "removed": "Disconnected"
+    }
   }
 }

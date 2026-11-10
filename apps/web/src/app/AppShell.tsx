@@ -9,6 +9,8 @@ import { CommandPalette, PaletteProvider } from "./CommandPalette";
 import { Sidebar } from "./Sidebar";
 import { useGlobalShortcuts } from "./shortcuts";
 import { Topbar } from "./Topbar";
+import { LiveEvents } from "./useLiveEvents";
+import { useLocaleSync, useSettingsQuery } from "./useSettingsQuery";
 
 function ShortcutBindings() {
   useGlobalShortcuts();
@@ -20,6 +22,8 @@ function ShortcutBindings() {
  * pathname, no exit animation), the command palette and the toasts.
  */
 export function AppShell() {
+  const settings = useSettingsQuery();
+  useLocaleSync(settings.data);
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const collapsed = useUi((state) => state.sidebarCollapsed);
@@ -33,7 +37,8 @@ export function AppShell() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <FormatProvider>
+      <FormatProvider timeZone={settings.data?.system.timezone}>
+        <LiveEvents />
         <PaletteProvider>
           <ShortcutBindings />
           <div className="min-h-dvh bg-bg">
