@@ -461,9 +461,9 @@ export function balanceHistory(
   const end = today(deps);
   const start = addDays(end, -(days - 1));
   const anchor = current.referenceDate;
-  // LocalDate strings (YYYY-MM-DD) compare chronologically.
-  const first = anchor < start ? anchor : start;
-  const last = anchor > end ? anchor : end;
+  // LocalDate strings (YYYY-MM-DD) compare chronologically (Math.min/max would not apply).
+  const first = start > anchor ? anchor : start;
+  const last = end < anchor ? anchor : end;
   const netByDate = new Map(
     all<{ sort_date: string; net: number }>(
       deps,
