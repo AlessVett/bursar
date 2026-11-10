@@ -328,6 +328,11 @@ function oldestPendingSince(
  * The incremental window starts at `lastBooked − 7` or at the oldest stored pending entry
  * (bounded to `PENDING_LOOKBACK_DAYS`), whichever is earlier: a card hold older than the booked
  * window must be inside the window, or its absence is never counted and it is never removed.
+ *
+ * A booked entry dated in the future (a card statement line dated by settlement) clamps the
+ * anchor to today, not the result: the seven-day look-back still applies, so an entry the bank
+ * lists late with an earlier booking date stays inside the window, and the start is always at
+ * least a week before today (Enable Banking reads `date_from` as a UTC date).
  */
 function transactionWindow(
   repo: FinanceRepository,
@@ -337,11 +342,12 @@ function transactionWindow(
 ): TransactionWindow {
   const lastBooked = trigger === "initial" ? null : repo.lastBookedDate(accountId);
   if (lastBooked === null) return { strategy: "longest", dateFrom: null };
-  const fromBooked = addDays(lastBooked, -SYNC_LOOKBACK_DAYS);
-  const oldestPending = oldestPendingSince(repo, accountId, addDays(today, -PENDING_LOOKBACK_DAYS));
   // LocalDate strings (YYYY-MM-DD) compare chronologically.
+  const anchor = lastBooked > today ? today : lastBooked;
+  const fromBooked = addDays(anchor, -SYNC_LOOKBACK_DAYS);
+  const oldestPending = oldestPendingSince(repo, accountId, addDays(today, -PENDING_LOOKBACK_DAYS));
   const from = oldestPending !== null && oldestPending < fromBooked ? oldestPending : fromBooked;
-  return { strategy: "default", dateFrom: from > today ? today : from };
+  return { strategy: "default", dateFrom: from };
 }
 
 async function fetchTransactionPages(

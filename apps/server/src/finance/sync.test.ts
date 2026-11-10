@@ -178,10 +178,48 @@ describe("runAccountSync: fetching and storing", () => {
     ];
     await sync("initial");
     await sync("background");
+    // The anchor is clamped to today, then the seven-day look-back applies.
     expect(h.bank.transactionCalls[1]?.query).toEqual({
       strategy: "default",
-      dateFrom: "2026-11-09",
+      dateFrom: "2026-11-02",
     });
+  });
+
+  it("keeps the seven-day look-back when a booked entry is dated weeks ahead", async () => {
+    h.settings.update({ backgroundSyncCap: 4 });
+    const settlement: EbTransaction = {
+      ...GROCERIES,
+      entry_reference: "ENTRY-0098",
+      transaction_id: "tx-0098",
+      booking_date: "2026-11-29",
+      value_date: "2026-11-29",
+    };
+    h.bank.pages = [{ transactions: [settlement, SALARY], continuation_key: null }];
+    await sync("initial");
+    // Listed late by the bank: booked last Friday, it only shows up today.
+    const late: EbTransaction = {
+      ...GROCERIES,
+      entry_reference: "ENTRY-0097",
+      transaction_id: "tx-0097",
+      booking_date: "2026-11-06",
+      value_date: "2026-11-06",
+    };
+    // Like a bank that honours date_from: only entries on or after the requested day.
+    h.bank.transactionsImpl = (query) => ({
+      transactions: [settlement, late, SALARY].filter(
+        (tx) => query.dateFrom === undefined || (tx.booking_date ?? "") >= query.dateFrom,
+      ),
+      continuation_key: null,
+    });
+    const outcome = await sync("background");
+    // Anchored at today rather than at the future date, so the window still reaches back a week
+    // and never starts after yesterday (Enable Banking reads date_from as a UTC date).
+    expect(h.bank.transactionCalls[1]?.query).toEqual({
+      strategy: "default",
+      dateFrom: "2026-11-02",
+    });
+    expect(outcome).toMatchObject({ status: "succeeded", inserted: 1, removed: 0 });
+    expect(h.repo.countTransactions(accountId)).toEqual({ total: 3, pending: 0 });
   });
 
   it("matches a stored entry the bank returns from before the window when it ignores date_from", async () => {
