@@ -295,6 +295,7 @@ export function TransactionsPage() {
             selectedDate={selectedDate}
             onCurrencyChange={(currency) => setState({ currency })}
             highlightNegativeNet={settings.data?.values.highlightNegativeNet ?? true}
+            period={period}
           />
           <Tabs
             ariaLabel={t("transactions.tabs.label")}

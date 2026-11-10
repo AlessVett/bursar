@@ -500,6 +500,17 @@ describe("TransactionsPage", () => {
     await findTable();
   });
 
+  it("keeps the period range on a no-match search instead of the collapsed response day", async () => {
+    stubFetch(apiHandler((params) => (params.q ? EMPTY_LIST : listResponse())));
+    renderPage("/transactions?q=zzzz");
+    expect(await screen.findByText("No transactions match the filters")).toBeTruthy();
+    const range = `${formatLocalDate(from30, "en-GB")} – ${formatLocalDate(today, "en-GB")}`;
+    expect(screen.getByText(range)).toBeTruthy();
+    expect(
+      screen.getByText(new RegExp(`^Cash flow from ${range.replace(" – ", " to ")}`)),
+    ).toBeTruthy();
+  });
+
   it("shows the true-empty state when there is no transaction at all", async () => {
     stubFetch(apiHandler(() => EMPTY_LIST));
     renderPage();

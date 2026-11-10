@@ -6,6 +6,7 @@ import { Card, Money } from "../../components/ui";
 import { useFormatters } from "../../lib/format";
 import { amountTone } from "../../lib/tones";
 import { useUi } from "../../store/ui";
+import type { PeriodRange } from "./period";
 
 export interface CashFlowAggregateProps {
   /** `undefined` while the first response is on its way. */
@@ -17,6 +18,11 @@ export interface CashFlowAggregateProps {
   selectedDate: LocalDate | null;
   onCurrencyChange(currency: string): void;
   highlightNegativeNet: boolean;
+  /**
+   * The period filter's resolved bounds. They name the range shown, because the response bounds
+   * collapse to a single day when the filters match nothing. An open side falls back to the response.
+   */
+  period?: PeriodRange;
 }
 
 interface FigureProps {
@@ -58,6 +64,7 @@ export function CashFlowAggregate({
   selectedDate,
   onCurrencyChange,
   highlightNegativeNet,
+  period,
 }: CashFlowAggregateProps) {
   const { t } = useTranslation();
   const { money, localDate } = useFormatters();
@@ -78,13 +85,12 @@ export function CashFlowAggregate({
 
   const { totals, currency, currencies } = aggregate;
   const mixed = currencies.length > 1;
-  const range = t("transactions.aggregate.range", {
-    from: localDate(aggregate.from),
-    to: localDate(aggregate.to),
-  });
+  const from = localDate(period?.from ?? aggregate.from);
+  const to = localDate(period?.to ?? aggregate.to);
+  const range = t("transactions.aggregate.range", { from, to });
   const summary = t("transactions.aggregate.summary", {
-    from: localDate(aggregate.from),
-    to: localDate(aggregate.to),
+    from,
+    to,
     in: money(totals.inMinor, currency, { sign: "never", masked: privacy }),
     out: money(totals.outMinor, currency, { sign: "never", masked: privacy }),
     net: money(totals.netMinor, currency, { sign: "always", masked: privacy }),
