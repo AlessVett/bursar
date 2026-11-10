@@ -7,7 +7,8 @@ import { pino } from "pino";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { generateTotpCode } from "./auth/totp";
 import { loadConfig } from "./config";
-import { type RunningBursar, startBursar } from "./server";
+import { seedQa } from "./qa/seed";
+import { type RunningBursar, type SeedContext, type StartOverrides, startBursar } from "./server";
 import { MIGRATIONS_DIR } from "./test/db";
 
 describe("startBursar", () => {
@@ -23,7 +24,11 @@ describe("startBursar", () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  async function boot(env: Record<string, string> = {}, logLines?: string[]) {
+  async function boot(
+    env: Record<string, string> = {},
+    logLines?: string[],
+    overrides?: StartOverrides,
+  ) {
     const config = loadConfig({
       BURSAR_PUBLIC_URL: "http://127.0.0.1",
       TZ: "UTC",
@@ -43,7 +48,7 @@ describe("startBursar", () => {
           }),
         )
       : pino({ level: "silent" });
-    const instance = await startBursar({ ...config, port: 0 }, logger);
+    const instance = await startBursar({ ...config, port: 0 }, logger, overrides);
     running.push(instance);
     return { base: `http://127.0.0.1:${instance.port}`, origin: config.publicUrl.origin };
   }
@@ -159,5 +164,33 @@ describe("startBursar", () => {
     }
     expect(statuses.slice(0, 5).every((status) => status !== 429)).toBe(true);
     expect(statuses.slice(5)).toEqual([429, 429]);
+  });
+
+  it("runs the seed hook once before the owner check, so a seeded owner gets no setup code", async () => {
+    const calls: SeedContext[] = [];
+    let token: string | null = null;
+    const { base } = await boot({}, undefined, {
+      seed: async (ctx) => {
+        calls.push(ctx);
+        token = (await seedQa(ctx, { owner: true })).sessionToken;
+      },
+    });
+    expect(calls).toHaveLength(1);
+    expect(existsSync(path.join(dir, "setup-code"))).toBe(false);
+    const status = await fetch(`${base}/api/auth/status`, {
+      headers: { cookie: `bursar_session=${token}` },
+    });
+    expect(await status.json()).toEqual({ setupRequired: false, authenticated: true });
+  });
+
+  it("rejects and starts nothing when the seed hook throws", async () => {
+    await expect(
+      boot({}, undefined, {
+        seed: () => {
+          throw new Error("seed failed");
+        },
+      }),
+    ).rejects.toThrow("seed failed");
+    expect(running).toHaveLength(0);
   });
 });

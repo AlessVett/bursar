@@ -10,7 +10,7 @@ import { SessionStore } from "./auth/sessions";
 import { SetupCode } from "./auth/setup-code";
 import { type Config, isLoopbackHost } from "./config";
 import { deriveKey } from "./crypto";
-import { openDatabase, runMigrations } from "./db";
+import { type BursarDb, openDatabase, runMigrations, type Sqlite } from "./db";
 import { createApp } from "./http/app";
 import { JobQueue } from "./jobs/queue";
 import { type JobHandler, JobWorker } from "./jobs/worker";
@@ -22,7 +22,28 @@ export interface RunningBursar {
   close(): Promise<void>;
 }
 
-export async function startBursar(config: Config, logger: Logger): Promise<RunningBursar> {
+/** What a seed hook receives: the migrated database, the configuration and the clock. */
+export interface SeedContext {
+  db: BursarDb;
+  sqlite: Sqlite;
+  config: Config;
+  now: () => number;
+}
+
+/**
+ * Test and QA hooks into startup. Production (`index.ts`) passes none. Later tasks add fields
+ * (for example a fake Enable Banking client or a mailer).
+ */
+export interface StartOverrides {
+  /** Runs once after the migrations, before the owner check, the worker, the scheduler and the listener. */
+  seed?: (ctx: SeedContext) => void | Promise<void>;
+}
+
+export async function startBursar(
+  config: Config,
+  logger: Logger,
+  overrides: StartOverrides = {},
+): Promise<RunningBursar> {
   if (!config.cfAccess && !isLoopbackHost(config.publicUrl.hostname)) {
     logger.warn(
       { publicUrl: config.publicUrl.origin },
@@ -35,6 +56,15 @@ export async function startBursar(config: Config, logger: Logger): Promise<Runni
     deriveKey(config.masterKey, "database").toString("hex"),
   );
   runMigrations(database.db, config.migrationsDir);
+
+  if (overrides.seed) {
+    try {
+      await overrides.seed({ db: database.db, sqlite: database.sqlite, config, now: Date.now });
+    } catch (error) {
+      database.close();
+      throw error;
+    }
+  }
 
   const owners = new OwnerStore(database.db, deriveKey(config.masterKey, "totp"));
   const sessions = new SessionStore(database.db);
