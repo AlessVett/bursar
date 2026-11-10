@@ -72,7 +72,7 @@ function route(
  */
 export const ROUTES: readonly RouteDef[] = [
   route("home", "/", House, "top", null, true),
-  route("accounts", "/accounts", Landmark, "money", null, false),
+  route("accounts", "/accounts", Landmark, "money", null, true),
   route("account", "/accounts/:accountId", Wallet, null, "accounts", false),
   route("connect", "/connect", LinkIcon, null, "accounts", false),
   route("connectCallback", "/connect/callback", LinkIcon, null, "accounts", false),
@@ -180,4 +180,12 @@ export function buildPath(
     Object.entries(search).filter(([, value]) => value.length > 0),
   ).toString();
   return `/${path}${query ? `?${query}` : ""}`;
+}
+
+/**
+ * The path of an account's detail page, or `null` while that page is not shipped: nothing may
+ * link to a route that does not exist yet (hidden until shipped). Task 19 flips the route.
+ */
+export function accountDetailPath(accountId: number): string | null {
+  return routeById("account").shipped ? buildPath("account", { accountId }) : null;
 }

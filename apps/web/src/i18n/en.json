@@ -237,7 +237,8 @@
     "placeholder": "Search pages, accounts, transactions…",
     "resultsLabel": "Results",
     "groups": {
-      "pages": "Pages"
+      "pages": "Pages",
+      "accounts": "Accounts"
     },
     "empty": "No results for “{{query}}”",
     "emptyHint": "Try a name, a bank or the last digits of an IBAN.",
@@ -390,6 +391,189 @@
       "disabled": "Disabled",
       "unavailable": "Unavailable",
       "removed": "Disconnected"
+    }
+  },
+  "connection": {
+    "status": {
+      "active": "Active",
+      "expiring": "Expiring soon",
+      "expired": "Expired",
+      "revoked": "Revoked",
+      "error": "Error"
+    },
+    "consent": {
+      "expiresToday": "Consent expires today",
+      "expiresIn_one": "Consent expires in {{count}} day",
+      "expiresIn_other": "Consent expires in {{count}} days",
+      "expiredToday": "Consent expired today",
+      "expiredAgo_one": "Consent expired {{count}} day ago",
+      "expiredAgo_other": "Consent expired {{count}} days ago",
+      "ended": "Consent ended",
+      "validUntil": "Valid until {{date}}"
+    },
+    "actions": {
+      "renew": "Renew consent",
+      "sync_one": "Sync account",
+      "sync_other": "Sync {{count}} accounts",
+      "disconnect": "Disconnect bank",
+      "menu": "Actions for {{bank}}"
+    },
+    "blocked": {
+      "syncExpired": "The consent has ended. Renew it to sync again.",
+      "syncRevoked": "The bank revoked the access. Renew the consent to sync again.",
+      "syncError": "The connection reports an error. Renew the consent to sync again.",
+      "noActiveAccounts": "No active account to sync."
+    },
+    "hint": {
+      "expiring": "The consent ends soon. Renew it before then to avoid a gap in your data.",
+      "expired": "The consent has ended, so Bursar cannot read new data. Renew it with your bank to resume syncing.",
+      "revoked": "The bank revoked the access. Renew the consent to resume syncing.",
+      "error": "The connection to the bank reports an error. Renew the consent; if the problem stays, try again later."
+    },
+    "meta": "{{country}} · connected on {{date}}"
+  },
+  "accounts": {
+    "subtitle": "The banks linked to Bursar, the accounts they expose and the state of each consent.",
+    "loading": "Loading accounts",
+    "allUpdated": "All good: every account was updated today.",
+    "retry": "Try again",
+    "loadError": {
+      "title": "Accounts could not be loaded",
+      "body": "Check your connection and try again. Nothing was changed."
+    },
+    "empty": {
+      "title": "No bank connected yet",
+      "body": "Bursar only reads balances and transactions from your bank. It cannot make payments or move money, and you can disconnect at any time."
+    },
+    "noConnections": {
+      "title": "No active connections",
+      "body": "Only disconnected accounts are left, listed below."
+    },
+    "noAccounts": {
+      "title": "No accounts on this connection",
+      "body": "The bank did not share any account. Renew the consent and select the accounts you want to see."
+    },
+    "row": {
+      "rename": "Rename {{name}}",
+      "renameLabel": "Account name",
+      "renameSave": "Save the name",
+      "renameCancel": "Cancel renaming",
+      "actionsFor": "Actions for {{name}}",
+      "balanceNone": "No balance yet",
+      "last30d": "in 30 days",
+      "miniStrip": "Daily cash flow, last 30 days",
+      "netTitle": "Inflows minus outflows over the last 30 days",
+      "syncing": "Syncing…",
+      "syncFailed": "Last sync failed",
+      "syncFailedTitle": "The last attempt failed {{when}}. The next scheduled sync will try again.",
+      "syncNow": "Sync now",
+      "disable": "Disable account",
+      "enable": "Enable account",
+      "openDetails": "Open details"
+    },
+    "status": {
+      "disabled": "Disabled",
+      "disabledTitle": "The account is not synced and is left out of the totals.",
+      "unavailable": "Unavailable",
+      "unavailableTitle": "The bank no longer exposes this account. Renewing the consent may bring it back."
+    },
+    "freshness": {
+      "updated": "Updated {{when}}",
+      "never": "Never updated"
+    },
+    "blocked": {
+      "disabled": "The account is disabled. Enable it to sync.",
+      "unavailable": "The bank no longer exposes this account.",
+      "rateLimited": "The bank is limiting requests for this account. Try again {{when}}.",
+      "running": "A sync of this account is already running."
+    },
+    "disable": {
+      "title": "Disable {{name}}?",
+      "body": "{{name}} stops syncing and is left out of your totals and transaction lists. Nothing is deleted, and you can enable it again at any time.",
+      "confirm": "Yes, disable"
+    },
+    "disconnect": {
+      "title": "Disconnect {{bank}}?",
+      "lead": "Bursar stops reading data from this bank. This cannot be undone, but you can connect the bank again later.",
+      "loading": "Counting what will be removed…",
+      "failed": "What will be removed could not be worked out.",
+      "retry": "Try again",
+      "accounts_one": "{{count}} account moves to “Disconnected accounts” and stops syncing",
+      "accounts_other": "{{count}} accounts move to “Disconnected accounts” and stop syncing",
+      "transactions_one": "{{n}} transaction stays in Bursar until you purge it",
+      "transactions_other": "{{n}} transactions stay in Bursar until you purge them",
+      "noTransactions": "There are no transactions to keep.",
+      "outro": "Bursar also asks the bank to close the access it was given. If you connect the bank again, accounts that still hold their transactions are re-attached.",
+      "confirm": "Yes, disconnect"
+    },
+    "removed": {
+      "title": "Disconnected accounts",
+      "description": "These accounts no longer sync. Their transactions stay in Bursar until you purge them.",
+      "transactions_one": "{{n}} transaction",
+      "transactions_other": "{{n}} transactions",
+      "since": "Disconnected {{when}}",
+      "purge": "Purge transactions",
+      "remove": "Remove account"
+    },
+    "purge": {
+      "title": "Purge the transactions of {{name}}?",
+      "titleEmpty": "Remove {{name}}?",
+      "body_one": "{{n}} transaction, the balances and the sync history of this account will be deleted from Bursar. This cannot be undone. Your bank is not affected.",
+      "body_other": "{{n}} transactions, the balances and the sync history of this account will be deleted from Bursar. This cannot be undone. Your bank is not affected.",
+      "bodyEmpty": "{{name}} has no transactions left. The account, its balances and its sync history will be deleted. This cannot be undone.",
+      "confirm_one": "Yes, purge {{n}} transaction",
+      "confirm_other": "Yes, purge {{n}} transactions",
+      "confirmEmpty": "Yes, remove account"
+    },
+    "toast": {
+      "renamed": "Account renamed",
+      "renamedDetail": "“{{name}}” is now the name shown across Bursar.",
+      "renamedReset": "The default name is shown again.",
+      "disabled": "Account disabled",
+      "disabledDetail": "{{name}} no longer syncs and is left out of the totals. Enable it again whenever you like.",
+      "enabled": "Account enabled",
+      "enabledDetail": "{{name}} is back in the totals and syncs with the next scheduled sync.",
+      "syncStarted": "Sync started",
+      "syncStartedAccount": "New transactions of {{name}} appear in about a minute.",
+      "syncStartedConnection_one": "Reading {{count}} account at {{bank}}. New transactions appear in about a minute.",
+      "syncStartedConnection_other": "Reading {{count}} accounts at {{bank}}. New transactions appear in about a minute.",
+      "disconnected": "Bank disconnected",
+      "disconnectedDetail_one": "{{bank}} is disconnected. {{count}} account moved to “Disconnected accounts” and its transactions are still here.",
+      "disconnectedDetail_other": "{{bank}} is disconnected. {{count}} accounts moved to “Disconnected accounts” and their transactions are still here.",
+      "purged": "Transactions purged",
+      "purgedDetail_one": "{{n}} transaction of {{name}} was deleted from Bursar.",
+      "purgedDetail_other": "{{n}} transactions of {{name}} were deleted from Bursar.",
+      "removedAccount": "Account removed",
+      "removedAccountDetail": "{{name}} was removed from Bursar."
+    },
+    "errors": {
+      "generic": "Something went wrong. Try again in a moment.",
+      "later": "later",
+      "titles": {
+        "sync": "Sync could not be started",
+        "rename": "Account could not be renamed",
+        "toggle": "Account could not be updated",
+        "renew": "Consent could not be renewed",
+        "disconnect": "Bank could not be disconnected",
+        "purge": "Transactions could not be purged"
+      },
+      "codes": {
+        "sync_in_progress": "A sync is already running.",
+        "rate_limited": "The bank is limiting requests for now. Try again {{when}}.",
+        "connection_inactive": "The consent has ended. Renew it with your bank before syncing.",
+        "account_inactive": "This account is disabled or unavailable, so it is not synced.",
+        "nothing_to_sync": "No account on this connection can be synced right now.",
+        "not_allowed": "This account was disconnected and can no longer be changed.",
+        "connection_removed": "This connection was already disconnected.",
+        "already_removed": "This connection was already disconnected.",
+        "account_not_removed": "Only disconnected accounts can be purged.",
+        "banking_not_configured": "Banking is not set up on this server. Add the Enable Banking credentials as described in docs/enable-banking.md, then restart Bursar.",
+        "REDIRECT_URI_NOT_ALLOWED": "The panel address is not registered in your Enable Banking application. See docs/enable-banking.md.",
+        "WRONG_ASPSP_PROVIDED": "Enable Banking no longer offers this bank.",
+        "unknown_bank": "Enable Banking no longer offers this bank.",
+        "bank_error": "The bank service refused the request. Try again in a few minutes.",
+        "not_found": "This item no longer exists. The list was refreshed."
+      }
     }
   }
 }

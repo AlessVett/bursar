@@ -9,4 +9,6 @@ export type PageLoader = () => Promise<{ Component: ComponentType }>;
  */
 export const PAGE_LOADERS: Partial<Record<RouteId, PageLoader>> = {
   home: () => import("../pages/HomePage").then((module) => ({ Component: module.HomePage })),
+  accounts: () =>
+    import("../pages/AccountsPage").then((module) => ({ Component: module.AccountsPage })),
 };

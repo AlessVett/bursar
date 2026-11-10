@@ -1,12 +1,21 @@
 import type {
+  AccountPatch,
+  AccountSummary,
   AuthStatus,
   CashFlowResponse,
+  ConnectionsResponse,
+  DisconnectResponse,
   HomeSummary,
   LoginRequest,
+  PurgeResponse,
+  RemovalPreview,
+  RenewConnectionRequest,
   SettingsResponse,
   SetupConfirmRequest,
   SetupStartRequest,
   SetupStartResponse,
+  StartConnectionResponse,
+  SyncQueuedResponse,
 } from "@bursar/shared";
 import { queryKeys } from "./lib/query-keys";
 
@@ -100,6 +109,19 @@ export const api = {
     request<{ ok: true }>("POST", "/api/auth/setup/confirm", body),
   login: (body: LoginRequest) => request<{ ok: true }>("POST", "/api/auth/login", body),
   logout: () => request<{ ok: true }>("POST", "/api/auth/logout"),
+  connections: () => request<ConnectionsResponse>("GET", "/api/connections"),
+  updateAccount: (id: number, patch: AccountPatch) =>
+    request<AccountSummary>("PATCH", `/api/accounts/${id}`, patch),
+  syncAccount: (id: number) => request<SyncQueuedResponse>("POST", `/api/accounts/${id}/sync`),
+  syncConnection: (id: number) =>
+    request<SyncQueuedResponse>("POST", `/api/connections/${id}/sync`),
+  renewConnection: (id: number, body: RenewConnectionRequest = {}) =>
+    request<StartConnectionResponse>("POST", `/api/connections/${id}/renew`, body),
+  removalPreview: (id: number) =>
+    request<RemovalPreview>("GET", `/api/connections/${id}/removal-preview`),
+  disconnect: (id: number) => request<DisconnectResponse>("DELETE", `/api/connections/${id}`),
+  purgeAccount: (id: number) =>
+    request<PurgeResponse>("POST", `/api/accounts/${id}/purge`, { confirm: true }),
   summary: () => request<HomeSummary>("GET", "/api/summary"),
   settings: () => request<SettingsResponse>("GET", "/api/settings"),
   /** 204 (no data for the filters) becomes `null`. Task 19 reuses this function. */
@@ -121,3 +143,11 @@ export const api = {
     return data ?? null;
   },
 };
+
+/**
+ * Same-origin URL of a bank logo. The server proxies the image (the CSP allows only `'self'`
+ * images) and looks the logo up by ASPSP, so no external URL ever reaches the browser.
+ */
+export function bankLogoUrl(country: string, name: string): string {
+  return `/api/banks/logo?${new URLSearchParams({ country, name }).toString()}`;
+}

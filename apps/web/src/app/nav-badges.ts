@@ -1,3 +1,6 @@
+import { useMemo } from "react";
+import { countNeedingAction } from "../lib/connection-state";
+import { useConnectionsQuery } from "../lib/use-connections";
 import type { RouteId } from "./routes";
 
 export interface NavBadge {
@@ -8,9 +11,14 @@ export interface NavBadge {
 const NO_BADGES: Partial<Record<RouteId, NavBadge>> = Object.freeze({});
 
 /**
- * Sidebar badges by route: neutral for a total, accent for a count that needs action. Nothing in this
- * task has a count yet; Task 18 adds the accounts badge from the connections query.
+ * Sidebar badges by route: neutral for a total, accent for a count that needs action. Accounts
+ * gets an accent badge with the number of connections that are expiring, expired, revoked or in
+ * error, read from the same `connections` query as the Accounts page.
  */
 export function useNavBadges(): Partial<Record<RouteId, NavBadge>> {
-  return NO_BADGES;
+  const { data } = useConnectionsQuery();
+  return useMemo(() => {
+    const count = countNeedingAction(data?.connections ?? []);
+    return count > 0 ? { accounts: { count, tone: "accent" as const } } : NO_BADGES;
+  }, [data]);
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import en from "../i18n/en.json";
 import it_ from "../i18n/it.json";
+import { PAGE_LOADERS } from "./pages";
 import {
   breadcrumbTrail,
   buildPath,
@@ -22,7 +23,7 @@ function lookup(tree: unknown, key: string): unknown {
 }
 
 describe("route registry", () => {
-  it("registers every M1–M4 page once, with Home as the only shipped route", () => {
+  it("registers every page once and keeps the M2–M4 pages hidden", () => {
     expect(ROUTES.map((def) => def.id)).toEqual([
       "home",
       "accounts",
@@ -37,7 +38,11 @@ describe("route registry", () => {
       "activity",
       "settings",
     ]);
-    expect(shippedRoutes().map((def) => def.id)).toEqual(["home"]);
+    const shipped = shippedRoutes().map((def) => def.id);
+    expect(shipped).toContain("home");
+    for (const id of ["documents", "reports", "chat", "agents", "activity"] as const) {
+      expect(shipped).not.toContain(id);
+    }
     expect(new Set(ROUTES.map((def) => def.path)).size).toBe(ROUTES.length);
   });
 
@@ -61,6 +66,12 @@ describe("route registry", () => {
       expect(routeById(id).parent).toBe("accounts");
     }
     expect(NAV_GROUPS).toEqual(["top", "money", "knowledge", "agents", "bottom"]);
+  });
+
+  it("has a page loader for every shipped route", () => {
+    for (const def of shippedRoutes()) {
+      expect(PAGE_LOADERS[def.id], def.id).toBeDefined();
+    }
   });
 
   it("has a title, description and keywords in both languages for every route", () => {
@@ -92,8 +103,8 @@ describe("matchRoute", () => {
     expect(matchRoute("/nowhere", allShipped)).toBeNull();
     expect(matchRoute("/accounts/12/extra", allShipped)).toBeNull();
     expect(matchRoute("/accounts/%E0%A4%A", allShipped)).toBeNull();
-    expect(matchRoute("/accounts")).toBeNull();
-    expect(matchRoute("/connect/callback")).toBeNull();
+    expect(matchRoute("/documents")).toBeNull();
+    expect(matchRoute("/reports")).toBeNull();
     expect(matchRoute("/")?.route.id).toBe("home");
   });
 });

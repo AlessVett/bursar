@@ -27,20 +27,22 @@ describe("AppShell", () => {
   it("shows only shipped routes in the navigation and the route title in the topbar", async () => {
     renderRoutes(appRoutes(), { client: testQueryClient(signedIn), initialEntries: ["/"] });
     const nav = await screen.findByRole("navigation", { name: "Main navigation" });
-    expect(
-      within(nav)
-        .getAllByRole("link")
-        .map((link) => link.textContent),
-    ).toEqual(["Home"]);
-    expect(within(nav).queryByText("Accounts")).toBeNull();
-    expect(within(nav).queryByText("Settings")).toBeNull();
+    const labels = within(nav)
+      .getAllByRole("link")
+      .map((link) => link.textContent ?? "");
+    expect(labels.some((label) => label.startsWith("Home"))).toBe(true);
+    expect(labels.some((label) => label.startsWith("Documents"))).toBe(false);
+    expect(within(nav).queryByText("Agents")).toBeNull();
     expect(await screen.findByRole("heading", { level: 1 })).toBeTruthy();
     // The topbar is the first banner landmark; its title comes from the registry.
     expect(screen.getAllByRole("banner")[0]?.textContent).toContain("Home");
   });
 
   it("renders unshipped and unknown paths as Page not found inside the shell", async () => {
-    renderRoutes(appRoutes(), { client: testQueryClient(signedIn), initialEntries: ["/accounts"] });
+    renderRoutes(appRoutes(), {
+      client: testQueryClient(signedIn),
+      initialEntries: ["/documents"],
+    });
     expect(await screen.findByText("This address does not match any page in Bursar.")).toBeTruthy();
     expect(screen.getByRole("navigation", { name: "Main navigation" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Back to Home" }).getAttribute("href")).toBe("/");

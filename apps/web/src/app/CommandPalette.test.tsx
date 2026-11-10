@@ -2,7 +2,7 @@ import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import i18n from "../i18n";
-import { renderRoutes } from "../test/router";
+import { renderRoutes, stubApi } from "../test/router";
 import { CommandPalette, PaletteProvider, usePaletteControl } from "./CommandPalette";
 
 // Every registry route counts as shipped here, so the palette has more than 8 pages to offer.
@@ -53,9 +53,16 @@ function optionTitles(): string[] {
 describe("CommandPalette", () => {
   beforeEach(async () => {
     await i18n.changeLanguage("en");
+    stubApi({
+      "GET /api/connections": () => ({
+        status: 200,
+        body: { connections: [], removedAccounts: [] },
+      }),
+    });
   });
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
   it("shows 8 pages with descriptions as subtitles when the query is empty", () => {
@@ -98,10 +105,11 @@ describe("CommandPalette", () => {
     expect(document.body.style.overflow).toBe("");
   });
 
-  it("shows the empty text with typographic quotes and closes on Escape", () => {
+  it("shows the empty text with typographic quotes and closes on Escape", async () => {
     renderPalette();
     fireEvent.change(input(), { target: { value: "xyz" } });
-    expect(screen.getByText("No results for “xyz”")).toBeTruthy();
+    // The accounts source loads the connections first, so the empty text follows the fetch.
+    expect(await screen.findByText("No results for “xyz”")).toBeTruthy();
     expect(screen.getByText("Try a name, a bank or the last digits of an IBAN.")).toBeTruthy();
     expect(screen.getByText("↑↓ navigate · ↵ open · esc close · 0 results")).toBeTruthy();
     fireEvent.keyDown(input(), { key: "Escape" });

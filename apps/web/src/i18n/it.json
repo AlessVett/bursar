@@ -242,7 +242,8 @@
     "placeholder": "Cerca pagine, conti, movimenti…",
     "resultsLabel": "Risultati",
     "groups": {
-      "pages": "Pagine"
+      "pages": "Pagine",
+      "accounts": "Conti"
     },
     "empty": "Nessun risultato per “{{query}}”",
     "emptyHint": "Prova con un nome, una banca o le ultime cifre di un IBAN.",
@@ -404,6 +405,200 @@
       "disabled": "Disattivato",
       "unavailable": "Non disponibile",
       "removed": "Scollegato"
+    }
+  },
+  "connection": {
+    "status": {
+      "active": "Attiva",
+      "expiring": "In scadenza",
+      "expired": "Scaduta",
+      "revoked": "Revocata",
+      "error": "Errore"
+    },
+    "consent": {
+      "expiresToday": "Il consenso scade oggi",
+      "expiresIn_one": "Il consenso scade tra {{count}} giorno",
+      "expiresIn_many": "Il consenso scade tra {{count}} di giorni",
+      "expiresIn_other": "Il consenso scade tra {{count}} giorni",
+      "expiredToday": "Consenso scaduto oggi",
+      "expiredAgo_one": "Consenso scaduto {{count}} giorno fa",
+      "expiredAgo_many": "Consenso scaduto {{count}} di giorni fa",
+      "expiredAgo_other": "Consenso scaduto {{count}} giorni fa",
+      "ended": "Consenso terminato",
+      "validUntil": "Valido fino al {{date}}"
+    },
+    "actions": {
+      "renew": "Rinnova il consenso",
+      "sync_one": "Sincronizza il conto",
+      "sync_many": "Sincronizza {{count}} di conti",
+      "sync_other": "Sincronizza {{count}} conti",
+      "disconnect": "Scollega la banca",
+      "menu": "Azioni per {{bank}}"
+    },
+    "blocked": {
+      "syncExpired": "Il consenso è scaduto. Rinnovalo per sincronizzare di nuovo.",
+      "syncRevoked": "La banca ha revocato l’accesso. Rinnova il consenso per sincronizzare di nuovo.",
+      "syncError": "La connessione segnala un errore. Rinnova il consenso per sincronizzare di nuovo.",
+      "noActiveAccounts": "Nessun conto attivo da sincronizzare."
+    },
+    "hint": {
+      "expiring": "Il consenso sta per scadere. Rinnovalo prima della scadenza per non avere buchi nei dati.",
+      "expired": "Il consenso è scaduto e Bursar non può leggere nuovi dati. Rinnovalo con la banca per riprendere la sincronizzazione.",
+      "revoked": "La banca ha revocato l’accesso. Rinnova il consenso per riprendere la sincronizzazione.",
+      "error": "La connessione con la banca segnala un errore. Rinnova il consenso; se il problema resta, riprova più tardi."
+    },
+    "meta": "{{country}} · collegata il {{date}}"
+  },
+  "accounts": {
+    "subtitle": "Le banche collegate a Bursar, i conti che mettono a disposizione e lo stato di ciascun consenso.",
+    "loading": "Caricamento dei conti",
+    "allUpdated": "Tutto in ordine: ogni conto è stato aggiornato oggi.",
+    "retry": "Riprova",
+    "loadError": {
+      "title": "Non è stato possibile caricare i conti",
+      "body": "Controlla la connessione e riprova. Non è stato modificato nulla."
+    },
+    "empty": {
+      "title": "Nessuna banca collegata",
+      "body": "Bursar legge soltanto saldi e movimenti dalla tua banca: non può effettuare pagamenti né spostare denaro, e puoi scollegarla quando vuoi."
+    },
+    "noConnections": {
+      "title": "Nessuna connessione attiva",
+      "body": "Restano soltanto i conti scollegati, elencati qui sotto."
+    },
+    "noAccounts": {
+      "title": "Nessun conto su questa connessione",
+      "body": "La banca non ha condiviso alcun conto. Rinnova il consenso e seleziona i conti che vuoi vedere."
+    },
+    "row": {
+      "rename": "Rinomina {{name}}",
+      "renameLabel": "Nome del conto",
+      "renameSave": "Salva il nome",
+      "renameCancel": "Annulla la modifica del nome",
+      "actionsFor": "Azioni per {{name}}",
+      "balanceNone": "Nessun saldo",
+      "last30d": "in 30 giorni",
+      "miniStrip": "Flusso di cassa giornaliero, ultimi 30 giorni",
+      "netTitle": "Entrate meno uscite degli ultimi 30 giorni",
+      "syncing": "Sincronizzazione…",
+      "syncFailed": "Ultima sincronizzazione non riuscita",
+      "syncFailedTitle": "L’ultimo tentativo è fallito {{when}}. La prossima sincronizzazione programmata riproverà.",
+      "syncNow": "Sincronizza ora",
+      "disable": "Disattiva il conto",
+      "enable": "Riattiva il conto",
+      "openDetails": "Apri i dettagli"
+    },
+    "status": {
+      "disabled": "Disattivato",
+      "disabledTitle": "Il conto non viene sincronizzato ed è escluso dai totali.",
+      "unavailable": "Non disponibile",
+      "unavailableTitle": "La banca non mette più a disposizione questo conto. Rinnovare il consenso può ripristinarlo."
+    },
+    "freshness": {
+      "updated": "Aggiornato {{when}}",
+      "never": "Mai aggiornato"
+    },
+    "blocked": {
+      "disabled": "Il conto è disattivato. Riattivalo per sincronizzarlo.",
+      "unavailable": "La banca non mette più a disposizione questo conto.",
+      "rateLimited": "La banca sta limitando le richieste per questo conto. Riprova {{when}}.",
+      "running": "Una sincronizzazione di questo conto è già in corso."
+    },
+    "disable": {
+      "title": "Disattivare {{name}}?",
+      "body": "{{name}} smette di sincronizzarsi ed esce da totali ed elenchi dei movimenti. Non viene cancellato nulla e puoi riattivarlo quando vuoi.",
+      "confirm": "Sì, disattiva"
+    },
+    "disconnect": {
+      "title": "Scollegare {{bank}}?",
+      "lead": "Bursar smette di leggere i dati di questa banca. L’operazione non si può annullare, ma potrai collegare di nuovo la banca.",
+      "loading": "Sto contando ciò che verrà rimosso…",
+      "failed": "Non è stato possibile calcolare cosa verrà rimosso.",
+      "retry": "Riprova",
+      "accounts_one": "{{count}} conto passa a “Conti scollegati” e smette di sincronizzarsi",
+      "accounts_many": "{{count}} di conti passano a “Conti scollegati” e smettono di sincronizzarsi",
+      "accounts_other": "{{count}} conti passano a “Conti scollegati” e smettono di sincronizzarsi",
+      "transactions_one": "{{n}} movimento resta in Bursar finché non lo elimini",
+      "transactions_many": "{{n}} di movimenti restano in Bursar finché non li elimini",
+      "transactions_other": "{{n}} movimenti restano in Bursar finché non li elimini",
+      "noTransactions": "Non ci sono movimenti da conservare.",
+      "outro": "Bursar chiede anche alla banca di chiudere l’accesso concesso. Se ricolleghi la banca, i conti che hanno ancora i loro movimenti vengono riagganciati.",
+      "confirm": "Sì, scollega"
+    },
+    "removed": {
+      "title": "Conti scollegati",
+      "description": "Questi conti non si sincronizzano più. I loro movimenti restano in Bursar finché non li elimini.",
+      "transactions_one": "{{n}} movimento",
+      "transactions_many": "{{n}} di movimenti",
+      "transactions_other": "{{n}} movimenti",
+      "since": "Scollegato {{when}}",
+      "purge": "Elimina i movimenti",
+      "remove": "Rimuovi il conto"
+    },
+    "purge": {
+      "title": "Eliminare i movimenti di {{name}}?",
+      "titleEmpty": "Rimuovere {{name}}?",
+      "body_one": "{{n}} movimento, i saldi e lo storico delle sincronizzazioni di questo conto verranno cancellati da Bursar. L’operazione non si può annullare. La tua banca non è coinvolta.",
+      "body_many": "{{n}} di movimenti, i saldi e lo storico delle sincronizzazioni di questo conto verranno cancellati da Bursar. L’operazione non si può annullare. La tua banca non è coinvolta.",
+      "body_other": "{{n}} movimenti, i saldi e lo storico delle sincronizzazioni di questo conto verranno cancellati da Bursar. L’operazione non si può annullare. La tua banca non è coinvolta.",
+      "bodyEmpty": "{{name}} non ha più movimenti. Il conto, i suoi saldi e lo storico delle sincronizzazioni verranno cancellati. L’operazione non si può annullare.",
+      "confirm_one": "Sì, elimina {{n}} movimento",
+      "confirm_many": "Sì, elimina {{n}} di movimenti",
+      "confirm_other": "Sì, elimina {{n}} movimenti",
+      "confirmEmpty": "Sì, rimuovi il conto"
+    },
+    "toast": {
+      "renamed": "Conto rinominato",
+      "renamedDetail": "“{{name}}” è ora il nome mostrato in tutto Bursar.",
+      "renamedReset": "Viene mostrato di nuovo il nome predefinito.",
+      "disabled": "Conto disattivato",
+      "disabledDetail": "{{name}} non si sincronizza più ed è escluso dai totali. Puoi riattivarlo quando vuoi.",
+      "enabled": "Conto riattivato",
+      "enabledDetail": "{{name}} torna nei totali e si sincronizza con la prossima sincronizzazione programmata.",
+      "syncStarted": "Sincronizzazione avviata",
+      "syncStartedAccount": "I nuovi movimenti di {{name}} compaiono tra circa un minuto.",
+      "syncStartedConnection_one": "Lettura di {{count}} conto presso {{bank}}. I nuovi movimenti compaiono tra circa un minuto.",
+      "syncStartedConnection_many": "Lettura di {{count}} di conti presso {{bank}}. I nuovi movimenti compaiono tra circa un minuto.",
+      "syncStartedConnection_other": "Lettura di {{count}} conti presso {{bank}}. I nuovi movimenti compaiono tra circa un minuto.",
+      "disconnected": "Banca scollegata",
+      "disconnectedDetail_one": "{{bank}} è scollegata. {{count}} conto è passato a “Conti scollegati” e i suoi movimenti restano qui.",
+      "disconnectedDetail_many": "{{bank}} è scollegata. {{count}} di conti sono passati a “Conti scollegati” e i loro movimenti restano qui.",
+      "disconnectedDetail_other": "{{bank}} è scollegata. {{count}} conti sono passati a “Conti scollegati” e i loro movimenti restano qui.",
+      "purged": "Movimenti eliminati",
+      "purgedDetail_one": "{{n}} movimento di {{name}} è stato cancellato da Bursar.",
+      "purgedDetail_many": "{{n}} di movimenti di {{name}} sono stati cancellati da Bursar.",
+      "purgedDetail_other": "{{n}} movimenti di {{name}} sono stati cancellati da Bursar.",
+      "removedAccount": "Conto rimosso",
+      "removedAccountDetail": "{{name}} è stato rimosso da Bursar."
+    },
+    "errors": {
+      "generic": "Qualcosa è andato storto. Riprova tra un attimo.",
+      "later": "più tardi",
+      "titles": {
+        "sync": "Non è stato possibile avviare la sincronizzazione",
+        "rename": "Non è stato possibile rinominare il conto",
+        "toggle": "Non è stato possibile aggiornare il conto",
+        "renew": "Non è stato possibile rinnovare il consenso",
+        "disconnect": "Non è stato possibile scollegare la banca",
+        "purge": "Non è stato possibile eliminare i movimenti"
+      },
+      "codes": {
+        "sync_in_progress": "Una sincronizzazione è già in corso.",
+        "rate_limited": "La banca sta limitando le richieste per ora. Riprova {{when}}.",
+        "connection_inactive": "Il consenso è scaduto. Rinnovalo con la banca prima di sincronizzare.",
+        "account_inactive": "Il conto è disattivato o non disponibile, quindi non viene sincronizzato.",
+        "nothing_to_sync": "Nessun conto di questa connessione può essere sincronizzato in questo momento.",
+        "not_allowed": "Questo conto è stato scollegato e non può più essere modificato.",
+        "connection_removed": "Questa connessione era già stata scollegata.",
+        "already_removed": "Questa connessione era già stata scollegata.",
+        "account_not_removed": "Si possono eliminare soltanto i conti scollegati.",
+        "banking_not_configured": "Le funzioni bancarie non sono configurate su questo server. Aggiungi le credenziali di Enable Banking come descritto in docs/enable-banking.md, poi riavvia Bursar.",
+        "REDIRECT_URI_NOT_ALLOWED": "L’indirizzo del pannello non è registrato nella tua applicazione Enable Banking. Vedi docs/enable-banking.md.",
+        "WRONG_ASPSP_PROVIDED": "Enable Banking non offre più questa banca.",
+        "unknown_bank": "Enable Banking non offre più questa banca.",
+        "bank_error": "Il servizio della banca ha rifiutato la richiesta. Riprova tra qualche minuto.",
+        "not_found": "Questo elemento non esiste più. L’elenco è stato aggiornato."
+      }
     }
   }
 }
