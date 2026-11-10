@@ -148,7 +148,7 @@ export function NotificationsPopover({
       : t("notifications.popover.title");
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="sm:relative">
       <button
         ref={buttonRef}
         type="button"
@@ -169,7 +169,7 @@ export function NotificationsPopover({
           id={panelId}
           role="dialog"
           aria-labelledby={titleId}
-          className="absolute right-0 top-full z-40 mt-2 w-[380px] max-w-[calc(100vw-2rem)] rounded-2xl border border-subtle bg-surface shadow-xl"
+          className="absolute inset-x-4 top-full z-40 mt-2 sm:inset-x-auto sm:right-0 sm:w-[380px] rounded-2xl border border-subtle bg-surface shadow-xl"
         >
           <div className="flex items-center justify-between gap-3 border-b border-subtle px-4 py-3">
             <div className="flex items-center gap-2">

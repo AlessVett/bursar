@@ -189,6 +189,24 @@ describe("NotificationsPopover", () => {
     expect(onMarkAllRead).toHaveBeenCalledTimes(1);
   });
 
+  it("anchors the panel to the viewport edges on phones and to the bell from sm up", () => {
+    render(
+      <NotificationsPopover
+        items={ITEMS}
+        unread={1}
+        onOpenItem={() => undefined}
+        onMarkAllRead={() => undefined}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Notifications: 1 unread" }));
+    const dialog = screen.getByRole("dialog", { name: "Notifications" });
+    // jsdom has no layout: the 390 px result is checked by the qa screenshots.
+    expect(dialog.className).toContain("inset-x-4");
+    expect(dialog.className).toContain("sm:right-0");
+    expect(dialog.className).not.toMatch(/(^|\s)w-\[380px\]/);
+    expect(dialog.parentElement?.className).toBe("sm:relative");
+  });
+
   it("shows the empty state and disables Mark all as read at zero", () => {
     render(
       <NotificationsPopover
