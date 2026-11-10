@@ -1,3 +1,4 @@
+import "./zod-runtime";
 import { z } from "zod";
 
 export const PASSWORD_MIN_LENGTH = 12;
