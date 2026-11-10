@@ -5,6 +5,7 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import { pino } from "pino";
 import { loadConfig } from "../config";
+import { FakeEnableBanking } from "../eb/fake";
 import { configSecrets, createLogger } from "../logger";
 import { MemoryMailer } from "../notifications/mailer";
 import { startBursar } from "../server";
@@ -70,6 +71,7 @@ async function main(): Promise<void> {
     );
     return startBursar(config, logger, {
       mailer: new MemoryMailer(),
+      bankingClient: new FakeEnableBanking({ publicUrl: config.publicUrl }),
       seed: async (ctx) => {
         sessionToken = (await seedQa(ctx, { owner: values["no-owner"] !== true })).sessionToken;
       },

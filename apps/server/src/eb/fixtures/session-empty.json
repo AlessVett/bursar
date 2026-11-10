@@ -1,0 +1,11 @@
+{
+  "session_id": "3b55705e-1e90-456c-add8-6f17cbdd99ab",
+  "accounts": [],
+  "aspsp": { "name": "Northwind Bank", "country": "IT" },
+  "psu_type": "personal",
+  "access": {
+    "valid_until": "2027-05-08T09:50:00.000000+00:00",
+    "balances": true,
+    "transactions": true
+  }
+}

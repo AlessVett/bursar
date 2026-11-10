@@ -1,0 +1,71 @@
+{
+  "transactions": [
+    {
+      "entry_reference": null,
+      "transaction_id": null,
+      "transaction_amount": { "currency": "EUR", "amount": "23.40" },
+      "credit_debit_indicator": "DBIT",
+      "status": "PDNG",
+      "booking_date": null,
+      "value_date": null,
+      "transaction_date": "2026-11-08",
+      "creditor": { "name": "Coffee Corner" },
+      "debtor": null,
+      "creditor_account": null,
+      "debtor_account": null,
+      "remittance_information": ["Card payment Coffee Corner"],
+      "bank_transaction_code": {
+        "description": "Card payment",
+        "code": "CCRD",
+        "sub_code": "POSD"
+      },
+      "merchant_category_code": "5814",
+      "balance_after_transaction": null,
+      "reference_number": null
+    },
+    {
+      "entry_reference": "NWB-20261107-0042",
+      "transaction_id": "a1b2c3d4-fixture",
+      "transaction_amount": { "currency": "EUR", "amount": "86.15" },
+      "credit_debit_indicator": "DBIT",
+      "status": "BOOK",
+      "booking_date": "2026-11-07",
+      "value_date": "2026-11-07",
+      "transaction_date": "2026-11-06",
+      "creditor": { "name": "City Utilities" },
+      "creditor_account": { "iban": "IT84K0888802200000000777001" },
+      "creditor_agent": { "bic_fi": "UTILITM1XXX" },
+      "debtor": { "name": "Alex Example" },
+      "debtor_account": { "iban": "IT10X0999901600000000123456" },
+      "remittance_information": ["Invoice 2026-10 electricity", "Customer ref 00123"],
+      "reference_number": "RF18539007547034",
+      "reference_number_schema": "INTL",
+      "bank_transaction_code": {
+        "description": "SEPA direct debit",
+        "code": "RDDT",
+        "sub_code": "ESDD"
+      },
+      "balance_after_transaction": { "currency": "EUR", "amount": "2450.75" }
+    },
+    {
+      "entry_reference": "NWB-20261105-0007",
+      "transaction_amount": { "currency": "EUR", "amount": "2150.00" },
+      "credit_debit_indicator": "CRDT",
+      "status": "BOOK",
+      "booking_date": "2026-11-05",
+      "value_date": "2026-11-05",
+      "debtor": { "name": "Example Employer Ltd" },
+      "debtor_account": {
+        "other": { "identification": "00012345678", "scheme_name": "BBAN" }
+      },
+      "creditor": { "name": "Alex Example" },
+      "remittance_information": ["Salary October 2026"],
+      "bank_transaction_code": {
+        "description": "Credit transfer",
+        "code": "RCDT",
+        "sub_code": "ESCT"
+      }
+    }
+  ],
+  "continuation_key": "next-page-2"
+}

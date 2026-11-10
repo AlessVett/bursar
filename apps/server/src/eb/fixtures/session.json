@@ -1,0 +1,64 @@
+{
+  "session_id": "2820b3c9-d6b3-45f5-bcd2-a13b759976ca",
+  "accounts": [
+    {
+      "uid": "3be3331e-a556-4a75-a5df-c08a2c064878",
+      "account_id": { "iban": "IT10X0999901600000000123456" },
+      "all_account_ids": [
+        { "identification": "IT10X0999901600000000123456", "scheme_name": "IBAN" },
+        { "identification": "X0999901600000000123456", "scheme_name": "BBAN" }
+      ],
+      "account_servicer": { "bic_fi": "NWBKITM1XXX", "name": "Northwind Bank" },
+      "name": "Alex Example",
+      "details": "Current account",
+      "product": "Everyday Account",
+      "usage": "PRIV",
+      "cash_account_type": "CACC",
+      "currency": "EUR",
+      "psu_status": "Account Holder",
+      "legal_age": true,
+      "identification_hash": "Zml4dHVyZS1hY2NvdW50LWN1cnJlbnQtMDAx",
+      "identification_hashes": [
+        "Zml4dHVyZS1hY2NvdW50LWN1cnJlbnQtMDAx",
+        "Zml4dHVyZS1iYmFuLWN1cnJlbnQtMDAx"
+      ]
+    },
+    {
+      "uid": "e5f28c52-eb1c-44e3-87e0-8177d2fa0395",
+      "account_id": { "iban": "IT54X0999901600000000654321" },
+      "all_account_ids": [
+        { "identification": "IT54X0999901600000000654321", "scheme_name": "IBAN" }
+      ],
+      "account_servicer": { "bic_fi": "NWBKITM1XXX", "name": "Northwind Bank" },
+      "name": "Alex Example",
+      "details": null,
+      "product": "Savings Account",
+      "usage": "PRIV",
+      "cash_account_type": "SVGS",
+      "currency": "EUR",
+      "legal_age": null,
+      "identification_hash": "Zml4dHVyZS1hY2NvdW50LXNhdmluZ3MtMDAy",
+      "identification_hashes": ["Zml4dHVyZS1hY2NvdW50LXNhdmluZ3MtMDAy"]
+    },
+    {
+      "account_id": {
+        "other": { "identification": "XXXXXXXXXXXX4321", "scheme_name": "CPAN" }
+      },
+      "all_account_ids": [{ "identification": "XXXXXXXXXXXX4321", "scheme_name": "CPAN" }],
+      "account_servicer": { "name": "Northwind Bank" },
+      "product": "Northwind Card",
+      "cash_account_type": "CARD",
+      "currency": "EUR",
+      "identification_hash": "Zml4dHVyZS1hY2NvdW50LWNhcmQtMDAz",
+      "identification_hashes": ["Zml4dHVyZS1hY2NvdW50LWNhcmQtMDAz"]
+    }
+  ],
+  "aspsp": { "name": "Northwind Bank", "country": "IT" },
+  "psu_type": "personal",
+  "access": {
+    "valid_until": "2027-05-08T09:50:00.000000+00:00",
+    "balances": true,
+    "transactions": true,
+    "transactions_extended_history": true
+  }
+}

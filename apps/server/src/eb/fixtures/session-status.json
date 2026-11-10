@@ -1,0 +1,29 @@
+{
+  "status": "AUTHORIZED",
+  "accounts": ["3be3331e-a556-4a75-a5df-c08a2c064878", "e5f28c52-eb1c-44e3-87e0-8177d2fa0395"],
+  "accounts_data": [
+    {
+      "uid": "3be3331e-a556-4a75-a5df-c08a2c064878",
+      "identification_hash": "Zml4dHVyZS1hY2NvdW50LWN1cnJlbnQtMDAx",
+      "identification_hashes": [
+        "Zml4dHVyZS1hY2NvdW50LWN1cnJlbnQtMDAx",
+        "Zml4dHVyZS1iYmFuLWN1cnJlbnQtMDAx"
+      ]
+    },
+    {
+      "uid": "e5f28c52-eb1c-44e3-87e0-8177d2fa0395",
+      "identification_hash": "Zml4dHVyZS1hY2NvdW50LXNhdmluZ3MtMDAy",
+      "identification_hashes": ["Zml4dHVyZS1hY2NvdW50LXNhdmluZ3MtMDAy"]
+    }
+  ],
+  "aspsp": { "name": "Northwind Bank", "country": "IT" },
+  "psu_type": "personal",
+  "psu_id_hash": "LXEWQrcmsEQBYnyp-6wy9chTD7GQPMTbAiWHF5Ia",
+  "access": {
+    "valid_until": "2027-05-08T09:50:00.000000+00:00",
+    "balances": true,
+    "transactions": true
+  },
+  "created": "2026-11-09T09:40:12.345678+00:00",
+  "authorized": "2026-11-09T09:41:03.123456+00:00"
+}

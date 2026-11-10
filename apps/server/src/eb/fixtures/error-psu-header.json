@@ -1,0 +1,6 @@
+{
+  "message": "Required PSU header is not provided",
+  "code": 422,
+  "error": "PSU_HEADER_NOT_PROVIDED",
+  "detail": "PSU header psuIpAddress is not provided"
+}

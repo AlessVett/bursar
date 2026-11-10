@@ -1,0 +1,24 @@
+{
+  "balances": [
+    {
+      "name": "Booked balance",
+      "balance_amount": { "currency": "EUR", "amount": "2450.75" },
+      "balance_type": "CLBD",
+      "last_change_date_time": "2026-11-08T22:00:00Z",
+      "reference_date": "2026-11-08",
+      "last_committed_transaction": "NWB-20261107-0042"
+    },
+    {
+      "name": "Interim available",
+      "balance_amount": { "currency": "EUR", "amount": "2391.20" },
+      "balance_type": "ITAV",
+      "last_change_date_time": "2026-11-09T08:15:00Z",
+      "reference_date": "2026-11-09"
+    },
+    {
+      "name": "Expected",
+      "balance_amount": { "currency": "EUR", "amount": "-35.10" },
+      "balance_type": "XPCD"
+    }
+  ]
+}

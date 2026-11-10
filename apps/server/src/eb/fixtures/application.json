@@ -1,0 +1,13 @@
+{
+  "name": "Bursar example",
+  "description": "Personal finance service (fictional fixture)",
+  "kid": "e1d1e636-f2a9-4410-9173-2f86f638e24b",
+  "environment": "SANDBOX",
+  "redirect_urls": [
+    "https://bursar.example.test/api/banks/callback",
+    "http://127.0.0.1:5173/api/banks/callback"
+  ],
+  "active": true,
+  "countries": ["IT", "FI"],
+  "services": ["AIS"]
+}

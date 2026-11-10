@@ -1,0 +1,92 @@
+{
+  "aspsps": [
+    {
+      "name": "Northwind Bank",
+      "country": "IT",
+      "logo": "https://logos.example.test/brands/IT/northwind-bank.png",
+      "psu_types": ["personal", "business"],
+      "auth_methods": [
+        {
+          "name": "redirect",
+          "title": "Online banking",
+          "psu_type": "personal",
+          "credentials": [],
+          "approach": "REDIRECT",
+          "hidden_method": false
+        }
+      ],
+      "maximum_consent_validity": 15552000,
+      "beta": false,
+      "bic": "NWBKITM1XXX",
+      "required_psu_headers": ["Psu-Ip-Address", "Psu-User-Agent"],
+      "group": {
+        "name": "Northwind Group",
+        "logo": "https://logos.example.test/groups/northwind.png"
+      },
+      "payments": []
+    },
+    {
+      "name": "Banca Esempio",
+      "country": "IT",
+      "logo": "https://logos.example.test/brands/IT/banca-esempio.png",
+      "psu_types": ["personal"],
+      "auth_methods": [
+        {
+          "name": "app",
+          "title": "Mobile app approval",
+          "psu_type": "personal",
+          "credentials": [
+            {
+              "name": "userId",
+              "title": "User ID",
+              "required": true,
+              "description": "The identifier used for online banking"
+            }
+          ],
+          "approach": "DECOUPLED",
+          "hidden_method": false
+        }
+      ],
+      "maximum_consent_validity": 7776000,
+      "beta": true,
+      "bic": null
+    },
+    {
+      "name": "Cassa Demo 10",
+      "country": "IT",
+      "logo": "https://logos.example.test/brands/IT/cassa-demo-10.png",
+      "psu_types": ["personal", "business"],
+      "auth_methods": [
+        {
+          "name": "redirect",
+          "title": "Online banking",
+          "psu_type": "personal",
+          "credentials": [],
+          "approach": "REDIRECT",
+          "hidden_method": false
+        }
+      ],
+      "maximum_consent_validity": 15552000,
+      "beta": false
+    },
+    {
+      "name": "Cassa Demo 2",
+      "country": "IT",
+      "logo": "http://logos.example.test/brands/IT/cassa-demo-2.png",
+      "psu_types": ["personal"],
+      "auth_methods": [
+        {
+          "name": "redirect",
+          "title": "Online banking",
+          "psu_type": "personal",
+          "credentials": [],
+          "approach": "REDIRECT",
+          "hidden_method": false
+        }
+      ],
+      "maximum_consent_validity": 15552000,
+      "beta": false,
+      "required_psu_headers": []
+    }
+  ]
+}

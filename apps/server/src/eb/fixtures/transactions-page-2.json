@@ -1,0 +1,26 @@
+{
+  "transactions": [
+    {
+      "entry_reference": "NWB-20261103-0003",
+      "transaction_amount": { "currency": "EUR", "amount": "34.90" },
+      "credit_debit_indicator": "DBIT",
+      "status": "BOOK",
+      "booking_date": "2026-11-03",
+      "value_date": "2026-11-03",
+      "creditor": { "name": "Online Bookshop" },
+      "remittance_information": ["Order 7781"],
+      "merchant_category_code": "5942"
+    },
+    {
+      "entry_reference": "NWB-20261101-0001",
+      "transaction_amount": { "currency": "EUR", "amount": "12.00" },
+      "credit_debit_indicator": "CRDT",
+      "status": "BOOK",
+      "booking_date": "2026-11-01",
+      "value_date": "2026-11-01",
+      "debtor": { "name": "Online Bookshop" },
+      "remittance_information": ["Refund order 7702"]
+    }
+  ],
+  "continuation_key": null
+}

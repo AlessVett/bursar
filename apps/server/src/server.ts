@@ -12,6 +12,9 @@ import { SetupCode } from "./auth/setup-code";
 import { type Config, isLoopbackHost } from "./config";
 import { deriveKey } from "./crypto";
 import { type BursarDb, openDatabase, runMigrations, type Sqlite } from "./db";
+import { AspspCache } from "./eb/aspsp-cache";
+import { type EnableBankingApi, EnableBankingClient } from "./eb/client";
+import { bankRoutes } from "./eb/routes";
 import { EventBus } from "./events/bus";
 import { FinanceRepository } from "./finance/repository";
 import { createApp, type MountedRouter } from "./http/app";
@@ -52,6 +55,8 @@ export interface StartOverrides {
   seed?: (ctx: SeedContext) => void | Promise<void>;
   /** `null` forces "no SMTP"; omit it to use `config.smtp`. Tests and the QA server pass a `MemoryMailer`. */
   mailer?: Mailer | null;
+  /** Tests and the QA server inject a client (`FakeEnableBanking`); `null` disables banking. */
+  bankingClient?: EnableBankingApi | null;
 }
 
 export async function startBursar(
@@ -120,6 +125,19 @@ export async function startBursar(
       : config.smtp
         ? createSmtpMailer(config.smtp)
         : null;
+  const ebConfig = config.enableBanking;
+  const ebApi: EnableBankingApi | null =
+    overrides.bankingClient !== undefined
+      ? overrides.bankingClient
+      : ebConfig
+        ? new EnableBankingClient({
+            applicationId: ebConfig.applicationId,
+            privateKeyPem: ebConfig.privateKeyPem,
+            // Config names it apiBaseUrl; the client option is baseUrl. Map it explicitly.
+            baseUrl: ebConfig.apiBaseUrl,
+          })
+        : null;
+  const aspsps = ebApi ? new AspspCache(ebApi) : null;
   const notifications = new NotificationService({
     db: database.db,
     queue,
@@ -157,6 +175,10 @@ export async function startBursar(
         settings,
         publicUrl: config.publicUrl,
       }),
+    },
+    {
+      prefix: "/api/banks",
+      router: bankRoutes({ api: ebApi, aspsps, publicUrl: config.publicUrl }),
     },
   ];
   const publicRouters: MountedRouter[] = [];
