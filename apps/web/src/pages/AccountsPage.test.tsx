@@ -1,5 +1,5 @@
 import type { ConnectionsResponse } from "@bursar/shared";
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { routeById } from "../app/routes";
 import { clearToasts } from "../components/feedback";
@@ -654,6 +654,19 @@ describe("AccountsPage", () => {
     expect(
       within(northwind).getAllByRole("img", { name: "IBAN hidden by privacy mode" }).length,
     ).toBeGreaterThan(0);
+  });
+
+  it("masks the IBAN digits of disconnected accounts in privacy mode", async () => {
+    serve();
+    renderPage();
+    const section = await region("Disconnected accounts");
+    expect(within(section).getAllByText("IT60 •••• •••• 7890")).toHaveLength(2);
+
+    act(() => useUi.setState({ privacy: true }));
+    expect(section.textContent).not.toMatch(/IT60|7890/);
+    expect(
+      within(section).getAllByRole("img", { name: "IBAN hidden by privacy mode" }),
+    ).toHaveLength(2);
   });
 
   it("renders in Italian", async () => {

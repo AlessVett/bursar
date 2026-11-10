@@ -1,7 +1,7 @@
 import type { RemovedAccountSummary } from "@bursar/shared";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, Card, Cascade } from "../../components/ui";
+import { Button, Card, Cascade, MaskedIban } from "../../components/ui";
 import { formatCount } from "../../lib/connection-state";
 import { useFormatters } from "../../lib/format";
 
@@ -44,7 +44,7 @@ export function RemovedAccounts({
                     {account.maskedIdentifier ? (
                       <>
                         {" · "}
-                        <span className="font-mono">{account.maskedIdentifier}</span>
+                        <MaskedIban masked={account.maskedIdentifier} />
                       </>
                     ) : null}
                   </p>
