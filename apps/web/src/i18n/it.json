@@ -1044,7 +1044,9 @@
       "range": "{{from}} – {{to}}",
       "summary": "Flusso di cassa dal {{from}} al {{to}}: entrate {{in}}, uscite {{out}}, netto {{net}}.",
       "currency": "Valuta",
-      "mixedNote": "I totali sono per valuta, senza conversione. Ogni riga mantiene la propria valuta."
+      "allCurrencies": "Tutte le valute",
+      "mixedNote": "I totali sono solo in {{currency}}, senza conversione; l’elenco mostra tutte le valute.",
+      "currencyNote": "Totali ed elenco mostrano solo {{currency}}. Non c’è conversione tra valute."
     },
     "tabs": {
       "label": "Direzione dei movimenti",
@@ -1077,6 +1079,7 @@
     "chips": {
       "search": "Ricerca: “{{q}}”",
       "account": "Conto: {{name}}",
+      "currency": "Valuta: {{currency}}",
       "period": "Periodo: {{label}}",
       "rangeFrom": "dal {{date}}",
       "rangeTo": "fino al {{date}}"

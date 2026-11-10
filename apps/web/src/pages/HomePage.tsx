@@ -215,7 +215,8 @@ function HomeContent({
         }
       : null);
   const mixed = currencies.length > 1;
-  const currencyParam = mixed && kpiCashflow ? kpiCashflow.currency : null;
+  // No transaction in the other currency: its links would open a list filtered to nothing.
+  const currencyParam = mixed && kpiCashflow && !emptyOther ? kpiCashflow.currency : null;
   const selected = cashflow?.buckets.find((bucket) => bucket.date === url.day) ?? null;
 
   return (

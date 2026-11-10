@@ -375,8 +375,9 @@ describe("HomePage", () => {
 
     expect(await screen.findByText("No transactions in USD in the last 30 days.")).toBeTruthy();
     expect(screen.queryByText("Loading the cash flow…")).toBeNull();
+    // Nothing to list in USD: the tile opens the inflows of every currency.
     expect(screen.getByRole("link", { name: /^In, last 30 days/ }).getAttribute("href")).toBe(
-      "/transactions?tab=in&currency=USD",
+      "/transactions?tab=in",
     );
   });
 });

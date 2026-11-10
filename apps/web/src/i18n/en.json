@@ -1002,7 +1002,9 @@
       "range": "{{from}} – {{to}}",
       "summary": "Cash flow from {{from}} to {{to}}: in {{in}}, out {{out}}, net {{net}}.",
       "currency": "Currency",
-      "mixedNote": "Totals are per currency, with no conversion. Each row keeps its own currency."
+      "allCurrencies": "All currencies",
+      "mixedNote": "Totals are in {{currency}} only, with no conversion; the list shows every currency.",
+      "currencyNote": "Totals and list show {{currency}} only. There is no conversion between currencies."
     },
     "tabs": {
       "label": "Transaction direction",
@@ -1035,6 +1037,7 @@
     "chips": {
       "search": "Search: “{{q}}”",
       "account": "Account: {{name}}",
+      "currency": "Currency: {{currency}}",
       "period": "Period: {{label}}",
       "rangeFrom": "from {{date}}",
       "rangeTo": "until {{date}}"

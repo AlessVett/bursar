@@ -16,6 +16,12 @@ export interface CashFlowAggregateProps {
   /** A click on a bar: the page turns it into a custom period. */
   onSelectBucket(bucket: CashFlowBucket): void;
   selectedDate: LocalDate | null;
+  /**
+   * The currency filter of the page ("" or absent: every currency). The switch stays visible while
+   * it is set, even when the response does not list that currency.
+   */
+  selectedCurrency?: string;
+  /** A currency code, or "" for every currency. */
   onCurrencyChange(currency: string): void;
   highlightNegativeNet: boolean;
   /**
@@ -62,6 +68,7 @@ export function CashFlowAggregate({
   onTabChange,
   onSelectBucket,
   selectedDate,
+  selectedCurrency = "",
   onCurrencyChange,
   highlightNegativeNet,
   period,
@@ -84,7 +91,15 @@ export function CashFlowAggregate({
   }
 
   const { totals, currency, currencies } = aggregate;
-  const mixed = currencies.length > 1;
+  const codes =
+    selectedCurrency === "" || currencies.includes(selectedCurrency)
+      ? currencies
+      : [...currencies, selectedCurrency];
+  const showSwitch = currencies.length > 1 || selectedCurrency !== "";
+  const switchButton = (pressed: boolean) =>
+    `rounded-md px-2.5 py-1 text-xs font-semibold max-sm:min-h-11 ${
+      pressed ? "bg-primary-50 text-primary" : "text-muted hover:text-fg"
+    }`;
   const from = localDate(period?.from ?? aggregate.from);
   const to = localDate(period?.to ?? aggregate.to);
   const range = t("transactions.aggregate.range", { from, to });
@@ -148,18 +163,24 @@ export function CashFlowAggregate({
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:flex-col sm:items-end">
             <p className="tabular text-[13px] text-muted">{range}</p>
-            {mixed ? (
-              <fieldset className="inline-flex rounded-lg border border-subtle p-0.5">
+            {showSwitch ? (
+              <fieldset className="inline-flex flex-wrap rounded-lg border border-subtle p-0.5">
                 <legend className="sr-only">{t("transactions.aggregate.currency")}</legend>
-                {currencies.map((code) => (
+                <button
+                  type="button"
+                  aria-pressed={selectedCurrency === ""}
+                  onClick={() => onCurrencyChange("")}
+                  className={switchButton(selectedCurrency === "")}
+                >
+                  {t("transactions.aggregate.allCurrencies")}
+                </button>
+                {codes.map((code) => (
                   <button
                     key={code}
                     type="button"
-                    aria-pressed={code === currency}
+                    aria-pressed={code === selectedCurrency}
                     onClick={() => onCurrencyChange(code)}
-                    className={`rounded-md px-2.5 py-1 text-xs font-semibold max-sm:min-h-11 ${
-                      code === currency ? "bg-primary-50 text-primary" : "text-muted hover:text-fg"
-                    }`}
+                    className={switchButton(code === selectedCurrency)}
                   >
                     {code}
                   </button>
@@ -168,8 +189,12 @@ export function CashFlowAggregate({
             ) : null}
           </div>
         </div>
-        {mixed ? (
-          <p className="text-[13px] text-muted">{t("transactions.aggregate.mixedNote")}</p>
+        {showSwitch ? (
+          <p className="text-[13px] text-muted">
+            {selectedCurrency === ""
+              ? t("transactions.aggregate.mixedNote", { currency })
+              : t("transactions.aggregate.currencyNote", { currency: selectedCurrency })}
+          </p>
         ) : null}
         <CashFlowStrip
           buckets={aggregate.buckets}

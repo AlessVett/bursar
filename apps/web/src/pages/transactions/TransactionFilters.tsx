@@ -22,11 +22,13 @@ export interface AccountOption {
   label: string;
 }
 
-type FilterKey = "q" | "accountId" | "period" | "from" | "to";
+type FilterKey = "q" | "accountId" | "currency" | "period" | "from" | "to";
 
 export interface TransactionFiltersProps {
   q: string;
   accountId: string;
+  /** ISO code of the currency filter (set from the aggregate's switch); "" or absent for none. */
+  currency?: string;
   period: PeriodState;
   today: LocalDate;
   accounts: AccountOption[];
@@ -86,6 +88,7 @@ function PeriodDateInput({
 export function TransactionFilters({
   q,
   accountId,
+  currency = "",
   period,
   today,
   accounts,
@@ -126,6 +129,13 @@ export function TransactionFilters({
         name: accountName ?? t("transactions.filters.unknownAccount"),
       }),
       onRemove: () => onChange({ accountId: "" }),
+    });
+  }
+  if (currency !== "") {
+    chips.push({
+      id: "currency",
+      label: t("transactions.chips.currency", { currency }),
+      onRemove: () => onChange({ currency: "" }),
     });
   }
   if (period.preset !== DEFAULT_PERIOD) {

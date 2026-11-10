@@ -521,22 +521,93 @@ describe("TransactionsPage", () => {
 
   it("offers a currency switch and the no-conversion note with mixed currencies", async () => {
     stubFetch(
-      apiHandler(() => listResponse({ aggregate: aggregate({ currencies: ["EUR", "USD"] }) })),
+      apiHandler((params) =>
+        listResponse({
+          aggregate: aggregate({
+            currency: params.currency ?? "EUR",
+            currencies: ["EUR", "USD"],
+          }),
+        }),
+      ),
     );
     const { router } = renderPage();
     await findTable();
     const group = screen.getByRole("group", { name: "Currency" });
-    expect(within(group).getByRole("button", { name: "EUR" }).getAttribute("aria-pressed")).toBe(
-      "true",
-    );
+    const pressed = () =>
+      within(group)
+        .getAllByRole("button")
+        .filter((button) => button.getAttribute("aria-pressed") === "true")
+        .map((button) => button.textContent);
+    expect(
+      within(group)
+        .getAllByRole("button")
+        .map((button) => button.textContent),
+    ).toEqual(["All currencies", "EUR", "USD"]);
+    expect(pressed()).toEqual(["All currencies"]);
     expect(
       screen.getByText(
-        "Totals are per currency, with no conversion. Each row keeps its own currency.",
+        "Totals are in EUR only, with no conversion; the list shows every currency.",
       ),
     ).toBeTruthy();
     fireEvent.click(within(group).getByRole("button", { name: "USD" }));
     await waitFor(() => expect(urlParams(router).get("currency")).toBe("USD"));
     await waitFor(() => expect(lastList()?.currency).toBe("USD"));
+    await waitFor(() => expect(pressed()).toEqual(["USD"]));
+    expect(
+      screen.getByText("Totals and list show USD only. There is no conversion between currencies."),
+    ).toBeTruthy();
+    fireEvent.click(within(group).getByRole("button", { name: "All currencies" }));
+    await waitFor(() => expect(urlParams(router).get("currency")).toBeNull());
+    await waitFor(() => expect(lastList()).toEqual({ from: from30, to: today }));
+  });
+
+  it("shows the currency filter as a chip that removes it", async () => {
+    stubFetch(
+      apiHandler((params) =>
+        listResponse({
+          aggregate: aggregate({ currency: params.currency ?? "EUR", currencies: ["EUR", "USD"] }),
+        }),
+      ),
+    );
+    const { router } = renderPage("/transactions?currency=USD");
+    await findTable();
+    expect(lastList()).toEqual({ from: from30, to: today, currency: "USD" });
+    const chips = screen.getByRole("list", { name: "Active filters" });
+    expect(within(chips).getByText("Currency: USD")).toBeTruthy();
+    // The results line compares the list with the same currency over the period.
+    await waitFor(() =>
+      expect(
+        calls.some((call) => call.params.pageSize !== undefined && call.params.currency === "USD"),
+      ).toBe(true),
+    );
+    fireEvent.click(within(chips).getByRole("button", { name: "Remove filter Currency: USD" }));
+    await waitFor(() => expect(urlParams(router).get("currency")).toBeNull());
+    await waitFor(() => expect(lastList()).toEqual({ from: from30, to: today }));
+  });
+
+  it("keeps the selected currency on the switch when the response does not list it", async () => {
+    stubFetch(
+      apiHandler((params) =>
+        params.currency === "USD"
+          ? listResponse({
+              ...EMPTY_LIST,
+              aggregate: { ...EMPTY_LIST.aggregate, currency: "USD", currencies: ["EUR"] },
+            })
+          : listResponse(),
+      ),
+    );
+    const { router } = renderPage("/transactions?currency=USD");
+    // A filter, not an empty period or installation.
+    expect(await screen.findByText("No transactions match the filters")).toBeTruthy();
+    expect(screen.queryByText("No transactions in this period")).toBeNull();
+    const group = screen.getByRole("group", { name: "Currency" });
+    expect(within(group).getByRole("button", { name: "USD" }).getAttribute("aria-pressed")).toBe(
+      "true",
+    );
+    const buttons = screen.getAllByRole("button", { name: "Clear filters" });
+    fireEvent.click(buttons[buttons.length - 1] as HTMLElement);
+    await waitFor(() => expect(urlParams(router).get("currency")).toBeNull());
+    await findTable();
   });
 
   it("shows the filter-empty state with Clear filters", async () => {

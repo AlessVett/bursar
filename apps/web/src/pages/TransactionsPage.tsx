@@ -137,10 +137,13 @@ export function TransactionsPage() {
   const data = list.data;
   const fresh = data !== undefined && !list.isPlaceholderData ? data : undefined;
   const searchOrAccount = state.q.trim() !== "" || state.accountId !== "";
-  const narrowed = searchOrAccount || tab !== "all";
+  // The currency is a filter of its own: it narrows the rows, the facets and the total.
+  const narrowed = searchOrAccount || tab !== "all" || state.currency !== "";
   const isEmpty = fresh !== undefined && fresh.total === 0;
 
-  const baseParams = { ...rangeParams(period), pageSize: PROBE_PAGE_SIZE };
+  const baseParams: Record<string, string> = { ...rangeParams(period), pageSize: PROBE_PAGE_SIZE };
+  // "N results of M" compares rows of one currency with the period's rows of that currency.
+  if (state.currency !== "") baseParams.currency = state.currency;
   const base = useQuery({
     queryKey: queryKeys.transactions(baseParams),
     queryFn: () => api.transactions(baseParams),
@@ -200,7 +203,15 @@ export function TransactionsPage() {
       : null;
 
   function clearFilters(): void {
-    setState({ q: "", accountId: "", period: DEFAULT_PERIOD, from: "", to: "", tab: "all" });
+    setState({
+      q: "",
+      accountId: "",
+      period: DEFAULT_PERIOD,
+      from: "",
+      to: "",
+      tab: "all",
+      currency: "",
+    });
   }
 
   function emptyState(): ReactNode {
@@ -280,6 +291,7 @@ export function TransactionsPage() {
             setState({ period: "custom", from: bucket.date, to: bucket.end })
           }
           selectedDate={selectedDate}
+          selectedCurrency={state.currency}
           onCurrencyChange={(currency) => setState({ currency })}
           highlightNegativeNet={settings.data?.values.highlightNegativeNet ?? true}
           period={period}
@@ -298,6 +310,7 @@ export function TransactionsPage() {
       <TransactionFilters
         q={state.q}
         accountId={state.accountId}
+        currency={state.currency}
         period={period}
         today={today}
         accounts={accounts}
