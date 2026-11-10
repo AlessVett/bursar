@@ -124,4 +124,4 @@ With a backup target configured, make a backup and expect a JSON line with `setI
 
 ## 7. Connect your banks
 
-Once you are signed in, open Accounts in the panel and connect a bank (see `docs/enable-banking.md`, sections 5 to 7: link your accounts first, then authorise). The first sync runs as soon as you return from the bank.
+Once you are signed in, open Accounts in the panel and connect a bank (see `docs/enable-banking.md`, sections 5 to 8: read the restricted-mode Terms, link your accounts, then authorise). The first sync runs as soon as you return from the bank.

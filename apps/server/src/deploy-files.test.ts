@@ -288,6 +288,14 @@ describe("documentation", () => {
     expect(deployment).toContain("docs/backup-restore.md");
   });
 
+  it("deployment.md sends readers through the Terms gate before they connect a bank", () => {
+    const step = read("docs/deployment.md").split("## 7. Connect your banks")[1] ?? "";
+    // enable-banking.md §8 is gate V5: read the restricted-mode Terms before real accounts.
+    expect(read("docs/enable-banking.md")).toContain("## 8. The Terms of restricted mode");
+    expect(step).toContain("sections 5 to 8");
+    expect(step).toContain("Terms");
+  });
+
   it("README.md has the bank accounts and backups sections and the QA command", () => {
     const readme = read("README.md");
     expect(readme).toContain("## Bank accounts");
