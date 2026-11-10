@@ -22,7 +22,7 @@ import { useUrlState } from "../lib/url-state";
 import { CashFlowAggregate } from "./transactions/CashFlowAggregate";
 import {
   DEFAULT_PERIOD,
-  isLocalDate,
+  isPeriodDate,
   isPeriodPreset,
   type PeriodState,
   readPeriod,
@@ -60,8 +60,8 @@ const LIST_RULES: Partial<Record<keyof TransactionUrlState, (value: string) => b
   tab: (value) => transactionTabSchema.safeParse(value).success,
   accountId: (value) => POSITIVE_ID.test(value),
   period: isPeriodPreset,
-  from: isLocalDate,
-  to: isLocalDate,
+  from: isPeriodDate,
+  to: isPeriodDate,
   currency: (value) => /^[A-Z]{3}$/.test(value),
   sort: (value) => SORT_COLUMNS.includes(value),
   order: (value) => value === "asc" || value === "desc",
@@ -256,6 +256,9 @@ export function TransactionsPage() {
   }
 
   const tableLoading = fresh === undefined || (needsAllTime && allTime.isPending);
+  // The filters stay on screen when the list fails, so a period can be changed; only the table
+  // (and the aggregate, which would otherwise show an endless placeholder) give way to the error.
+  const failed = list.isError && data === undefined;
   const selectedDate =
     period.preset === "custom" && period.from !== null && period.from === period.to
       ? period.from
@@ -268,7 +271,42 @@ export function TransactionsPage() {
         count={data?.total}
         subtitle={t("routes.transactions.description")}
       />
-      {list.isError && data === undefined ? (
+      {failed ? null : (
+        <CashFlowAggregate
+          aggregate={data?.aggregate}
+          tab={tab}
+          onTabChange={(next) => setState({ tab: next })}
+          onSelectBucket={(bucket) =>
+            setState({ period: "custom", from: bucket.date, to: bucket.end })
+          }
+          selectedDate={selectedDate}
+          onCurrencyChange={(currency) => setState({ currency })}
+          highlightNegativeNet={settings.data?.values.highlightNegativeNet ?? true}
+          period={period}
+        />
+      )}
+      <Tabs
+        ariaLabel={t("transactions.tabs.label")}
+        value={tab}
+        onChange={(id) => setState({ tab: id })}
+        items={TABS.map((id) => ({
+          id,
+          label: t(`transactions.tabs.${id}`),
+          count: data?.facets[id],
+        }))}
+      />
+      <TransactionFilters
+        q={state.q}
+        accountId={state.accountId}
+        period={period}
+        today={today}
+        accounts={accounts}
+        accountName={accountName}
+        results={results}
+        onChange={setState}
+        onClearAll={clearFilters}
+      />
+      {failed ? (
         <Card padding="lg" role="alert" className="flex flex-col items-start gap-3">
           <p className="font-display text-base font-bold text-fg">
             {t("transactions.error.title")}
@@ -285,39 +323,6 @@ export function TransactionsPage() {
         </Card>
       ) : (
         <>
-          <CashFlowAggregate
-            aggregate={data?.aggregate}
-            tab={tab}
-            onTabChange={(next) => setState({ tab: next })}
-            onSelectBucket={(bucket) =>
-              setState({ period: "custom", from: bucket.date, to: bucket.end })
-            }
-            selectedDate={selectedDate}
-            onCurrencyChange={(currency) => setState({ currency })}
-            highlightNegativeNet={settings.data?.values.highlightNegativeNet ?? true}
-            period={period}
-          />
-          <Tabs
-            ariaLabel={t("transactions.tabs.label")}
-            value={tab}
-            onChange={(id) => setState({ tab: id })}
-            items={TABS.map((id) => ({
-              id,
-              label: t(`transactions.tabs.${id}`),
-              count: data?.facets[id],
-            }))}
-          />
-          <TransactionFilters
-            q={state.q}
-            accountId={state.accountId}
-            period={period}
-            today={today}
-            accounts={accounts}
-            accountName={accountName}
-            results={results}
-            onChange={setState}
-            onClearAll={clearFilters}
-          />
           <TransactionTable
             rows={data?.items}
             loading={tableLoading}

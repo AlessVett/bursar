@@ -311,6 +311,9 @@ describe("GET /api/transactions", () => {
     "accountId=abc",
     "currency=EURO",
     `q=${"x".repeat(101)}`,
+    "from=0002-10-12",
+    "from=0202-10-12&to=2026-11-09",
+    "to=2100-01-01",
   ])("answers 400 invalid_query for %s", async (query) => {
     const { status, body } = await ta.json(`/api/transactions?${query}`);
     expect(status).toBe(400);
@@ -368,6 +371,7 @@ describe("GET /api/cashflow", () => {
   it("answers 400 invalid_query for a bad query", async () => {
     expect((await ta.json("/api/cashflow?from=2026-11-10&to=2026-11-01")).status).toBe(400);
     expect((await ta.json("/api/cashflow?accountId=-3")).status).toBe(400);
+    expect((await ta.json("/api/cashflow?from=0020-10-12")).status).toBe(400);
   });
 });
 

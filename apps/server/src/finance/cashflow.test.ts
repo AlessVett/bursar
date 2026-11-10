@@ -196,6 +196,14 @@ describe("buildCashFlow", () => {
     });
   });
 
+  it("writes four-digit years in month buckets", () => {
+    const months = buildCashFlow([], { ...base, from: "0202-10-12", to: "0204-01-10" });
+    expect(months.bucket).toBe("month");
+    expect(months.buckets[0]).toMatchObject({ date: "0202-10-12", end: "0202-10-31" });
+    expect(months.buckets[1]).toMatchObject({ date: "0202-11-01", end: "0202-11-30" });
+    expect(months.buckets.at(-1)).toMatchObject({ date: "0204-01-01", end: "0204-01-10" });
+  });
+
   it("handles a leap-year February and a one-day period", () => {
     const month = buildCashFlow([], { ...base, from: "2023-12-01", to: "2025-03-31" });
     expect(month.buckets.find((b) => b.date === "2024-02-01")?.end).toBe("2024-02-29");

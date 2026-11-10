@@ -23,6 +23,22 @@ function periodIsOrdered(value: {
 }
 const PERIOD_ISSUE = { path: ["to"], message: "`to` must not be before `from`" };
 
+/**
+ * The dates a transaction period may name. A year typed digit by digit reads 0002, 0020 and 0202
+ * before it is complete; nothing in a personal finance history is outside this range.
+ */
+export const PERIOD_BOUNDS = { min: "1970-01-01", max: "2099-12-31" } as const;
+
+/** A calendar date within {@link PERIOD_BOUNDS} (LocalDate strings compare chronologically). */
+export function isWithinPeriodBounds(date: LocalDate): boolean {
+  return date >= PERIOD_BOUNDS.min && date <= PERIOD_BOUNDS.max;
+}
+
+const periodDateSchema = localDateSchema.refine(
+  isWithinPeriodBounds,
+  `Expected a date from ${PERIOD_BOUNDS.min} to ${PERIOD_BOUNDS.max}`,
+);
+
 /** Query string of `GET /api/transactions` (every value arrives as text, so numbers are coerced). */
 export const transactionQuerySchema = z
   .object({
@@ -34,8 +50,8 @@ export const transactionQuerySchema = z
       .optional(),
     accountId: accountIdParam.optional(),
     tab: transactionTabSchema.default("all"),
-    from: localDateSchema.optional(),
-    to: localDateSchema.optional(),
+    from: periodDateSchema.optional(),
+    to: periodDateSchema.optional(),
     currency: currencyParam.optional(),
     page: z.coerce.number().int().min(1).max(100_000).default(1),
     pageSize: z.coerce
@@ -51,8 +67,8 @@ export type TransactionQuery = z.infer<typeof transactionQuerySchema>;
 /** Query string of `GET /api/cashflow`. */
 export const cashflowQuerySchema = z
   .object({
-    from: localDateSchema.optional(),
-    to: localDateSchema.optional(),
+    from: periodDateSchema.optional(),
+    to: periodDateSchema.optional(),
     accountId: accountIdParam.optional(),
     currency: currencyParam.optional(),
   })

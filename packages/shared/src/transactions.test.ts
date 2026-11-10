@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { searchQuerySchema } from "./search";
-import { cashflowQuerySchema, transactionQuerySchema, transactionTabSchema } from "./transactions";
+import {
+  cashflowQuerySchema,
+  PERIOD_BOUNDS,
+  transactionQuerySchema,
+  transactionTabSchema,
+} from "./transactions";
 
 describe("transactionQuerySchema", () => {
   it("fills every default from an empty query", () => {
@@ -69,8 +74,19 @@ describe("transactionQuerySchema", () => {
     ["empty account", { accountId: "" }],
     ["long search", { q: "x".repeat(101) }],
     ["bad currency", { currency: "EURO" }],
+    ["year typed digit by digit", { from: "0002-10-12" }],
+    ["three-digit year", { to: "0202-10-12" }],
+    ["date before 1970", { from: "1969-12-31" }],
+    ["date after 2099", { to: "2100-01-01" }],
   ])("rejects %s", (_name, query) => {
     expect(transactionQuerySchema.safeParse(query).success).toBe(false);
+  });
+
+  it("accepts the period bounds themselves", () => {
+    expect(PERIOD_BOUNDS).toEqual({ min: "1970-01-01", max: "2099-12-31" });
+    expect(
+      transactionQuerySchema.safeParse({ from: PERIOD_BOUNDS.min, to: PERIOD_BOUNDS.max }).success,
+    ).toBe(true);
   });
 });
 
@@ -90,6 +106,11 @@ describe("cashflowQuerySchema", () => {
       false,
     );
     expect(cashflowQuerySchema.safeParse({ accountId: "-1" }).success).toBe(false);
+  });
+
+  it("rejects a date outside the period bounds", () => {
+    expect(cashflowQuerySchema.safeParse({ from: "0020-10-12" }).success).toBe(false);
+    expect(cashflowQuerySchema.safeParse({ to: "2100-01-01" }).success).toBe(false);
   });
 });
 

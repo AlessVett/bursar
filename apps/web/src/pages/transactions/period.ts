@@ -1,4 +1,10 @@
-import { addDays, formatRelativeDay, type LocalDate, localDateSchema } from "@bursar/shared";
+import {
+  addDays,
+  formatRelativeDay,
+  isWithinPeriodBounds,
+  type LocalDate,
+  localDateSchema,
+} from "@bursar/shared";
 
 export type PeriodPreset = "30d" | "90d" | "12m" | "all" | "custom";
 
@@ -24,6 +30,14 @@ export function isPeriodPreset(value: string): value is PeriodPreset {
 /** A real calendar date in `YYYY-MM-DD` form (Task 1 `localDateSchema`). */
 export function isLocalDate(value: string | null | undefined): value is LocalDate {
   return typeof value === "string" && localDateSchema.safeParse(value).success;
+}
+
+/**
+ * A date a period may use: a calendar date within the server's `PERIOD_BOUNDS`. A year typed
+ * digit by digit reads 0002, 0020 and 0202 first; such a value is never a period bound.
+ */
+export function isPeriodDate(value: string | null | undefined): value is LocalDate {
+  return isLocalDate(value) && isWithinPeriodBounds(value);
 }
 
 function daysInMonth(year: number, month: number): number {
@@ -56,8 +70,8 @@ export function resolvePeriod(
 ): PeriodRange {
   if (input.period === "all") return { from: null, to: null };
   if (input.period === "custom") {
-    const from = isLocalDate(input.from) ? input.from : null;
-    const to = isLocalDate(input.to) ? input.to : null;
+    const from = isPeriodDate(input.from) ? input.from : null;
+    const to = isPeriodDate(input.to) ? input.to : null;
     if (from === null && to === null) return presetRange(DEFAULT_PERIOD, today);
     if (from !== null && to !== null && from > to) return { from: to, to: from };
     return { from, to };
@@ -89,8 +103,8 @@ export function readPeriod(
   input: { period: string; from: string; to: string },
   today: LocalDate,
 ): PeriodState {
-  const from = isLocalDate(input.from) ? input.from : null;
-  const to = isLocalDate(input.to) ? input.to : null;
+  const from = isPeriodDate(input.from) ? input.from : null;
+  const to = isPeriodDate(input.to) ? input.to : null;
   let preset: PeriodPreset = isPeriodPreset(input.period) ? input.period : DEFAULT_PERIOD;
   if (preset === DEFAULT_PERIOD && (from !== null || to !== null)) {
     preset = periodFromRange(from, to, today);

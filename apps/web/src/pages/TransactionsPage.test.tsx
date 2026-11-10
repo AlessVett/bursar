@@ -437,6 +437,56 @@ describe("TransactionsPage", () => {
     await waitFor(() => expect(lastList()).toEqual({}));
   });
 
+  it("ignores a period date outside the supported years in the URL", async () => {
+    stubFetch(apiHandler());
+    renderPage(`/transactions?period=custom&from=0002-10-12&to=${yesterday}`);
+    await findTable();
+    expect(lastList()).toEqual({ to: yesterday });
+    expect(calls.some((call) => call.params.from === "0002-10-12")).toBe(false);
+  });
+
+  it("writes a typed date to the URL only once its year is complete", async () => {
+    stubFetch(apiHandler());
+    const { router } = renderPage(`/transactions?period=custom&from=${twoDaysAgo}&to=${yesterday}`);
+    await findTable();
+    const input = screen.getByLabelText("From") as HTMLInputElement;
+    // Chrome fires one input event per typed year digit.
+    for (const partial of ["0002-10-12", "0020-10-12", "0202-10-12"]) {
+      fireEvent.change(input, { target: { value: partial } });
+      expect(input.value).toBe(partial);
+      expect(urlParams(router).get("from")).toBe(twoDaysAgo);
+    }
+    fireEvent.change(input, { target: { value: "2025-10-12" } });
+    await waitFor(() => expect(urlParams(router).get("from")).toBe("2025-10-12"));
+    await waitFor(() => expect(lastList()).toEqual({ from: "2025-10-12", to: yesterday }));
+    expect(calls.some((call) => /^0/.test(call.params.from ?? ""))).toBe(false);
+
+    // Leaving the field with an unfinished year shows the period in use again.
+    fireEvent.change(input, { target: { value: "0019-10-12" } });
+    fireEvent.blur(input);
+    expect(input.value).toBe("2025-10-12");
+  });
+
+  it("keeps the tabs and filters when the list fails, so the period can be changed", async () => {
+    let failing = true;
+    const ok = apiHandler();
+    stubFetch((call) =>
+      call.path === "/api/transactions" && failing
+        ? { status: 500, body: { error: "Internal error" } }
+        : ok(call),
+    );
+    const { router } = renderPage(`/transactions?period=custom&from=${twoDaysAgo}`);
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("Transactions could not be loaded");
+    expect(screen.getByRole("tablist", { name: "Transaction direction" })).toBeTruthy();
+    expect(screen.queryByRole("table")).toBeNull();
+    failing = false;
+    fireEvent.change(screen.getByLabelText("Period"), { target: { value: "90d" } });
+    await waitFor(() => expect(urlParams(router).get("period")).toBe("90d"));
+    await findTable();
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
   it("cycles the server sort ascending, descending and back to none", async () => {
     stubFetch(apiHandler());
     const { router } = renderPage();

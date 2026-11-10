@@ -33,11 +33,16 @@ function pad(value: number): string {
   return String(value).padStart(2, "0");
 }
 
+/** LocalDate years always have four digits (year 202 is "0202"). */
+function padYear(year: number): string {
+  return String(year).padStart(4, "0");
+}
+
 /** First day of the bucket that contains `date` (Monday for weeks, the 1st for months). */
 function bucketStart(date: LocalDate, size: BucketSize): LocalDate {
   if (size === "day") return date;
   const { year, month, day } = dateParts(date);
-  if (size === "month") return `${year}-${pad(month)}-01`;
+  if (size === "month") return `${padYear(year)}-${pad(month)}-01`;
   const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
   return addDays(date, -((weekday + 6) % 7));
 }
@@ -47,7 +52,7 @@ function bucketEnd(start: LocalDate, size: BucketSize): LocalDate {
   if (size === "day") return start;
   if (size === "week") return addDays(start, 6);
   const { year, month } = dateParts(start);
-  return `${year}-${pad(month)}-${pad(new Date(Date.UTC(year, month, 0)).getUTCDate())}`;
+  return `${padYear(year)}-${pad(month)}-${pad(new Date(Date.UTC(year, month, 0)).getUTCDate())}`;
 }
 
 function safeAdd(a: number, b: number): number {

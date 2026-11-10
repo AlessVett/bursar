@@ -11,7 +11,7 @@ import {
   TextInput,
 } from "../../components/ui";
 import { useFormatters } from "../../lib/format";
-import { DEFAULT_PERIOD, PERIOD_PRESETS, type PeriodState } from "./period";
+import { DEFAULT_PERIOD, isPeriodDate, PERIOD_PRESETS, type PeriodState } from "./period";
 
 export interface AccountOption {
   /** Account id as written in the URL. */
@@ -36,6 +36,47 @@ export interface TransactionFiltersProps {
   results: { shown: number; total: number } | null;
   onChange(patch: Partial<Record<FilterKey, string>>): void;
   onClearAll(): void;
+}
+
+/**
+ * A custom period bound. The browser reports a year typed digit by digit as 0002, 0020 and 0202
+ * before 2025: such a value stays in the field (so typing goes on) and is written to the URL only
+ * once it is a period date, or when it is cleared. Leaving the field with an unfinished value shows
+ * the date in use again.
+ */
+function PeriodDateInput({
+  label,
+  value,
+  min,
+  max,
+  onCommit,
+}: {
+  label: string;
+  value: string;
+  min?: string;
+  max?: string;
+  onCommit(value: string): void;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  return (
+    <TextInput
+      type="date"
+      label={label}
+      value={draft ?? value}
+      min={min}
+      max={max}
+      onChange={(event) => {
+        const next = event.target.value;
+        if (next === "" || isPeriodDate(next)) {
+          setDraft(null);
+          onCommit(next);
+        } else {
+          setDraft(next);
+        }
+      }}
+      onBlur={() => setDraft(null)}
+    />
+  );
 }
 
 /**
@@ -168,23 +209,17 @@ export function TransactionFilters({
         />
         {period.preset === "custom" ? (
           <>
-            <TextInput
-              type="date"
+            <PeriodDateInput
               label={t("transactions.filters.from")}
               value={period.from ?? ""}
               max={period.to ?? undefined}
-              onChange={(event) =>
-                onChange({ period: "custom", from: event.target.value, to: period.to ?? "" })
-              }
+              onCommit={(from) => onChange({ period: "custom", from, to: period.to ?? "" })}
             />
-            <TextInput
-              type="date"
+            <PeriodDateInput
               label={t("transactions.filters.to")}
               value={period.to ?? ""}
               min={period.from ?? undefined}
-              onChange={(event) =>
-                onChange({ period: "custom", from: period.from ?? "", to: event.target.value })
-              }
+              onCommit={(to) => onChange({ period: "custom", from: period.from ?? "", to })}
             />
           </>
         ) : null}
