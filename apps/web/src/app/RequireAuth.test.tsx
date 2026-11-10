@@ -27,6 +27,10 @@ describe("safeNext and loginPath", () => {
     expect(safeNext("//example.invalid/")).toBe("/");
     expect(safeNext("/\\example.invalid")).toBe("/");
     expect(safeNext("/login?next=/x")).toBe("/");
+    expect(safeNext("/\t/evil.example")).toBe("/");
+    expect(safeNext("/\n/evil.example")).toBe("/");
+    expect(safeNext("/\r/evil.example")).toBe("/");
+    expect(safeNext("/a\\b")).toBe("/");
   });
 
   it("builds the login path with next and the expiry flag", () => {

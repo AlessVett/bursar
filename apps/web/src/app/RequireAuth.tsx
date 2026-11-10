@@ -9,9 +9,19 @@ import { ProductMark } from "./AuthShell";
 
 const AUTH_PATHS = new Set(["/login", "/setup"]);
 
+function hasUnsafeChar(value: string): boolean {
+  for (const char of value) {
+    const code = char.charCodeAt(0);
+    if (code <= 0x1f || code === 0x7f || char === "\\") return true;
+  }
+  return false;
+}
+
 /** A same-origin in-app path to return to after sign-in, or `/` for anything else. */
 export function safeNext(raw: string | null | undefined): string {
-  if (!raw?.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) return "/";
+  // URL parsers strip tab/CR/LF ("/\t/host" becomes "//host") and treat "\\" as "/": reject
+  // control characters and backslashes anywhere in the value.
+  if (!raw?.startsWith("/") || raw.startsWith("//") || hasUnsafeChar(raw)) return "/";
   const pathname = raw.split(/[?#]/, 1)[0] ?? "/";
   return AUTH_PATHS.has(pathname) ? "/" : raw;
 }
