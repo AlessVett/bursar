@@ -154,6 +154,10 @@ function displayName(
 
 // Account and connection views
 
+/**
+ * The preferred balance of each account, ranked among the balances of its latest fetch only: a
+ * type the bank stopped reporting must not keep winning with an old figure.
+ */
 function loadPreferredBalances(deps: QueryDeps): Map<number, PreferredBalance> {
   const rows = all<{
     account_id: number;
@@ -161,18 +165,26 @@ function loadPreferredBalances(deps: QueryDeps): Map<number, PreferredBalance> {
     amount_minor: number;
     currency: string;
     as_of: number;
+    reference_date: LocalDate;
   }>(
     deps,
-    `SELECT account_id, balance_type, amount_minor, currency, as_of FROM (
+    `SELECT account_id, balance_type, amount_minor, currency, as_of, reference_date FROM (
        SELECT b.*, ROW_NUMBER() OVER (
          PARTITION BY b.account_id, b.balance_type
          ORDER BY b.reference_date DESC, b.as_of DESC, b.id DESC
        ) AS rn FROM balances b
+        WHERE b.fetched_at = (SELECT MAX(l.fetched_at) FROM balances l WHERE l.account_id = b.account_id)
      ) WHERE rn = 1`,
   );
   const byAccount = new Map<
     number,
-    { balanceType: string; amountMinor: number; currency: string; asOf: number }[]
+    {
+      balanceType: string;
+      amountMinor: number;
+      currency: string;
+      asOf: number;
+      referenceDate: LocalDate;
+    }[]
   >();
   for (const row of rows) {
     const list = byAccount.get(row.account_id) ?? [];
@@ -181,6 +193,7 @@ function loadPreferredBalances(deps: QueryDeps): Map<number, PreferredBalance> {
       amountMinor: row.amount_minor,
       currency: row.currency,
       asOf: row.as_of,
+      referenceDate: row.reference_date,
     });
     byAccount.set(row.account_id, list);
   }
@@ -193,6 +206,7 @@ function loadPreferredBalances(deps: QueryDeps): Map<number, PreferredBalance> {
         currency: pick.currency,
         type: pick.balanceType,
         asOf: pick.asOf,
+        referenceDate: pick.referenceDate,
       });
     }
   }
@@ -430,9 +444,10 @@ export function getAccountDetail(
 }
 
 /**
- * Daily balances for the last `days` local days, computed backwards from the current preferred
- * balance by undoing the booked transactions of each day. Null when the account is unknown or has
- * no balance.
+ * Daily end-of-day balances for the last `days` local days. The preferred balance is the balance
+ * at the end of its reference date (a closing balance usually describes the previous business
+ * day), so every day is derived from that anchor: later days add the booked flows after it,
+ * earlier days undo the booked flows up to it. Null when the account is unknown or has no balance.
  */
 export function balanceHistory(
   deps: QueryDeps,
@@ -445,28 +460,41 @@ export function balanceHistory(
 
   const end = today(deps);
   const start = addDays(end, -(days - 1));
+  const anchor = current.referenceDate;
+  // LocalDate strings (YYYY-MM-DD) compare chronologically.
+  const first = anchor < start ? anchor : start;
+  const last = anchor > end ? anchor : end;
   const netByDate = new Map(
     all<{ sort_date: string; net: number }>(
       deps,
       `SELECT sort_date, SUM(amount_minor) AS net FROM transactions
-         WHERE account_id = ? AND status = 'booked' AND sort_date >= ? AND sort_date <= ?
+         WHERE account_id = ? AND status = 'booked' AND sort_date > ? AND sort_date <= ?
          GROUP BY sort_date`,
       accountId,
-      start,
-      end,
+      first,
+      last,
     ).map((row) => [row.sort_date, row.net]),
   );
 
-  // Walk from today back to the first day: the balance at the end of the previous day is the
-  // balance at the end of this day minus this day's booked flow.
-  const points: BalanceHistoryResponse["points"] = [];
+  const balanceAt = new Map<LocalDate, number>([[anchor, current.amountMinor]]);
+  // Forward: the end of the next day is this day's end plus the next day's booked flow.
   let balance = current.amountMinor;
-  for (let offset = 0; offset < days; offset += 1) {
-    const date = addDays(end, -offset);
-    points.push({ date, balanceMinor: balance });
-    balance -= netByDate.get(date) ?? 0;
+  for (let date = anchor; date < last; ) {
+    date = addDays(date, 1);
+    balance += netByDate.get(date) ?? 0;
+    balanceAt.set(date, balance);
   }
-  points.reverse();
+  // Backward: the end of the previous day is this day's end minus this day's booked flow.
+  balance = current.amountMinor;
+  for (let date = anchor; date > first; date = addDays(date, -1)) {
+    balance -= netByDate.get(date) ?? 0;
+    balanceAt.set(addDays(date, -1), balance);
+  }
+
+  const points = Array.from({ length: days }, (_, offset) => {
+    const date = addDays(start, offset);
+    return { date, balanceMinor: balanceAt.get(date) ?? current.amountMinor };
+  });
   return { currency: current.currency, points };
 }
 
@@ -904,11 +932,12 @@ export function getTransaction(input: QueryDeps, id: number): TransactionDetail 
 
 /**
  * The strip for a scope (one account, or every account counted in the totals) and one currency.
- * The period defaults to the 30 local days ending today. The running balance starts from the sum
- * of the preferred balances and undoes the booked transactions dated after the period, so it
- * stays correct for a period that ended in the past. It is null when any account of the currency
- * has no balance. With `nullWhenEmpty` a scope without any transaction (or without accounts)
- * answers null so the route can reply 204.
+ * The period defaults to the 30 local days ending today. The running balance at the end of the
+ * period is, per account, its preferred balance (the end of its reference date) plus the booked
+ * flows between that date and the period end (minus them when the period ends first), so it stays
+ * correct for a past period and for a closing balance of a previous day. It is null when any
+ * account of the currency has no balance. With `nullWhenEmpty` a scope without any transaction (or
+ * without accounts) answers null so the route can reply 204.
  */
 function computeCashflow(
   deps: QueryDeps,
@@ -964,17 +993,27 @@ function computeCashflow(
   const sameCurrency = scope.filter((a) => a.currency === currency);
   const known = sameCurrency.flatMap((a) => {
     const balance = balances.get(a.id);
-    return balance && balance.currency === currency ? [balance.amountMinor] : [];
+    return balance && balance.currency === currency ? [{ accountId: a.id, balance }] : [];
   });
   if (sameCurrency.length > 0 && known.length === sameCurrency.length) {
-    const after = get<{ total: number }>(
-      deps,
-      `SELECT COALESCE(SUM(t.amount_minor), 0) AS total ${FROM_TRANSACTIONS}
-        WHERE ${scopeFilter.where.join(" AND ")} AND t.status = 'booked' AND t.sort_date > ?`,
-      ...scopeFilter.params,
-      to,
+    currentBalanceMinor = sumMinor(
+      known.map(({ accountId, balance }) => {
+        // Booked flows after the reference date minus those after the period end: the move from
+        // the end of the reference date to the end of `to` (negative when `to` comes first).
+        const moved = get<{ total: number }>(
+          deps,
+          `SELECT COALESCE(SUM(CASE WHEN t.sort_date > ? THEN t.amount_minor ELSE 0 END), 0)
+                - COALESCE(SUM(CASE WHEN t.sort_date > ? THEN t.amount_minor ELSE 0 END), 0) AS total
+             ${FROM_TRANSACTIONS} WHERE ${scopeFilter.where.join(" AND ")} AND t.status = 'booked'
+              AND t.account_id = ?`,
+          balance.referenceDate,
+          to,
+          ...scopeFilter.params,
+          accountId,
+        );
+        return balance.amountMinor + (moved?.total ?? 0);
+      }),
     );
-    currentBalanceMinor = sumMinor(known) - (after?.total ?? 0);
   }
 
   return buildCashFlow(rows, { from, to, currency, currencies, currentBalanceMinor });

@@ -128,7 +128,13 @@ describe("listConnectionsView", () => {
     const accounts = listConnectionsView(deps).connections.flatMap((c) => c.accounts);
     const checking = accounts.find((a) => a.id === w.checking);
     expect(checking).toMatchObject({
-      balance: { amountMinor: 500_000, currency: "EUR", type: "CLBD", asOf: NOW },
+      balance: {
+        amountMinor: 500_000,
+        currency: "EUR",
+        type: "CLBD",
+        asOf: NOW,
+        referenceDate: TODAY,
+      },
       // 30 local days ending today: 2026-10-11 is in, 2026-10-10 is out.
       net30d: { inMinor: 250_000, outMinor: 23_450, netMinor: 226_550 },
       lastSyncedAt: NOW - 3 * HOUR_MS,
@@ -285,6 +291,54 @@ describe("balanceHistory", () => {
     expect(at("2026-10-15")).toBe(259_700);
     expect(at("2026-10-14")).toBe(271_700); // before the 120,00 rent
     expect(at("2026-10-11")).toBe(271_700);
+  });
+
+  it("anchors a closing balance at its reference date, not at today", () => {
+    // The sync fixture's balances: CLBD at the end of 2026-11-08, ITAV during 2026-11-09.
+    const account = fx.account(w.bankA, { last4: "3333" });
+    fx.balance(account, 152_040, { type: "CLBD", referenceDate: "2026-11-08" });
+    fx.balance(account, 149_015, { type: "ITAV", referenceDate: TODAY });
+    fx.transaction(account, { sortDate: "2026-11-07", amountMinor: -4_280 });
+    fx.transaction(account, { sortDate: TODAY, amountMinor: -10_000 });
+    // Booked ahead (a settlement date): not part of today's balance.
+    fx.transaction(account, { sortDate: "2026-11-12", amountMinor: -2_500 });
+    const history = balanceHistory(queryDeps(t), account, 30);
+    const at = (date: string) => history?.points.find((p) => p.date === date)?.balanceMinor;
+    expect(at("2026-11-06")).toBe(156_320);
+    expect(at("2026-11-07")).toBe(152_040);
+    expect(at("2026-11-08")).toBe(152_040); // what the bank says for the end of that day
+    expect(at(TODAY)).toBe(142_040); // minus today's booked payment
+  });
+
+  it("walks forward from a balance dated in the future", () => {
+    const account = fx.account(w.bankA, { last4: "3334" });
+    fx.balance(account, 90_000, { type: "CLBD", referenceDate: "2026-11-10" });
+    fx.transaction(account, { sortDate: "2026-11-10", amountMinor: -5_000 });
+    const history = balanceHistory(queryDeps(t), account, 30);
+    expect(history?.points.at(-1)).toEqual({ date: TODAY, balanceMinor: 95_000 });
+  });
+
+  it("ranks only the balances of the latest fetch", () => {
+    const account = fx.account(w.bankA, { last4: "3335" });
+    const stored = (type: string, amountMinor: number, referenceDate: string, at: number) =>
+      fx.repo.upsertBalance({
+        accountId: account,
+        balanceType: type,
+        amountMinor,
+        currency: "EUR",
+        referenceDate,
+        asOf: at,
+        fetchedAt: at,
+      });
+    // The bank reported ITBD once, then stopped: the newer CLBD is the balance.
+    stored("ITBD", 10_000, "2026-11-01", NOW - 8 * DAY_MS);
+    stored("CLBD", 20_000, TODAY, NOW - HOUR_MS);
+    const history = balanceHistory(queryDeps(t), account, 30);
+    expect(history?.points.at(-1)?.balanceMinor).toBe(20_000);
+    const summary = listConnectionsView(queryDeps(t))
+      .connections.flatMap((c) => c.accounts)
+      .find((a) => a.id === account);
+    expect(summary?.balance).toMatchObject({ amountMinor: 20_000, type: "CLBD" });
   });
 
   it("supports the 90 and 365 day windows with consecutive days", () => {
@@ -706,6 +760,25 @@ describe("cashflow", () => {
     // 700 000 minus the booked flows dated after 11-04: +250 000 -1 250 -8 450.
     expect(past?.buckets.at(-1)?.balanceMinor).toBe(459_700);
     expect(past?.buckets).toHaveLength(4);
+  });
+
+  it("anchors the running balance at each account's balance reference date", () => {
+    const account = fx.account(w.bankA, { last4: "3336" });
+    fx.balance(account, 152_040, { type: "CLBD", referenceDate: "2026-11-08" });
+    fx.transaction(account, { sortDate: TODAY, amountMinor: -10_000 });
+    fx.transaction(account, { sortDate: "2026-11-12", amountMinor: -2_500 });
+    const deps = queryDeps(t);
+    const own = cashflow(deps, { accountId: account });
+    const balance = (date: string) => own?.buckets.find((b) => b.date === date)?.balanceMinor;
+    expect(balance("2026-11-08")).toBe(152_040);
+    expect(balance(TODAY)).toBe(142_040);
+
+    // With the world's two EUR accounts (balances dated today): 700 000 + 142 040.
+    expect(cashflow(deps, {})?.buckets.at(-1)?.balanceMinor).toBe(842_040);
+    // A past period: the end of 2026-11-04 is before every booked flow of the new account.
+    expect(cashflow(deps, { from: "2026-11-01", to: "2026-11-04" })?.buckets.at(-1)).toMatchObject({
+      balanceMinor: 459_700 + 152_040,
+    });
   });
 
   it("switches currency while keeping the other accounts out of it", () => {

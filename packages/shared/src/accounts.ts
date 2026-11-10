@@ -22,7 +22,17 @@ export interface AccountSummary {
   currency: string;
   cashAccountType: string | null;
   status: AccountStatus;
-  balance: { amountMinor: number; currency: string; type: string; asOf: number } | null;
+  /**
+   * The preferred balance of the latest fetch. `referenceDate` is the local day the bank's figure
+   * describes (a closing balance is usually the previous business day's end).
+   */
+  balance: {
+    amountMinor: number;
+    currency: string;
+    type: string;
+    asOf: number;
+    referenceDate: LocalDate;
+  } | null;
   net30d: { inMinor: number; outMinor: number; netMinor: number };
   /**
    * The same 30 local days as `net30d`, one bucket per day (`end = date`, `balanceMinor: null`,
