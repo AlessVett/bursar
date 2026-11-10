@@ -1,0 +1,10 @@
+services:
+  app:
+    environment:
+      - BACKUP_S3_SECRET_KEY_FILE=/run/secrets/backup_s3_secret_key
+    secrets:
+      - backup_s3_secret_key
+
+secrets:
+  backup_s3_secret_key:
+    file: ${BURSAR_SECRETS_DIR:-./secrets}/backup_s3_secret_key

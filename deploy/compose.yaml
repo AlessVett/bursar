@@ -16,6 +16,20 @@ services:
       CF_ACCESS_TEAM_DOMAIN: ${CF_ACCESS_TEAM_DOMAIN:-}
       CF_ACCESS_AUD: ${CF_ACCESS_AUD:-}
       BURSAR_TRUST_CF_CONNECTING_IP: ${BURSAR_TRUST_CF_CONNECTING_IP:-false}
+      # Optional integrations. Empty means off. The secrets for them (EB_PRIVATE_KEY,
+      # SMTP_PASSWORD, BACKUP_S3_SECRET_KEY) come from the overlays compose.banking.yaml,
+      # compose.smtp.yaml and compose.backup.yaml, which the deploy adds when the secret exists.
+      EB_APPLICATION_ID: ${EB_APPLICATION_ID:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_SECURITY: ${SMTP_SECURITY:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      BACKUP_S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:-}
+      BACKUP_S3_REGION: ${BACKUP_S3_REGION:-}
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET:-}
+      BACKUP_S3_PREFIX: ${BACKUP_S3_PREFIX:-}
+      BACKUP_S3_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY_ID:-}
     secrets:
       - master_key
     volumes:
@@ -25,6 +39,11 @@ services:
       - /tmp
       - /home/node:uid=1000,gid=1000,mode=700
     mem_limit: ${BURSAR_MEM_LIMIT:-3g}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test:
         - CMD
@@ -46,6 +65,11 @@ services:
       app:
         condition: service_healthy
     mem_limit: 128m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     profiles: [tunnel]
 
 secrets:

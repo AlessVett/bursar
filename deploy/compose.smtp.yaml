@@ -1,0 +1,10 @@
+services:
+  app:
+    environment:
+      - SMTP_PASSWORD_FILE=/run/secrets/smtp_password
+    secrets:
+      - smtp_password
+
+secrets:
+  smtp_password:
+    file: ${BURSAR_SECRETS_DIR:-./secrets}/smtp_password

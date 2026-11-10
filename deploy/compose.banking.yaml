@@ -1,0 +1,10 @@
+services:
+  app:
+    environment:
+      - EB_PRIVATE_KEY_FILE=/run/secrets/eb_private_key
+    secrets:
+      - eb_private_key
+
+secrets:
+  eb_private_key:
+    file: ${BURSAR_SECRETS_DIR:-./secrets}/eb_private_key

@@ -19,10 +19,25 @@ secrets_dir="${secrets_dir:-./secrets}"
 
 [[ -f "$secrets_dir/master_key" ]] || { echo "Missing $secrets_dir/master_key" >&2; exit 1; }
 
+# Optional integrations: each overlay adds one secret and is included only when that secret
+# file exists (compose fails on a declared secret whose file is missing).
+# Format: <secret file name>:<overlay file name>
+overlays=(
+  "claude_credential:compose.claude.yaml"
+  "eb_private_key:compose.banking.yaml"
+  "smtp_password:compose.smtp.yaml"
+  "backup_s3_secret_key:compose.backup.yaml"
+)
+
 compose=(docker compose --env-file "$dir/.env" -f "$release_dir/deploy/compose.yaml")
-if [[ -f "$secrets_dir/claude_credential" ]]; then
-  compose+=(-f "$release_dir/deploy/compose.claude.yaml")
-fi
+for entry in "${overlays[@]}"; do
+  secret="${entry%%:*}"
+  overlay="${entry#*:}"
+  if [[ -f "$secrets_dir/$secret" ]]; then
+    echo "Including $overlay ($secret found)"
+    compose+=(-f "$release_dir/deploy/$overlay")
+  fi
+done
 
 "${compose[@]}" --profile tunnel up -d --build --remove-orphans --wait --wait-timeout 180
 ln -sfn "$release_dir" "$dir/current"
