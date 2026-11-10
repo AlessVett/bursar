@@ -4,10 +4,10 @@ import { type Language, setLanguage } from "../i18n";
 export function LanguageSwitcher() {
   const { t, i18n } = useTranslation();
   return (
-    <label className="text-sm text-slate-600">
+    <label className="text-sm text-muted">
       {t("common.language")}{" "}
       <select
-        className="rounded-md border border-slate-300 bg-white px-2 py-1"
+        className="rounded-md border border-muted bg-surface px-2 py-1 text-fg"
         value={i18n.language}
         onChange={(event) => setLanguage(event.target.value as Language)}
       >

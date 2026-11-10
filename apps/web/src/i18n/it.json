@@ -35,5 +35,24 @@
     "welcome": "Bursar è pronto",
     "empty": "Non hai ancora collegato conti o caricato documenti.",
     "logout": "Esci"
+  },
+  "theme": {
+    "label": "Tema",
+    "system": "Sistema",
+    "light": "Chiaro",
+    "dark": "Scuro"
+  },
+  "density": {
+    "label": "Densità",
+    "compact": "Compatta",
+    "comfortable": "Comoda"
+  },
+  "privacy": {
+    "toggle": "Nascondi gli importi",
+    "on": "Modalità privacy attiva",
+    "off": "Modalità privacy disattivata",
+    "onDetail": "Importi e cifre degli IBAN sono nascosti in questo browser.",
+    "offDetail": "Importi e cifre degli IBAN tornano visibili.",
+    "maskedAmount": "Importo nascosto"
   }
 }

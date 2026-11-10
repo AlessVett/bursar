@@ -1,1 +1,37 @@
 @import "tailwindcss";
+@import "./styles/tokens.css";
+@import "./styles/base.css";
+
+/*
+ * Semantic utilities. `inline` makes each utility read the variable directly, so a
+ * theme switch (`:root[data-theme="dark"]`) needs no Tailwind rebuild and no `dark:`.
+ * Opacity modifiers (`bg-primary/50`) work through color-mix.
+ */
+@theme inline {
+  --color-bg: rgb(var(--bg));
+  --color-surface: rgb(var(--surface));
+  --color-surface-2: rgb(var(--surface-2));
+  --color-subtle: rgb(var(--border));
+  --color-fg: rgb(var(--text));
+  --color-muted: rgb(var(--muted));
+  --color-primary: rgb(var(--primary));
+  --color-primary-50: rgb(var(--primary-50));
+  --color-accent: rgb(var(--accent));
+  --color-on-accent: rgb(var(--on-accent));
+  --color-positive: rgb(var(--positive));
+  --color-ink: rgb(var(--ink));
+  --color-warning: rgb(var(--warning));
+  --color-warning-soft: rgb(var(--warning-bg));
+  --color-danger: rgb(var(--danger));
+  --color-danger-soft: rgb(var(--danger-bg));
+  --color-info: rgb(var(--info));
+  --color-info-soft: rgb(var(--info-bg));
+
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Manrope Variable", "Inter Variable", sans-serif;
+}
+
+/* Amounts and figures. */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}

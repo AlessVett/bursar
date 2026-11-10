@@ -35,5 +35,24 @@
     "welcome": "Bursar is ready",
     "empty": "No bank accounts or documents yet.",
     "logout": "Sign out"
+  },
+  "theme": {
+    "label": "Theme",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "density": {
+    "label": "Density",
+    "compact": "Compact",
+    "comfortable": "Comfortable"
+  },
+  "privacy": {
+    "toggle": "Hide amounts",
+    "on": "Privacy mode on",
+    "off": "Privacy mode off",
+    "onDetail": "Amounts and IBAN digits are hidden in this browser.",
+    "offDetail": "Amounts and IBAN digits are visible again.",
+    "maskedAmount": "Amount hidden"
   }
 }

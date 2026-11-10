@@ -1,0 +1,62 @@
+/*
+ * Semantic colour tokens, stored as space-separated RGB triplets so that Tailwind
+ * can build alpha variants (`bg-primary/50`). Values come from the panel UX design
+ * (docs/superpowers/specs/2026-11-09-panel-ux-design.md, section 5) and are checked
+ * by tokens.test.ts. Components never use these variables directly: they use the
+ * semantic utilities mapped in styles.css (`bg-surface`, `text-muted`, ...).
+ *
+ * `--on-accent` is the one addition to the table: the foreground for text on an
+ * `accent` fill. The `text` token cannot be used there in dark mode (1.8:1).
+ */
+:root {
+  color-scheme: light;
+  --bg: 246 247 249; /* #F6F7F9 */
+  --surface: 255 255 255; /* #FFFFFF */
+  --surface-2: 241 243 247; /* #F1F3F7 */
+  --border: 227 231 238; /* #E3E7EE */
+  --text: 20 26 38; /* #141A26 */
+  --muted: 91 100 117; /* #5B6475 */
+  --primary: 30 42 74; /* #1E2A4A */
+  --primary-50: 238 241 248; /* #EEF1F8 */
+  --accent: 176 122 34; /* #B07A22 */
+  --on-accent: 20 26 38; /* #141A26 */
+  --positive: 21 128 61; /* #15803D */
+  --ink: 51 65 85; /* #334155 */
+  --warning: 180 83 9; /* #B45309 */
+  --warning-bg: 254 243 199; /* #FEF3C7 */
+  --danger: 185 28 28; /* #B91C1C */
+  --danger-bg: 254 226 226; /* #FEE2E2 */
+  --info: 29 78 216; /* #1D4ED8 */
+  --info-bg: 219 234 254; /* #DBEAFE */
+  --row-height: 40px;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: 14 18 27; /* #0E121B */
+  --surface: 21 27 39; /* #151B27 */
+  --surface-2: 28 36 51; /* #1C2433 */
+  --border: 39 48 67; /* #273043 */
+  --text: 231 234 241; /* #E7EAF1 */
+  --muted: 154 164 182; /* #9AA4B6 */
+  --primary: 157 176 224; /* #9DB0E0 */
+  --primary-50: 30 40 64; /* #1E2840 */
+  --accent: 217 167 74; /* #D9A74A */
+  --on-accent: 20 26 38; /* #141A26 */
+  --positive: 74 222 128; /* #4ADE80 */
+  --ink: 203 213 225; /* #CBD5E1 */
+  --warning: 251 191 36; /* #FBBF24 */
+  --warning-bg: 58 42 11; /* #3A2A0B */
+  --danger: 248 113 113; /* #F87171 */
+  --danger-bg: 59 20 22; /* #3B1416 */
+  --info: 96 165 250; /* #60A5FA */
+  --info-bg: 19 35 63; /* #13233F */
+}
+
+:root[data-density="compact"] {
+  --row-height: 40px;
+}
+
+:root[data-density="comfortable"] {
+  --row-height: 56px;
+}
