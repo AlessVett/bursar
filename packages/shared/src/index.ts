@@ -8,4 +8,5 @@ export * from "./iban";
 export * from "./money";
 export * from "./notifications";
 export * from "./settings";
+export * from "./sync";
 export * from "./text";

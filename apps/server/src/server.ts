@@ -2,7 +2,6 @@ import { once } from "node:events";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { serve } from "@hono/node-server";
-import { getConnInfo } from "@hono/node-server/conninfo";
 import type { Logger } from "pino";
 import { AuditLog } from "./audit";
 import { OwnerStore } from "./auth/owner";
@@ -20,10 +19,14 @@ import { bankCallbackRoutes } from "./finance/callback";
 import { ConnectService } from "./finance/connect";
 import { connectRoutes } from "./finance/connect-routes";
 import { FinanceRepository } from "./finance/repository";
+import { syncAccountHandler, unconfiguredSyncHandler } from "./finance/sync";
+import { syncRoutes } from "./finance/sync-routes";
+import { dailySyncTask } from "./finance/sync-task";
 import { createApp, type MountedRouter } from "./http/app";
+import { createClientIpResolver } from "./http/client-ip";
 import { eventsRoute } from "./http/events";
 import { JobQueue } from "./jobs/queue";
-import { EMAIL_JOB } from "./jobs/types";
+import { EMAIL_JOB, SYNC_ACCOUNT_JOB } from "./jobs/types";
 import { type JobHandler, JobWorker } from "./jobs/worker";
 import { maintenanceTask } from "./maintenance";
 import { emailJobHandler } from "./notifications/email-job";
@@ -166,6 +169,22 @@ export async function startBursar(
     EMAIL_JOB,
     emailJobHandler({ service: notifications, mailer, settings, publicUrl: config.publicUrl }),
   );
+  handlers.set(
+    SYNC_ACCOUNT_JOB,
+    ebApi
+      ? syncAccountHandler({
+          repo,
+          api: ebApi,
+          bus,
+          notifications,
+          settings,
+          timezone: config.timezone,
+          now: Date.now,
+          logger,
+        })
+      : unconfiguredSyncHandler(),
+  );
+  const clientIp = createClientIpResolver(config.trustCfConnectingIp);
   const shutdown = new AbortController();
   const routers: MountedRouter[] = [
     { prefix: "/api/events", router: eventsRoute({ bus, sessions, signal: shutdown.signal }) },
@@ -198,6 +217,10 @@ export async function startBursar(
       router: bankRoutes({ api: ebApi, aspsps, publicUrl: config.publicUrl }),
     },
     { prefix: "/api/connections", router: connectRoutes({ service: connect }) },
+    {
+      prefix: "/api",
+      router: syncRoutes({ repo, queue, clientIp, timezone: config.timezone }),
+    },
   ];
   const publicRouters: MountedRouter[] = [
     { prefix: "/api/banks/callback", router: bankCallbackRoutes() },
@@ -215,6 +238,7 @@ export async function startBursar(
         logger,
         cleanups: [{ name: "auth-requests", run: () => repo.purgeExpiredAuthRequests() }],
       }),
+      dailySyncTask({ repo, queue, settings, timezone: config.timezone, logger }),
     ],
     logger,
   );
@@ -239,11 +263,7 @@ export async function startBursar(
       accountLimiter,
       secureCookies: config.publicUrl.protocol === "https:",
       now: Date.now,
-      // CF-Connecting-IP is set by Cloudflare's edge; any other client could forge it.
-      getClientIp: (c) =>
-        (config.trustCfConnectingIp ? c.req.header("cf-connecting-ip")?.trim() : undefined) ||
-        getConnInfo(c).remote.address ||
-        "unknown",
+      getClientIp: clientIp,
     },
     routers,
     publicRouters,
