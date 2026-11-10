@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { feedback } from "../components/feedback";
 import { useFormatters } from "../lib/format";
 import { queryKeys } from "../lib/query-keys";
+import { announceBackupFinished } from "./backup-toast";
 
 export const EVENTS_URL = "/api/events";
 export const RECONNECT_MIN_MS = 1_000;
@@ -168,6 +169,7 @@ export function applyServerEvent(event: ServerEvent, ctx: LiveContext): void {
       return;
     case "backup.finished":
       invalidate(queryClient, [queryKeys.backups, queryKeys.summary]);
+      announceBackupFinished(event.status);
       return;
     case "settings.updated":
       invalidate(queryClient, [queryKeys.settings]);

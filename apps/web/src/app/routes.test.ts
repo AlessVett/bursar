@@ -39,9 +39,15 @@ describe("route registry", () => {
       "settings",
     ]);
     const shipped = shippedRoutes().map((def) => def.id);
-    expect(shipped).toEqual(
-      expect.arrayContaining(["home", "connect", "connectCallback", "transactions"]),
-    );
+    expect(shipped).toEqual([
+      "home",
+      "accounts",
+      "account",
+      "connect",
+      "connectCallback",
+      "transactions",
+      "settings",
+    ]);
     for (const id of ["documents", "reports", "chat", "agents", "activity"] as const) {
       expect(shipped).not.toContain(id);
     }

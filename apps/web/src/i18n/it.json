@@ -267,7 +267,9 @@
       "compact": "Compatta",
       "comfortable": "Comoda"
     },
-    "signOut": "Esci"
+    "signOut": "Esci",
+    "languageNotSaved": "Lingua non salvata",
+    "languageNotSavedDetail": "Il pannello ha cambiato lingua, ma la scelta non è stata salvata e al prossimo caricamento torna quella salvata."
   },
   "notifications": {
     "popover": {
@@ -282,6 +284,34 @@
       "unread": "Non letta",
       "emptyTitle": "Nessuna notifica",
       "emptyBody": "Qui compaiono i promemoria sui consensi e i problemi di sincronizzazione."
+    },
+    "events": {
+      "consent_expiring": {
+        "title": "Consenso in scadenza",
+        "body_one": "Il consenso per {{bankName}} scade tra {{count}} giorno. Rinnovalo per mantenere aggiornati i dati.",
+        "body_many": "Il consenso per {{bankName}} scade tra {{count}} di giorni. Rinnovalo per mantenere aggiornati i dati.",
+        "body_other": "Il consenso per {{bankName}} scade tra {{count}} giorni. Rinnovalo per mantenere aggiornati i dati."
+      },
+      "consent_expired": {
+        "title": "Consenso scaduto",
+        "body": "Il consenso per {{bankName}} è scaduto. Rinnovalo per riprendere la sincronizzazione."
+      },
+      "connection_error": {
+        "title": "Problema con il collegamento bancario",
+        "body": "{{bankName}} non condivide più i dati. Rinnova il consenso o controlla il collegamento."
+      },
+      "sync_failing": {
+        "title": "Sincronizzazione in errore",
+        "body": "{{accountName}} non si sincronizza da oltre due giorni."
+      },
+      "backup_failing": {
+        "title": "Backup in errore",
+        "body": "Gli ultimi backup non sono andati a buon fine. Apri le impostazioni per i dettagli."
+      },
+      "generic": {
+        "title": "Notifica di Bursar",
+        "body": "Apri Bursar per vedere i dettagli."
+      }
     }
   },
   "errors": {
@@ -1108,5 +1138,215 @@
       "openAccount": "Apri il conto"
     },
     "seeAllForAccount": "Vedi tutti in Movimenti"
+  },
+  "settings": {
+    "subtitle": "Lingua, banche, notifiche, visualizzazione e backup. Modifica una sezione alla volta e salvala.",
+    "editSection": "Modifica sezione",
+    "editSectionNamed": "Modifica sezione {{section}}",
+    "saveSection": "Salva sezione",
+    "saveSectionNamed": "Salva sezione {{section}}",
+    "on": "Attivo",
+    "off": "Disattivato",
+    "notSet": "Non impostato",
+    "loadFailed": {
+      "title": "Impossibile caricare le impostazioni",
+      "body": "Il server non ha risposto. Le impostazioni non sono cambiate."
+    },
+    "saved": {
+      "title": "Impostazioni salvate",
+      "detail": "La sezione “{{section}}” è stata aggiornata."
+    },
+    "saveFailed": {
+      "title": "Impostazioni non salvate",
+      "detail": "Il server non è riuscito a registrare la modifica. Riprova tra un momento."
+    },
+    "invalid": {
+      "title": "Controlla i campi evidenziati",
+      "detail_one": "{{count}} campo richiede attenzione.",
+      "detail_many": "{{count}} di campi richiedono attenzione.",
+      "detail_other": "{{count}} campi richiedono attenzione.",
+      "refused": "Il server ha rifiutato questi valori. Controlla i campi e riprova."
+    },
+    "errors": {
+      "generic": "Valore non valido.",
+      "locale": "Scegli italiano o inglese.",
+      "country": "Scegli un paese dall’elenco.",
+      "consentDays": "Inserisci un numero intero di giorni tra 1 e 365.",
+      "backgroundSyncCap": "Scegli tra 1 e 4 sincronizzazioni al giorno.",
+      "dailySyncTime": "Inserisci un orario come 06:00.",
+      "backupTime": "Inserisci un orario come 03:00.",
+      "notificationEmail": "Inserisci un indirizzo email valido, oppure lascia il campo vuoto."
+    },
+    "unsaved": {
+      "region": "Modifiche non salvate",
+      "title": "Modifiche non salvate",
+      "sections_one": "{{count}} sezione modificata",
+      "sections_many": "{{count}} di sezioni modificate",
+      "sections_other": "{{count}} sezioni modificate",
+      "discard": "Annulla le modifiche",
+      "save": "Salva le modifiche"
+    },
+    "sections": {
+      "general": {
+        "title": "Generale",
+        "description": "Lingua, paese e fuso orario."
+      },
+      "banking": {
+        "title": "Banche",
+        "description": "Durata del consenso, sincronizzazioni in background e collegamento con Enable Banking."
+      },
+      "notifications": {
+        "title": "Notifiche",
+        "description": "Dove arrivano gli avvisi e se vengono inviate email."
+      },
+      "display": {
+        "title": "Visualizzazione",
+        "description": "Come vengono evidenziate le cifre."
+      },
+      "backups": {
+        "title": "Backup",
+        "description": "Copie cifrate dei dati e dove sono conservate."
+      }
+    },
+    "general": {
+      "language": "Lingua",
+      "languages": {
+        "it": "Italiano",
+        "en": "English"
+      },
+      "country": "Paese",
+      "timezone": "Fuso orario",
+      "timezoneNote": "Impostato al momento del rilascio con la variabile TZ. Date, orari e limiti giornalieri lo seguono.",
+      "preview": {
+        "title": "Anteprima",
+        "date": "Data",
+        "relative": "Tempo relativo",
+        "amount": "Importo",
+        "hint": "Valori di esempio nella lingua scelta: i tuoi dati non cambiano."
+      }
+    },
+    "banking": {
+      "consentDays": "Durata del consenso (giorni)",
+      "consentDaysHint": "Per quanti giorni la banca può condividere i dati prima del rinnovo. Se il massimo della banca è più basso, vale quello.",
+      "consentDaysValue_one": "{{count}} giorno",
+      "consentDaysValue_many": "{{count}} di giorni",
+      "consentDaysValue_other": "{{count}} giorni",
+      "syncCap": "Sincronizzazioni in background per conto al giorno",
+      "syncCapHint": "Le banche di solito consentono circa 4 aggiornamenti automatici al giorno. Bursar resta sotto quel limite; “Sincronizza ora” dal pannello non lo consuma.",
+      "syncCapValue_one": "{{count}} per conto al giorno",
+      "syncCapValue_many": "{{count}} per conto al giorno",
+      "syncCapValue_other": "{{count}} per conto al giorno",
+      "dailyTime": "Orario della sincronizzazione giornaliera",
+      "dailyTimeHint": "Ora locale ({{timezone}}). La prima sincronizzazione in background del giorno parte dopo questo orario.",
+      "short": {
+        "consentDays": "Durata del consenso",
+        "syncCap": "Sincronizzazioni in background",
+        "dailyTime": "Sincronizzazione giornaliera"
+      },
+      "status": {
+        "title": "Enable Banking",
+        "loading": "Controllo di Enable Banking…",
+        "failed": "Impossibile caricare lo stato di Enable Banking.",
+        "notConfigured": "Enable Banking non è configurato",
+        "notConfiguredHint": "Aggiungi le credenziali dell’applicazione sul server per collegare le banche. Vedi docs/enable-banking.md.",
+        "environment": {
+          "SANDBOX": "Sandbox",
+          "PRODUCTION": "Produzione"
+        },
+        "active": "Applicazione attiva",
+        "inactive": "Applicazione non attiva",
+        "redirectAllowed": "URL di ritorno consentito",
+        "redirectBlocked": "URL di ritorno non consentito",
+        "redirectBlockedHint": "Aggiungi l’indirizzo di ritorno di questo pannello agli URL di redirect dell’applicazione nel Control Panel di Enable Banking.",
+        "unreachable": "Al momento Enable Banking non risponde."
+      }
+    },
+    "notifications": {
+      "email": "Indirizzo per le notifiche",
+      "emailPlaceholder": "nome@example.com",
+      "emailHint": "Le email contengono solo il titolo dell’evento e un link al pannello, mai importi o dati dei conti.",
+      "enabled": "Invia notifiche via email",
+      "enabledHint": "Gli avvisi compaiono sempre nel pannello. Se è attivo, gli stessi eventi arrivano anche per email.",
+      "enabledShort": "Notifiche via email",
+      "smtp": {
+        "label": "Server di posta",
+        "configured": "SMTP configurato",
+        "notConfigured": "SMTP non configurato",
+        "hint": "Finché SMTP non è configurato sul server, gli avvisi compaiono solo nel pannello. Vedi docs/deployment.md."
+      },
+      "test": {
+        "button": "Invia email di prova",
+        "blocked": "Salva prima le modifiche: la prova va all’indirizzo salvato.",
+        "sentTitle": "Email di prova inviata",
+        "sentDetail": "Controlla la posta di {{email}}.",
+        "outcomes": {
+          "sent": "L’email di prova è stata consegnata al server di posta.",
+          "smtp_not_configured": "SMTP non è configurato sul server, quindi non si può inviare alcuna email.",
+          "recipient_missing": "Salva prima un indirizzo per le notifiche.",
+          "smtp_failed": "Il server di posta ha rifiutato il messaggio. Controlla le impostazioni SMTP sul server.",
+          "unknown": "Non è stato possibile inviare l’email di prova. Riprova tra un momento."
+        }
+      }
+    },
+    "display": {
+      "highlight": "Evidenzia il netto negativo",
+      "highlightHint": "Mostra in rosso un netto a 30 giorni negativo. Se è disattivato, usa il tono neutro.",
+      "themeHint": "Tema e densità si cambiano dal menu utente in alto a destra."
+    },
+    "backups": {
+      "target": "Destinazione",
+      "targetLocal": "Solo copia locale",
+      "targetS3": "Archivio compatibile S3",
+      "lastSuccess": "Ultimo backup riuscito",
+      "never": "Mai",
+      "failures": "Errori consecutivi",
+      "failuresNone": "Nessuno",
+      "failuresValue_one": "{{count}} errore di fila",
+      "failuresValue_many": "{{count}} di errori di fila",
+      "failuresValue_other": "{{count}} errori di fila",
+      "nightlyTime": "Backup notturno alle",
+      "nightlyTimeHint": "Ora locale ({{timezone}}).",
+      "localOnly": {
+        "title": "I backup restano su questo server",
+        "body": "Senza una destinazione compatibile S3 le uniche copie stanno accanto ai dati: perdere il server significa perdere anche i backup. Vedi docs/backup-restore.md per aggiungerne una."
+      },
+      "runNow": "Esegui backup ora",
+      "running": "Backup in corso…",
+      "runBlocked": "Un backup è già in corso.",
+      "startedTitle": "Backup avviato",
+      "startedDetail": "Comparirà nell’elenco qui sotto quando finisce.",
+      "busyTitle": "Un backup è già in corso",
+      "busyDetail": "Attendi che finisca, poi avviane un altro se serve.",
+      "runFailedTitle": "Impossibile avviare il backup",
+      "runFailedDetail": "Il server non ha accettato la richiesta. Riprova tra un momento.",
+      "finishedTitle": "Backup completato",
+      "finishedDetail": "È stata salvata una nuova copia cifrata dei dati.",
+      "failedTitle": "Backup non riuscito",
+      "failedDetail": "L’ultima esecuzione non è terminata. Apri le impostazioni per i dettagli.",
+      "recent": "Backup recenti",
+      "caption": "Backup recenti",
+      "loadFailed": "Impossibile caricare lo stato dei backup.",
+      "columns": {
+        "started": "Avvio",
+        "trigger": "Origine",
+        "status": "Esito",
+        "size": "Dimensione",
+        "details": "Dettagli"
+      },
+      "triggers": {
+        "scheduled": "Notturno",
+        "manual": "Manuale",
+        "cli": "Riga di comando"
+      },
+      "statuses": {
+        "running": "In corso",
+        "succeeded": "Riuscito",
+        "failed": "Non riuscito"
+      },
+      "empty": {
+        "title": "Ancora nessun backup",
+        "body": "Il primo backup notturno parte alle {{time}}."
+      }
+    }
   }
 }

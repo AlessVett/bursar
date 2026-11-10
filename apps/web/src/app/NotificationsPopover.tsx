@@ -1,7 +1,13 @@
+import type { NotificationEvent, NotificationItem } from "@bursar/shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { TFunction } from "i18next";
 import { Bell, BellOff, CircleAlert, Info, TriangleAlert } from "lucide-react";
-import { useCallback, useId, useRef, useState } from "react";
+import { useCallback, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
+import { api } from "../api";
 import { InlineEmpty, RelativeTime } from "../components/ui";
+import { queryKeys } from "../lib/query-keys";
 import { useDismiss } from "./useDismiss";
 
 export interface PopoverNotification {
@@ -22,19 +28,91 @@ export interface NotificationsPopoverProps {
   loading?: boolean;
 }
 
-const NO_ITEMS: PopoverNotification[] = [];
+const FEED_LIMIT = 6;
+const FEED_STALE_MS = 30_000;
+
+/** Tone per event: warnings need attention soon, danger means data is no longer flowing. */
+const EVENT_TONES: Record<NotificationEvent, PopoverNotification["tone"]> = {
+  consent_expiring: "warning",
+  consent_expired: "danger",
+  connection_error: "danger",
+  sync_failing: "warning",
+  backup_failing: "warning",
+};
+
+/** Panel paths only: an absolute or protocol-relative link in the data is never followed. */
+function safeLink(link: string | null): string | null {
+  return link !== null && link.startsWith("/") && !link.startsWith("//") ? link : null;
+}
 
 /**
- * Data for the popover. This task has no notifications API yet, so the feed is empty; Task 22
- * replaces the body with the `notifications` query.
+ * Turns a stored notification into popover text: `notifications.events.<event>.title|body`
+ * interpolated with the event's params (`days` also drives the plural), the tone of the event and
+ * the panel link. An event the panel does not know yet gets a generic text and the info tone.
+ */
+export function toPopoverNotification(item: NotificationItem, t: TFunction): PopoverNotification {
+  const params = item.params;
+  const options: Record<string, string | number> = { ...params };
+  if (typeof params.days === "number") options.count = params.days;
+  const base = `notifications.events.${item.event}`;
+  return {
+    id: item.id,
+    title: t(`${base}.title`, {
+      ...options,
+      defaultValue: t("notifications.events.generic.title"),
+    }),
+    body: t(`${base}.body`, {
+      ...options,
+      defaultValue: t("notifications.events.generic.body"),
+    }),
+    at: item.createdAt,
+    read: item.readAt !== null,
+    tone: EVENT_TONES[item.event] ?? "info",
+    to: safeLink(item.link),
+  };
+}
+
+/**
+ * Data for the popover: the latest six notifications (`staleTime` 30 s; live events invalidate
+ * the query). Opening an unread item marks it read and follows its link; "Mark all as read"
+ * clears the badge. Both settle with a refetch, so the unread count always comes from the server.
  */
 export function useNotificationsFeed(): NotificationsPopoverProps {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const query = useQuery({
+    queryKey: queryKeys.notifications,
+    queryFn: () => api.notifications(FEED_LIMIT),
+    staleTime: FEED_STALE_MS,
+  });
+  const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.notifications });
+  const markRead = useMutation({
+    mutationFn: (id: number) => api.markNotificationRead(id),
+    onSettled: refresh,
+  });
+  const markAll = useMutation({
+    mutationFn: () => api.markAllNotificationsRead(),
+    onSettled: refresh,
+  });
+
+  const data = query.data;
+  const items = useMemo(
+    () => (data?.items ?? []).map((entry) => toPopoverNotification(entry, t)),
+    [data, t],
+  );
+
   return {
-    items: NO_ITEMS,
-    unread: 0,
-    onOpenItem: () => undefined,
-    onMarkAllRead: () => undefined,
-    loading: false,
+    items,
+    unread: data?.unread ?? 0,
+    loading: query.isPending,
+    onOpenItem: (id) => {
+      const opened = items.find((entry) => entry.id === id);
+      if (!opened) return;
+      if (!opened.read) markRead.mutate(id);
+      if (opened.to) void navigate(opened.to);
+    },
+    onMarkAllRead: () => markAll.mutate(),
   };
 }
 

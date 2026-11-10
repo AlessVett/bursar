@@ -82,7 +82,7 @@ export const ROUTES: readonly RouteDef[] = [
   route("chat", "/chat", MessagesSquare, "agents", null, false),
   route("agents", "/agents", Bot, "agents", null, false),
   route("activity", "/activity", Activity, "agents", null, false),
-  route("settings", "/settings", Settings, "bottom", null, false),
+  route("settings", "/settings", Settings, "bottom", null, true),
 ];
 
 export function shippedRoutes(): RouteDef[] {

@@ -8,7 +8,8 @@
     "build": "vite build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p . && tsc --noEmit -p qa",
-    "qa": "tsx qa/run.ts"
+    "qa": "tsx qa/run.ts",
+    "qa:stories": "tsx qa/stories.ts"
   },
   "dependencies": {
     "@bursar/shared": "workspace:*",

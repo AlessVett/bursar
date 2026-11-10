@@ -291,6 +291,10 @@ describe("useLiveEvents", () => {
     invalidate.mockClear();
     emit("backup.finished", { type: "backup.finished", status: "failed" });
     expect(invalidatedKeys()).toEqual([queryKeys.backups, queryKeys.summary]);
+    // A finished backup produces exactly one toast (Task 22): "Backup failed" for a failed run.
+    expect(feedback).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(feedback).mock.calls[0]?.[0]).toBe("Backup failed");
+    vi.mocked(feedback).mockClear();
 
     invalidate.mockClear();
     emit("settings.updated", { type: "settings.updated" });

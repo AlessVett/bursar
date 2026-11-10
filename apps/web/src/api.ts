@@ -4,6 +4,7 @@ import type {
   AccountSummary,
   AspspListResponse,
   AuthStatus,
+  BackupStatusResponse,
   BalanceHistoryResponse,
   BankStatusResponse,
   CashFlowResponse,
@@ -13,10 +14,12 @@ import type {
   DisconnectResponse,
   HomeSummary,
   LoginRequest,
+  NotificationListResponse,
   PurgeResponse,
   RemovalPreview,
   RenewConnectionRequest,
   SearchResponse,
+  SettingsPatch,
   SettingsResponse,
   SetupConfirmRequest,
   SetupStartRequest,
@@ -24,6 +27,7 @@ import type {
   StartConnectionRequest,
   StartConnectionResponse,
   SyncQueuedResponse,
+  TestEmailResponse,
   TransactionDetail,
   TransactionListResponse,
 } from "@bursar/shared";
@@ -168,6 +172,19 @@ export const api = {
     request<StartConnectionResponse>("POST", "/api/connections", body),
   completeConnection: (body: CompleteConnectionRequest) =>
     request<CompleteConnectionResponse>("POST", "/api/connections/complete", body),
+  updateSettings: (patch: SettingsPatch) =>
+    request<SettingsResponse>("PATCH", "/api/settings", patch),
+  backups: () => request<BackupStatusResponse>("GET", "/api/backups"),
+  runBackup: () => request<{ queued: true }>("POST", "/api/backups/run"),
+  notifications: (limit?: number) =>
+    request<NotificationListResponse>(
+      "GET",
+      limit === undefined ? "/api/notifications" : `/api/notifications?limit=${limit}`,
+    ),
+  markNotificationRead: (id: number) => request<void>("POST", `/api/notifications/${id}/read`),
+  markAllNotificationsRead: () =>
+    request<{ updated: number }>("POST", "/api/notifications/read-all"),
+  sendTestEmail: () => request<TestEmailResponse>("POST", "/api/notifications/test-email"),
 };
 
 /**

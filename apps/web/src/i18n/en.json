@@ -261,7 +261,9 @@
       "compact": "Compact",
       "comfortable": "Comfortable"
     },
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "languageNotSaved": "Language not saved",
+    "languageNotSavedDetail": "The panel switched language, but the choice was not saved and the next reload uses the saved one."
   },
   "notifications": {
     "popover": {
@@ -274,6 +276,33 @@
       "unread": "Unread",
       "emptyTitle": "No notifications",
       "emptyBody": "Consent reminders and sync problems appear here."
+    },
+    "events": {
+      "consent_expiring": {
+        "title": "Consent expiring",
+        "body_one": "Consent for {{bankName}} has {{count}} day left. Renew it to keep your data up to date.",
+        "body_other": "Consent for {{bankName}} has {{count}} days left. Renew it to keep your data up to date."
+      },
+      "consent_expired": {
+        "title": "Consent expired",
+        "body": "Consent for {{bankName}} has expired. Renew it to resume syncing."
+      },
+      "connection_error": {
+        "title": "Bank connection problem",
+        "body": "{{bankName}} is not sharing data any more. Renew the consent or check the connection."
+      },
+      "sync_failing": {
+        "title": "Sync is failing",
+        "body": "{{accountName}} has not synced for over two days."
+      },
+      "backup_failing": {
+        "title": "Backups are failing",
+        "body": "The last backups did not complete. Open Settings to see the details."
+      },
+      "generic": {
+        "title": "Bursar notification",
+        "body": "Open Bursar to see the details."
+      }
     }
   },
   "errors": {
@@ -1066,5 +1095,210 @@
       "openAccount": "Open account"
     },
     "seeAllForAccount": "See all in Transactions"
+  },
+  "settings": {
+    "subtitle": "Language, banking, notifications, display and backups. Edit one section at a time and save it.",
+    "editSection": "Edit section",
+    "editSectionNamed": "Edit section {{section}}",
+    "saveSection": "Save section",
+    "saveSectionNamed": "Save section {{section}}",
+    "on": "On",
+    "off": "Off",
+    "notSet": "Not set",
+    "loadFailed": {
+      "title": "Settings could not be loaded",
+      "body": "The server did not answer. Your settings are unchanged."
+    },
+    "saved": {
+      "title": "Settings saved",
+      "detail": "The “{{section}}” section was updated."
+    },
+    "saveFailed": {
+      "title": "Settings were not saved",
+      "detail": "The server could not store the change. Try again in a moment."
+    },
+    "invalid": {
+      "title": "Check the highlighted fields",
+      "detail_one": "{{count}} field needs attention.",
+      "detail_other": "{{count}} fields need attention.",
+      "refused": "The server refused these values. Review the fields and try again."
+    },
+    "errors": {
+      "generic": "This value is not valid.",
+      "locale": "Choose Italian or English.",
+      "country": "Choose a country from the list.",
+      "consentDays": "Enter a whole number of days between 1 and 365.",
+      "backgroundSyncCap": "Choose between 1 and 4 syncs per day.",
+      "dailySyncTime": "Enter a time such as 06:00.",
+      "backupTime": "Enter a time such as 03:00.",
+      "notificationEmail": "Enter a valid email address, or leave the field empty."
+    },
+    "unsaved": {
+      "region": "Unsaved changes",
+      "title": "Unsaved changes",
+      "sections_one": "{{count}} section changed",
+      "sections_other": "{{count}} sections changed",
+      "discard": "Discard changes",
+      "save": "Save changes"
+    },
+    "sections": {
+      "general": {
+        "title": "General",
+        "description": "Language, country and time zone."
+      },
+      "banking": {
+        "title": "Banking",
+        "description": "Consent length, background syncs and the Enable Banking connection."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Where alerts are sent and whether emails go out."
+      },
+      "display": {
+        "title": "Display",
+        "description": "How figures are highlighted."
+      },
+      "backups": {
+        "title": "Backups",
+        "description": "Encrypted copies of your data and where they are stored."
+      }
+    },
+    "general": {
+      "language": "Language",
+      "languages": {
+        "it": "Italiano",
+        "en": "English"
+      },
+      "country": "Country",
+      "timezone": "Time zone",
+      "timezoneNote": "Set at deploy time with the TZ variable. Dates, schedules and daily limits follow it.",
+      "preview": {
+        "title": "Preview",
+        "date": "Date",
+        "relative": "Relative time",
+        "amount": "Amount",
+        "hint": "Sample values in the chosen language; your data is not changed."
+      }
+    },
+    "banking": {
+      "consentDays": "Consent length (days)",
+      "consentDaysHint": "How long a bank may share data before you renew. The bank's own maximum applies if it is shorter.",
+      "consentDaysValue_one": "{{count}} day",
+      "consentDaysValue_other": "{{count}} days",
+      "syncCap": "Background syncs per account per day",
+      "syncCapHint": "Banks usually allow about 4 unattended refreshes a day. Bursar stays below that; “Sync now” from the panel does not count against this limit.",
+      "syncCapValue_one": "{{count}} per account per day",
+      "syncCapValue_other": "{{count}} per account per day",
+      "dailyTime": "Daily sync time",
+      "dailyTimeHint": "Local time ({{timezone}}). The first background sync of the day starts after this time.",
+      "short": {
+        "consentDays": "Consent length",
+        "syncCap": "Background syncs",
+        "dailyTime": "Daily sync"
+      },
+      "status": {
+        "title": "Enable Banking",
+        "loading": "Checking Enable Banking…",
+        "failed": "The Enable Banking status could not be loaded.",
+        "notConfigured": "Enable Banking is not configured",
+        "notConfiguredHint": "Add the application credentials on the server to connect banks. See docs/enable-banking.md.",
+        "environment": {
+          "SANDBOX": "Sandbox",
+          "PRODUCTION": "Production"
+        },
+        "active": "Application active",
+        "inactive": "Application inactive",
+        "redirectAllowed": "Redirect URL allowed",
+        "redirectBlocked": "Redirect URL not allowed",
+        "redirectBlockedHint": "Add this panel's callback address to the application's redirect URLs in the Enable Banking Control Panel.",
+        "unreachable": "Enable Banking could not be reached just now."
+      }
+    },
+    "notifications": {
+      "email": "Notification address",
+      "emailPlaceholder": "name@example.com",
+      "emailHint": "Emails contain only an event title and a link to the panel, never amounts or account details.",
+      "enabled": "Send email notifications",
+      "enabledHint": "Alerts always appear in the panel. With this on, the same events are emailed too.",
+      "enabledShort": "Email notifications",
+      "smtp": {
+        "label": "Mail server",
+        "configured": "SMTP is configured",
+        "notConfigured": "SMTP is not configured",
+        "hint": "Until SMTP is set up on the server, alerts appear only in the panel. See docs/deployment.md."
+      },
+      "test": {
+        "button": "Send test email",
+        "blocked": "Save the changes first: the test goes to the saved address.",
+        "sentTitle": "Test email sent",
+        "sentDetail": "Check the inbox of {{email}}.",
+        "outcomes": {
+          "sent": "The test email was handed to the mail server.",
+          "smtp_not_configured": "SMTP is not configured on the server, so no email can be sent.",
+          "recipient_missing": "Save a notification address first.",
+          "smtp_failed": "The mail server refused the message. Check the SMTP settings on the server.",
+          "unknown": "The test email could not be sent. Try again in a moment."
+        }
+      }
+    },
+    "display": {
+      "highlight": "Highlight negative net",
+      "highlightHint": "Shows a negative 30-day net in red. When off, it uses the neutral tone.",
+      "themeHint": "Theme and density are in the user menu at the top right."
+    },
+    "backups": {
+      "target": "Target",
+      "targetLocal": "Local copy only",
+      "targetS3": "S3-compatible storage",
+      "lastSuccess": "Last successful backup",
+      "never": "Never",
+      "failures": "Consecutive failures",
+      "failuresNone": "None",
+      "failuresValue_one": "{{count}} failure in a row",
+      "failuresValue_other": "{{count}} failures in a row",
+      "nightlyTime": "Nightly backup at",
+      "nightlyTimeHint": "Local time ({{timezone}}).",
+      "localOnly": {
+        "title": "Backups stay on this server",
+        "body": "Without an S3-compatible target the only copies sit next to the data, so losing the server loses the backups too. See docs/backup-restore.md to add a target."
+      },
+      "runNow": "Back up now",
+      "running": "A backup is running…",
+      "runBlocked": "A backup is already running.",
+      "startedTitle": "Backup started",
+      "startedDetail": "It appears in the list below when it finishes.",
+      "busyTitle": "A backup is already running",
+      "busyDetail": "Wait for it to finish, then start another if you need one.",
+      "runFailedTitle": "Backup could not be started",
+      "runFailedDetail": "The server did not accept the request. Try again in a moment.",
+      "finishedTitle": "Backup completed",
+      "finishedDetail": "A new encrypted copy of your data was stored.",
+      "failedTitle": "Backup failed",
+      "failedDetail": "The last run did not complete. Open Settings to see the details.",
+      "recent": "Recent backups",
+      "caption": "Recent backups",
+      "loadFailed": "The backup status could not be loaded.",
+      "columns": {
+        "started": "Started",
+        "trigger": "Trigger",
+        "status": "Status",
+        "size": "Size",
+        "details": "Details"
+      },
+      "triggers": {
+        "scheduled": "Nightly",
+        "manual": "Manual",
+        "cli": "Command line"
+      },
+      "statuses": {
+        "running": "Running",
+        "succeeded": "Succeeded",
+        "failed": "Failed"
+      },
+      "empty": {
+        "title": "No backups yet",
+        "body": "The first nightly backup runs at {{time}}."
+      }
+    }
   }
 }

@@ -4,7 +4,9 @@ import { type ReactNode, useCallback, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { api } from "../api";
+import { feedback } from "../components/feedback";
 import { type Language, SUPPORTED_LANGUAGES, setLanguage } from "../i18n";
+import { isSessionExpired } from "../lib/query-client";
 import { queryKeys } from "../lib/query-keys";
 import { type Density, type ThemePreference, useUi } from "../store/ui";
 import { useDismiss } from "./useDismiss";
@@ -58,6 +60,22 @@ export function UserMenu() {
     },
   });
 
+  // Task 17's useLocaleSync makes the saved locale win on every page load, so the menu saves it.
+  const saveLanguage = useMutation({
+    mutationFn: (language: Language) => api.updateSettings({ locale: language }),
+    onSuccess: (response) => queryClient.setQueryData(queryKeys.settings, response),
+    onError: (error) => {
+      if (isSessionExpired(error)) return;
+      feedback(t("userMenu.languageNotSaved"), t("userMenu.languageNotSavedDetail"), "warning");
+    },
+  });
+
+  function chooseLanguage(language: Language): void {
+    if (i18n.language === language) return;
+    setLanguage(language);
+    saveLanguage.mutate(language);
+  }
+
   const close = useCallback(() => setOpen(false), []);
   useDismiss(open, close, rootRef, buttonRef);
 
@@ -90,7 +108,7 @@ export function UserMenu() {
                 lang={language}
                 aria-pressed={i18n.language === language}
                 className={OPTION}
-                onClick={() => setLanguage(language)}
+                onClick={() => chooseLanguage(language)}
               >
                 {LANGUAGE_LABELS[language]}
               </button>
