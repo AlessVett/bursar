@@ -1,9 +1,10 @@
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import i18n from "../i18n";
 import { queryKeys } from "../lib/query-keys";
 import { renderRoutes, stubApi, testQueryClient } from "../test/router";
 import { expireSession, loginPath, RequireAuth, safeNext } from "./RequireAuth";
+import { LiveEvents } from "./useLiveEvents";
 
 const routes = [
   {
@@ -91,6 +92,65 @@ describe("RequireAuth", () => {
       "The server is not reachable. Try again in a moment.",
     );
     expect(screen.getByRole("button", { name: "Try again" })).toBeTruthy();
+  });
+
+  it("keeps the signed-in page and the live stream when a status refetch fails", async () => {
+    class FakeEventSource {
+      static instances: FakeEventSource[] = [];
+      closed = false;
+      onerror: ((event: Event) => void) | null = null;
+      constructor(readonly url: string) {
+        FakeEventSource.instances.push(this);
+      }
+      addEventListener(): void {}
+      close(): void {
+        this.closed = true;
+      }
+    }
+    vi.stubGlobal("EventSource", FakeEventSource);
+    let reachable = true;
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      if (!reachable) throw new TypeError("Failed to fetch");
+      expect(String(input)).toBe("/api/auth/status");
+      return new Response(JSON.stringify({ setupRequired: false, authenticated: true }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const live = [
+      {
+        element: <RequireAuth area="app" />,
+        children: [
+          {
+            path: "*",
+            element: (
+              <>
+                <LiveEvents />
+                <p>app page</p>
+              </>
+            ),
+          },
+        ],
+      },
+    ];
+    const client = testQueryClient({ setupRequired: false, authenticated: true });
+    renderRoutes(live, { client, initialEntries: ["/transactions"] });
+    expect(await screen.findByText("app page")).toBeTruthy();
+    await waitFor(() => expect(FakeEventSource.instances).toHaveLength(1));
+
+    // A server restart: the stream drops and the status refetch cannot reach the server.
+    reachable = false;
+    act(() => FakeEventSource.instances[0]?.onerror?.(new Event("error")));
+    await waitFor(() => expect(client.getQueryState(queryKeys.authStatus)?.status).toBe("error"));
+    expect(screen.getByText("app page")).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
+
+    // The stream keeps trying (1 s after the first failure) and the page stays mounted.
+    await waitFor(() => expect(FakeEventSource.instances).toHaveLength(2), { timeout: 3_000 });
+    expect(FakeEventSource.instances[1]?.closed).toBe(false);
+    reachable = true;
+    expect(screen.getByText("app page")).toBeTruthy();
   });
 
   it("expireSession marks the session as gone and opens the login page with the notice", async () => {

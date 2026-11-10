@@ -79,13 +79,18 @@ function FullPageStatus({ failed, onRetry }: { failed: boolean; onRetry: () => v
 /**
  * Route guard for both areas. `app`: setup first, then sign-in (with `next`). `auth`: `/setup` only
  * while setup is required, `/login` only while signed out; a signed-in owner goes to `next`.
+ *
+ * The full-page status shows only while no status is known. A background refetch that fails (the
+ * live stream invalidates the status on every error, for example during a server restart) keeps
+ * routing on the last known status, so the shell, its open forms and the stream's reconnects stay.
  */
 export function RequireAuth({ area }: { area: "app" | "auth" }) {
   const location = useLocation();
   const status = useQuery({ queryKey: queryKeys.authStatus, queryFn: api.status });
 
-  if (status.isPending) return <FullPageStatus failed={false} onRetry={() => undefined} />;
-  if (status.isError) return <FullPageStatus failed onRetry={() => void status.refetch()} />;
+  if (status.data === undefined) {
+    return <FullPageStatus failed={status.isError} onRetry={() => void status.refetch()} />;
+  }
 
   const { setupRequired, authenticated } = status.data;
   const here = `${location.pathname}${location.search}`;
