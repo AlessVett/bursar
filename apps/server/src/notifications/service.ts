@@ -1,4 +1,5 @@
 import {
+  isPanelPath,
   type NotificationEvent,
   type NotificationItem,
   type NotificationListResponse,
@@ -54,6 +55,9 @@ export class NotificationService {
    * queueing the email fails, the notification stays (marked `skipped`) and the error is rethrown.
    */
   raise(input: RaiseInput): number | null {
+    if (input.link !== null && !isPanelPath(input.link)) {
+      throw new Error("A notification link must be a panel path");
+    }
     const sendEmail = this.shouldEmail();
     const [row] = this.deps.db
       .insert(notifications)

@@ -57,6 +57,11 @@ describe("panelUrlFor", () => {
       "//evil.example.test/",
       "/\\evil.example.test",
       "javascript:alert(1)",
+      "/\t/evil.example.test",
+      "/\n/evil.example.test",
+      "/\r/evil.example.test",
+      "/accounts\u0000",
+      "/a\\b",
     ]) {
       expect(panelUrlFor(publicUrl, link)).toBe("https://bursar.example.test/");
     }

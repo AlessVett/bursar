@@ -181,17 +181,22 @@ describe("emailJobHandler", () => {
     expect(f.mailer.sent).toHaveLength(0);
   });
 
-  it("falls back to the panel home for a link that is not a panel path", async () => {
-    f.service.raise({
-      event: "connection_error",
-      dedupeKey: "odd-link",
-      params: {},
-      link: "https://evil.example.test/phish",
-    });
-    await worker().runOnce();
-    expect(f.mailer.sent[0]?.text).toContain("\nhttps://bursar.example.test/\n");
-    expect(f.mailer.sent[0]?.text).not.toContain("evil");
-  });
+  it.each(["https://evil.example.test/phish", "/\t/evil.example.test"])(
+    "falls back to the panel home for the stored link %j",
+    async (link) => {
+      // `raise` refuses such links now; a row written by an older build can still carry one.
+      const { lastInsertRowid } = f.t.sqlite
+        .prepare(
+          `INSERT INTO notifications (event, dedupe_key, params, link, created_at, email_status)
+         VALUES ('connection_error', 'odd-link', '{}', ?, ?, 'pending')`,
+        )
+        .run(link, f.clock.now);
+      f.queue.enqueue(EMAIL_JOB, { notificationId: Number(lastInsertRowid) });
+      await worker().runOnce();
+      expect(f.mailer.sent[0]?.text).toContain("\nhttps://bursar.example.test/\n");
+      expect(f.mailer.sent[0]?.text).not.toContain("evil");
+    },
+  );
 
   it("completes quietly when the notification no longer exists", async () => {
     const jobId = f.queue.enqueue(EMAIL_JOB, { notificationId: 9_999 });

@@ -46,6 +46,16 @@ describe("NotificationService", () => {
   });
   afterEach(() => f.dispose());
 
+  it.each([
+    "https://evil.example.test/",
+    "//evil.example.test",
+    "/\t/evil.example.test",
+    "/\\evil",
+  ])("refuses to store the non-panel link %j", (link) => {
+    expect(() => f.service.raise(expiring({ link }))).toThrow("panel path");
+    expect(f.service.list(10).items).toHaveLength(0);
+  });
+
   it("stores a notification and tells the panel", () => {
     const id = f.service.raise(expiring());
     expect(id).toBeGreaterThan(0);

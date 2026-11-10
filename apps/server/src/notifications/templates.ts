@@ -1,4 +1,4 @@
-import type { NotificationEvent } from "@bursar/shared";
+import { isPanelPath, type NotificationEvent } from "@bursar/shared";
 
 export type EmailLocale = "it" | "en";
 export type EmailEvent = NotificationEvent | "test";
@@ -61,6 +61,9 @@ export function renderEmail(input: { event: EmailEvent; locale: EmailLocale; pan
  * home, so a notification can never point an email reader outside the panel.
  */
 export function panelUrlFor(publicUrl: URL, link: string | null): string {
-  const isPanelPath = link !== null && /^\/(?![/\\])/.test(link);
-  return new URL(isPanelPath ? link : "/", publicUrl).toString();
+  if (link !== null && isPanelPath(link)) {
+    const resolved = new URL(link, publicUrl);
+    if (resolved.origin === publicUrl.origin) return resolved.toString();
+  }
+  return new URL("/", publicUrl).toString();
 }

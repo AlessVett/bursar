@@ -45,6 +45,21 @@ describe("notification payload schemas", () => {
     );
   });
 
+  it.each([
+    "https://evil.example.test/",
+    "//evil.example.test",
+    "/\t/evil.example.test",
+    "/a\nb",
+    "/\\evil",
+    "accounts",
+  ])("rejects the link %j", (link) => {
+    expect(notificationItemSchema.safeParse({ ...item, link }).success).toBe(false);
+  });
+
+  it("accepts a null link", () => {
+    expect(notificationItemSchema.safeParse({ ...item, link: null }).success).toBe(true);
+  });
+
   it("only accepts sent: true as a test email response", () => {
     expect(testEmailResponseSchema.safeParse({ sent: true }).success).toBe(true);
     expect(testEmailResponseSchema.safeParse({ sent: false }).success).toBe(false);

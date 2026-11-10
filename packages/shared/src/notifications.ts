@@ -11,12 +11,22 @@ export const NOTIFICATION_MAX_LIMIT = 50;
  */
 export const notificationParamsSchema = z.record(z.string(), z.union([z.string(), z.number()]));
 
+/**
+ * True for a panel path: a single leading slash, no second slash or backslash right after it and
+ * no control characters anywhere (a URL parser silently drops TAB, LF and CR, so `/\t/host`
+ * would otherwise turn into the protocol-relative `//host`).
+ */
+export function isPanelPath(link: string): boolean {
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: rejecting control characters is the point
+  return /^\/(?![/\\])/.test(link) && !/[\u0000-\u001f\u007f\\]/.test(link);
+}
+
 export const notificationItemSchema = z.object({
   id: z.number().int().positive(),
   event: notificationEventSchema,
   params: notificationParamsSchema,
   /** A panel path such as `/accounts/12` or `/settings#backups`. */
-  link: z.string().nullable(),
+  link: z.string().refine(isPanelPath, { message: "link must be a panel path" }).nullable(),
   createdAt: z.number().int(),
   readAt: z.number().int().nullable(),
 });
