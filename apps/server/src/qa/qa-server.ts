@@ -6,6 +6,7 @@ import { parseArgs } from "node:util";
 import { pino } from "pino";
 import { loadConfig } from "../config";
 import { configSecrets, createLogger } from "../logger";
+import { MemoryMailer } from "../notifications/mailer";
 import { startBursar } from "../server";
 import { seedQa } from "./seed";
 
@@ -58,6 +59,9 @@ async function main(): Promise<void> {
       BURSAR_MIGRATIONS_DIR: path.join(SERVER_DIR, "drizzle"),
       BURSAR_WEB_DIST: webDist,
       BURSAR_LOG_LEVEL: "warn",
+      SMTP_HOST: "127.0.0.1",
+      SMTP_SECURITY: "none",
+      SMTP_FROM: "Bursar <bursar@example.test>",
     });
     const logger = createLogger(
       config.logLevel,
@@ -65,6 +69,7 @@ async function main(): Promise<void> {
       configSecrets(config),
     );
     return startBursar(config, logger, {
+      mailer: new MemoryMailer(),
       seed: async (ctx) => {
         sessionToken = (await seedQa(ctx, { owner: values["no-owner"] !== true })).sessionToken;
       },

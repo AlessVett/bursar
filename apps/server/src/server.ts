@@ -17,14 +17,21 @@ import { FinanceRepository } from "./finance/repository";
 import { createApp, type MountedRouter } from "./http/app";
 import { eventsRoute } from "./http/events";
 import { JobQueue } from "./jobs/queue";
+import { EMAIL_JOB } from "./jobs/types";
 import { type JobHandler, JobWorker } from "./jobs/worker";
 import { maintenanceTask } from "./maintenance";
+import { emailJobHandler } from "./notifications/email-job";
+import { createSmtpMailer, type Mailer } from "./notifications/mailer";
+import { notificationRoutes } from "./notifications/routes";
+import { NotificationService } from "./notifications/service";
 import { Scheduler } from "./scheduler";
 import { settingsRoutes } from "./settings/routes";
 import { SettingsStore } from "./settings/store";
 
 export interface RunningBursar {
   port: number;
+  /** Raises panel notifications (and their emails); used by later tasks and tests. */
+  notifications: NotificationService;
   close(): Promise<void>;
 }
 
@@ -38,11 +45,13 @@ export interface SeedContext {
 
 /**
  * Test and QA hooks into startup. Production (`index.ts`) passes none. Later tasks add fields
- * (for example a fake Enable Banking client or a mailer).
+ * (for example a fake Enable Banking client).
  */
 export interface StartOverrides {
   /** Runs once after the migrations, before the owner check, the worker, the scheduler and the listener. */
   seed?: (ctx: SeedContext) => void | Promise<void>;
+  /** `null` forces "no SMTP"; omit it to use `config.smtp`. Tests and the QA server pass a `MemoryMailer`. */
+  mailer?: Mailer | null;
 }
 
 export async function startBursar(
@@ -105,6 +114,23 @@ export async function startBursar(
 
   // Later tasks register their job handlers and routers here, before the worker and app start.
   const handlers = new Map<string, JobHandler>();
+  const mailer: Mailer | null =
+    overrides.mailer !== undefined
+      ? overrides.mailer
+      : config.smtp
+        ? createSmtpMailer(config.smtp)
+        : null;
+  const notifications = new NotificationService({
+    db: database.db,
+    queue,
+    bus,
+    settings,
+    emailEnabled: () => mailer !== null,
+  });
+  handlers.set(
+    EMAIL_JOB,
+    emailJobHandler({ service: notifications, mailer, settings, publicUrl: config.publicUrl }),
+  );
   const shutdown = new AbortController();
   const routers: MountedRouter[] = [
     { prefix: "/api/events", router: eventsRoute({ bus, sessions, signal: shutdown.signal }) },
@@ -121,6 +147,15 @@ export async function startBursar(
           smtpConfigured: config.smtp !== null,
           backupTarget: config.backup.s3 ? "s3" : "local",
         },
+      }),
+    },
+    {
+      prefix: "/api/notifications",
+      router: notificationRoutes({
+        service: notifications,
+        mailer,
+        settings,
+        publicUrl: config.publicUrl,
       }),
     },
   ];
@@ -174,6 +209,7 @@ export async function startBursar(
 
   return {
     port,
+    notifications,
     close: async () => {
       // Open event streams would keep server.close() waiting for the panel to disconnect.
       shutdown.abort();
