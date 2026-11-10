@@ -16,6 +16,7 @@ import {
   deleteSessionPayloadSchema,
   parsePayload,
   syncDedupeKey,
+  syncFollowUpDedupeKey,
 } from "../jobs/types";
 import { type JobHandler, PermanentJobError } from "../jobs/worker";
 import type { FinanceRepository } from "./repository";
@@ -108,8 +109,11 @@ export class ConnectionLifecycle {
   }
 
   /**
-   * Closes the bank session (best effort, retried by a job), then marks the connection and its
-   * accounts removed in one transaction. Throws {@link AlreadyRemovedError} when it is removed.
+   * Marks the connection and its accounts removed in one transaction, then closes the bank
+   * session (best effort, retried by a job). Throws {@link AlreadyRemovedError} when it is
+   * removed. Removing first means a sync still waiting on the bank, which hears about the closed
+   * session, finds its account removed and changes nothing (no `connection_error` for a bank the
+   * owner just disconnected).
    */
   async disconnect(connectionId: number): Promise<DisconnectResponse | null> {
     const { repo, queue, audit, bus } = this.deps;
@@ -117,29 +121,25 @@ export class ConnectionLifecycle {
     if (!connection) return null;
     if (connection.removedAt !== null) throw new AlreadyRemovedError();
 
-    const remoteSession = await this.closeRemoteSession(connection.providerSessionId);
-
     const now = this.now();
-    const removedAccounts = repo.transaction((): number | null => {
-      // Re-read: another disconnect may have finished while this one waited for the bank.
-      const current = repo.getConnection(connectionId);
-      if (!current) return null;
-      if (current.removedAt !== null) throw new AlreadyRemovedError();
+    const removedAccounts = repo.transaction((): number => {
       repo.updateConnection(connectionId, { removedAt: now });
       const accounts = repo.listAccounts({ connectionId, statuses: LIVE_ACCOUNT_STATUSES });
       for (const account of accounts) {
         repo.updateAccount(account.id, { status: "removed", removedAt: now });
         queue.cancelQueued(syncDedupeKey(account.id));
+        queue.cancelQueued(syncFollowUpDedupeKey(account.id));
       }
-      audit.record({
-        actor: "user",
-        action: "connection.remove",
-        target: `connection:${connectionId}`,
-        details: { accounts: accounts.length, remoteSession },
-      });
       return accounts.length;
     });
-    if (removedAccounts === null) return null;
+
+    const remoteSession = await this.closeRemoteSession(connection.providerSessionId);
+    audit.record({
+      actor: "user",
+      action: "connection.remove",
+      target: `connection:${connectionId}`,
+      details: { accounts: removedAccounts, remoteSession },
+    });
 
     // No time zone in this service: the event carries the stored status; the panel refetches.
     bus.publish({ type: "connection.updated", connectionId, status: connection.status });
@@ -154,6 +154,7 @@ export class ConnectionLifecycle {
     if (account.status !== "removed") return "not_removed";
 
     queue.cancelQueued(syncDedupeKey(accountId));
+    queue.cancelQueued(syncFollowUpDedupeKey(accountId));
     const counts = repo.purgeAccount(accountId);
     const connection = repo.getConnection(account.connectionId);
     const connectionDeleted =

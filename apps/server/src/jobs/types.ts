@@ -19,6 +19,11 @@ export const syncAccountPayloadSchema = z.object({
 });
 export type SyncAccountPayload = z.infer<typeof syncAccountPayloadSchema>;
 export const syncDedupeKey = (accountId: number): string => `sync:${accountId}`;
+/**
+ * A sync queued behind one that is still running, for a renewal that lands while the running
+ * sync waits on the bank with the old session (it cannot use the new consent).
+ */
+export const syncFollowUpDedupeKey = (accountId: number): string => `sync-followup:${accountId}`;
 
 /** Sends the e-mail of one stored notification (Task 9). */
 export const EMAIL_JOB = "notify.email";

@@ -1,6 +1,7 @@
 import type { SkipReason, SyncTrigger } from "@bursar/shared";
 import { pino } from "pino";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { AuditLog } from "../audit";
 import type { PsuHeaders } from "../eb/client";
 import type { EbTransaction } from "../eb/schemas";
 import { SYNC_ACCOUNT_JOB } from "../jobs/types";
@@ -20,6 +21,7 @@ import {
   SYNC_TEST_NOW,
   type SyncHarness,
 } from "../test/sync-fixture";
+import { ConnectionLifecycle } from "./lifecycle";
 import {
   enqueueAccountSync,
   MAX_TRANSACTION_PAGES,
@@ -616,6 +618,89 @@ describe("runAccountSync: bank errors", () => {
     });
     expect(h.repo.getAccount(accountId)?.status).toBe("unavailable");
     expect(h.repo.getConnection(connectionId)?.status).toBe("active");
+  });
+
+  /** Holds the next balance request until `release` is called, like a slow bank. */
+  function holdBalances(): () => void {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const answer = h.bank.getBalances.bind(h.bank);
+    h.bank.getBalances = async (uid, psu) => {
+      await gate;
+      return answer(uid, psu);
+    };
+    return release;
+  }
+
+  /** What a consent renewal writes while the sync waits: new session, new uid, new consent end. */
+  function renewMeanwhile(): void {
+    h.repo.updateConnection(connectionId, {
+      providerSessionId: "renewed-session",
+      validUntil: SYNC_TEST_NOW + 180 * DAY_MS,
+      status: "active",
+      renewedAt: SYNC_TEST_NOW,
+    });
+    h.repo.updateAccount(accountId, { providerAccountUid: "renewed-uid" });
+  }
+
+  it("leaves a renewed connection active when a sync on the old session ends with EXPIRED_SESSION", async () => {
+    const release = holdBalances();
+    h.bank.balanceErrors.push(ebError(401, "EXPIRED_SESSION", "Session expired"));
+    const running = sync("background");
+    renewMeanwhile();
+    release();
+
+    expect(await running).toMatchObject({ status: "failed", errorCode: "EXPIRED_SESSION" });
+    expect(h.repo.getConnection(connectionId)).toMatchObject({
+      status: "active",
+      providerSessionId: "renewed-session",
+      lastErrorCode: null,
+    });
+    expect(h.notifications.list(10).items).toEqual([]);
+    expect(eventsOf(h.events, "connection.updated")).toEqual([]);
+  });
+
+  it("keeps a renewed account active when the bank no longer knows the old uid", async () => {
+    const release = holdBalances();
+    h.bank.balanceErrors.push(ebError(404, "ACCOUNT_DOES_NOT_EXIST", "Account does not exist"));
+    const running = sync("background");
+    renewMeanwhile();
+    release();
+
+    expect(await running).toMatchObject({ status: "failed", errorCode: "ACCOUNT_DOES_NOT_EXIST" });
+    expect(h.repo.getAccount(accountId)).toMatchObject({
+      status: "active",
+      providerAccountUid: "renewed-uid",
+    });
+  });
+
+  it("raises no connection error when the bank closes the session for a disconnect", async () => {
+    const release = holdBalances();
+    h.bank.balanceErrors.push(ebError(401, "CLOSED_SESSION", "Session closed"));
+    h.bank.deleteSession = async () => {
+      // The bank closes the session; the waiting sync hears about it first.
+      release();
+      await running;
+    };
+    const running = sync("background");
+    const lifecycle = new ConnectionLifecycle({
+      repo: h.repo,
+      api: h.bank,
+      queue: h.queue,
+      bus: h.bus,
+      audit: new AuditLog(h.t.db, () => h.clock.now),
+      now: () => h.clock.now,
+    });
+
+    expect(await lifecycle.disconnect(connectionId)).toEqual({ removedAccounts: 1 });
+    expect(await running).toMatchObject({ status: "skipped", skipReason: "account_inactive" });
+    expect(h.notifications.list(10).items).toEqual([]);
+    expect(h.repo.getConnection(connectionId)).toMatchObject({
+      status: "active",
+      removedAt: SYNC_TEST_NOW,
+    });
   });
 
   it("throws PermanentJobError for a fatal bank error", async () => {

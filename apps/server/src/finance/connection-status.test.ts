@@ -94,6 +94,26 @@ describe("markConnectionEnded", () => {
     expect(h.events).toHaveLength(0);
   });
 
+  it("leaves a connection alone once it holds another session than the one that failed", () => {
+    const renewed = h.repo.getConnection(connectionId)?.providerSessionId ?? "";
+    markConnectionEnded(
+      deps(),
+      connectionId,
+      "expired",
+      { code: "EXPIRED_SESSION", message: "401 EXPIRED_SESSION: Session expired" },
+      "an-older-session",
+    );
+    expect(h.repo.getConnection(connectionId)).toMatchObject({
+      status: "active",
+      lastErrorCode: null,
+    });
+    expect(h.notifications.list(10).items).toHaveLength(0);
+    expect(h.events).toHaveLength(0);
+
+    markConnectionEnded(deps(), connectionId, "expired", undefined, renewed);
+    expect(h.repo.getConnection(connectionId)?.status).toBe("expired");
+  });
+
   it("stores no error details when none is given", () => {
     markConnectionEnded(deps(), connectionId, "expired");
     expect(h.repo.getConnection(connectionId)).toMatchObject({

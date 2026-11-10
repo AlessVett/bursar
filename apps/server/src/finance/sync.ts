@@ -86,6 +86,12 @@ interface ActiveRun {
   trigger: SyncTrigger;
   /** Headers used by the current fetch; cleared by the PSU fallback. */
   psu: PsuHeaders | undefined;
+  /**
+   * The provider session and account uid the requests use. A renewal can replace both while the
+   * bank answers; an error about the old ones must not change the renewed connection or account.
+   */
+  sessionId: string;
+  uid: string;
 }
 
 interface TransactionWindow {
@@ -104,7 +110,7 @@ interface FetchedData {
 
 type Preflight =
   | { kind: "skip"; reason: SkipReason; retryAt: number | null }
-  | { kind: "run"; uid: string };
+  | { kind: "run"; uid: string; sessionId: string };
 
 /** A run stopped by a guard of Bursar's own (not by an Enable Banking error). */
 class SyncAbortError extends Error {
@@ -185,7 +191,11 @@ function preflight(
   if (account.rateLimitedUntil !== null && account.rateLimitedUntil > now) {
     return { kind: "skip", reason: "rate_limited", retryAt: account.rateLimitedUntil };
   }
-  return { kind: "run", uid: account.providerAccountUid };
+  return {
+    kind: "run",
+    uid: account.providerAccountUid,
+    sessionId: connection.providerSessionId,
+  };
 }
 
 /** PSU headers are forwarded only for a manual sync from a public client address. */
@@ -522,16 +532,22 @@ function failRun(
   const errorMessage = error.message.slice(0, MAX_ERROR_MESSAGE_LENGTH);
   switch (error.kind) {
     case "reauth":
-      markConnectionEnded(statusDeps(deps), run.account.connectionId, reauthStatus(code), {
-        code,
-        message: errorMessage,
-      });
+      markConnectionEnded(
+        statusDeps(deps),
+        run.account.connectionId,
+        reauthStatus(code),
+        { code, message: errorMessage },
+        run.sessionId,
+      );
       return finishRun(deps, run, emptyOutcome("failed", { errorCode: code }), { errorMessage });
-    case "account":
+    case "account": {
+      // Only while the account still holds the uid the bank refused (a renewal replaces it).
+      const sameUid = deps.repo.getAccount(run.account.id)?.providerAccountUid === run.uid;
       return finishRun(deps, run, emptyOutcome("failed", { errorCode: code }), {
         errorMessage,
-        accountPatch: { status: "unavailable" },
+        ...(sameUid ? { accountPatch: { status: "unavailable" } } : {}),
       });
+    }
     case "rate_limited": {
       const retryAt = now + RATE_LIMIT_PAUSE_MS;
       return finishRun(
@@ -597,6 +613,8 @@ export async function runAccountSync(
     account,
     trigger: payload.trigger,
     psu,
+    sessionId: check.sessionId,
+    uid: check.uid,
   };
   deps.bus.publish({
     type: "sync.started",
@@ -608,7 +626,7 @@ export async function runAccountSync(
   try {
     let data: FetchedData;
     try {
-      data = await fetchAccountData(deps, run, check.uid, today);
+      data = await fetchAccountData(deps, run, run.uid, today);
     } catch (error) {
       if (run.psu === undefined || !isPsuHeaderError(error)) throw error;
       deps.logger.warn(
@@ -619,7 +637,7 @@ export async function runAccountSync(
       if (!deps.repo.tryConsumeBackgroundFetch(account.id, today, cap)) {
         return finishRun(deps, run, emptyOutcome("skipped", { skipReason: "daily_cap" }));
       }
-      data = await fetchAccountData(deps, run, check.uid, today);
+      data = await fetchAccountData(deps, run, run.uid, today);
     }
     const stored = storeAccountData(deps, run, data, today);
     if (stored === null) {

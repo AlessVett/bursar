@@ -4,7 +4,12 @@ import type { EnableBankingApi } from "../eb/client";
 import { EnableBankingError, parseEbErrorBody } from "../eb/errors";
 import rateLimitError from "../eb/fixtures/error-rate-limit.json";
 import type { JobRecord } from "../jobs/queue";
-import { DELETE_SESSION_JOB, SYNC_ACCOUNT_JOB, syncDedupeKey } from "../jobs/types";
+import {
+  DELETE_SESSION_JOB,
+  SYNC_ACCOUNT_JOB,
+  syncDedupeKey,
+  syncFollowUpDedupeKey,
+} from "../jobs/types";
 import { type JobHandler, JobWorker, PermanentJobError } from "../jobs/worker";
 import {
   auditRows,
@@ -142,11 +147,17 @@ describe("ConnectionLifecycle.disconnect", () => {
       });
     }
     expect(fx.queue.claimNext()?.payload).toEqual({ accountId: first, trigger: "background" });
+    // A renewal queued a follow-up behind the running sync.
+    fx.queue.enqueueUnique(SYNC_ACCOUNT_JOB, syncFollowUpDedupeKey(first), {
+      accountId: first,
+      trigger: "renewal",
+    });
 
     await lifecycle(closingBank().api).disconnect(connectionId);
 
     expect(fx.queue.findActive(syncDedupeKey(first))).toMatchObject({ status: "running" });
     expect(fx.queue.findActive(syncDedupeKey(second))).toBeNull();
+    expect(fx.queue.findActive(syncFollowUpDedupeKey(first))).toBeNull();
   });
 
   it("queues a retry when the bank cannot close the session", async () => {
@@ -255,8 +266,13 @@ describe("ConnectionLifecycle.purgeAccount", () => {
       accountId: first,
       trigger: "background",
     });
+    fx.queue.enqueueUnique(SYNC_ACCOUNT_JOB, syncFollowUpDedupeKey(first), {
+      accountId: first,
+      trigger: "renewal",
+    });
     lifecycle(null).purgeAccount(first);
     expect(fx.queue.findActive(syncDedupeKey(first))).toBeNull();
+    expect(fx.queue.findActive(syncFollowUpDedupeKey(first))).toBeNull();
   });
 
   it("returns null for an unknown account", () => {

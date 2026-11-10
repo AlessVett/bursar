@@ -24,7 +24,12 @@ import type {
 } from "../eb/schemas";
 import type { EventBus } from "../events/bus";
 import type { JobQueue } from "../jobs/queue";
-import { SYNC_ACCOUNT_JOB, syncAccountPayloadSchema, syncDedupeKey } from "../jobs/types";
+import {
+  SYNC_ACCOUNT_JOB,
+  syncAccountPayloadSchema,
+  syncDedupeKey,
+  syncFollowUpDedupeKey,
+} from "../jobs/types";
 import type { SettingsStore } from "../settings/store";
 import {
   type AccountFields,
@@ -530,18 +535,24 @@ export class ConnectService {
     return { ids, created: mapping.created.length, reattached: mapping.matched.length };
   }
 
-  /** One sync per active account: `initial` (longest history) while it has no transaction yet. */
+  /**
+   * One sync per active account: `initial` (longest history) while it has no transaction yet.
+   * A sync that is already running still uses the previous session and uid, so a follow-up is
+   * queued behind it (once: a later renewal reuses the queued follow-up).
+   */
   private enqueueSyncs(accountIds: readonly number[]): number {
+    const { queue } = this.deps;
     let queued = 0;
     for (const accountId of accountIds) {
       if (this.deps.repo.getAccount(accountId)?.status !== "active") continue;
       const trigger: SyncTrigger =
         this.deps.repo.countTransactions(accountId).total === 0 ? "initial" : "renewal";
-      this.deps.queue.enqueueUnique(
-        SYNC_ACCOUNT_JOB,
-        syncDedupeKey(accountId),
-        syncAccountPayloadSchema.parse({ accountId, trigger }),
-      );
+      const payload = syncAccountPayloadSchema.parse({ accountId, trigger });
+      const key = syncDedupeKey(accountId);
+      const job = queue.enqueueUnique(SYNC_ACCOUNT_JOB, key, payload);
+      if (!job.created && queue.findActive(key)?.status === "running") {
+        queue.enqueueUnique(SYNC_ACCOUNT_JOB, syncFollowUpDedupeKey(accountId), payload);
+      }
       queued += 1;
     }
     return queued;

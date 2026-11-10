@@ -7,7 +7,12 @@ import { parseEbErrorBody } from "../eb/errors";
 import type { EbAccountResource } from "../eb/schemas";
 import { EventBus } from "../events/bus";
 import { JobQueue } from "../jobs/queue";
-import { DELETE_SESSION_JOB, SYNC_ACCOUNT_JOB } from "../jobs/types";
+import {
+  DELETE_SESSION_JOB,
+  SYNC_ACCOUNT_JOB,
+  syncDedupeKey,
+  syncFollowUpDedupeKey,
+} from "../jobs/types";
 import { SettingsStore } from "../settings/store";
 import {
   AUTH_URL,
@@ -857,6 +862,43 @@ describe("ConnectService", () => {
         missing: 2,
         syncsQueued: 1,
       });
+    });
+
+    it("queues a follow-up sync when a sync on the old session is still running", async () => {
+      const first = await connect([accountResource("current"), accountResource("savings")]);
+      const connectionId = connectionIdOf(first);
+      const currentId = accountIdAt(first, 0);
+      const savingsId = accountIdAt(first, 1);
+      insertTransaction(currentId);
+      // The current account's sync still waits on the bank with the old uid; savings is queued.
+      expect(queue.claimNext()?.payload).toEqual({ accountId: currentId, trigger: "initial" });
+      now += HOUR_MS;
+
+      await renew(
+        connectionId,
+        [
+          accountResource("current", { uid: testUid(11) }),
+          accountResource("savings", { uid: testUid(12) }),
+        ],
+        2,
+      );
+      expect(
+        jobs()
+          .filter((job) => job.type === SYNC_ACCOUNT_JOB)
+          .map((job) => [job.status, job.dedupeKey, job.payload]),
+      ).toEqual([
+        ["running", syncDedupeKey(currentId), { accountId: currentId, trigger: "initial" }],
+        ["queued", syncDedupeKey(savingsId), { accountId: savingsId, trigger: "initial" }],
+        ["queued", syncFollowUpDedupeKey(currentId), { accountId: currentId, trigger: "renewal" }],
+      ]);
+
+      // A second renewal while the old sync still runs reuses the queued follow-up.
+      now += HOUR_MS;
+      await renew(connectionId, [accountResource("current", { uid: testUid(21) })], 3);
+      expect(queuedOf(SYNC_ACCOUNT_JOB).map((job) => job.dedupeKey)).toEqual([
+        syncDedupeKey(savingsId),
+        syncFollowUpDedupeKey(currentId),
+      ]);
     });
   });
 });
