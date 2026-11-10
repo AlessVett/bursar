@@ -11,7 +11,10 @@ import { SetupCode } from "./auth/setup-code";
 import { type Config, isLoopbackHost } from "./config";
 import { deriveKey } from "./crypto";
 import { type BursarDb, openDatabase, runMigrations, type Sqlite } from "./db";
-import { createApp } from "./http/app";
+import { EventBus } from "./events/bus";
+import { FinanceRepository } from "./finance/repository";
+import { createApp, type MountedRouter } from "./http/app";
+import { eventsRoute } from "./http/events";
 import { JobQueue } from "./jobs/queue";
 import { type JobHandler, JobWorker } from "./jobs/worker";
 import { maintenanceTask } from "./maintenance";
@@ -75,9 +78,41 @@ export async function startBursar(
     logger.warn({ file: setupCodeFile }, "No owner yet: open the panel and enter the setup code");
   }
 
-  const queue = new JobQueue(database.sqlite);
-  const worker = new JobWorker(queue, new Map<string, JobHandler>(), logger);
-  const scheduler = new Scheduler([maintenanceTask(queue, sessions, logger)], logger);
+  const bus = new EventBus((error) =>
+    logger.warn(
+      { error: error instanceof Error ? error.message : String(error) },
+      "Event listener failed",
+    ),
+  );
+  const repo = new FinanceRepository(database.db);
+  const queue = new JobQueue(database.sqlite, Date.now, (job) =>
+    logger.error({ jobId: job.id, type: job.type }, "Job payload is not valid JSON; failed"),
+  );
+
+  // Single process: whatever is still marked running was orphaned by the previous process, so it
+  // is recovered now rather than after the 10 minute maintenance threshold. This must run before
+  // the worker starts.
+  const requeuedJobs = queue.recoverStale(0);
+  const failedSyncRuns = repo.failStaleSyncRuns("Interrupted by a restart");
+  if (requeuedJobs > 0 || failedSyncRuns > 0) {
+    logger.warn({ requeuedJobs, failedSyncRuns }, "Recovered work interrupted by a restart");
+  }
+
+  // Later tasks register their job handlers and routers here, before the worker and app start.
+  const handlers = new Map<string, JobHandler>();
+  const shutdown = new AbortController();
+  const routers: MountedRouter[] = [
+    { prefix: "/api/events", router: eventsRoute({ bus, sessions, signal: shutdown.signal }) },
+  ];
+  const publicRouters: MountedRouter[] = [];
+
+  const loginLimiter = new FailureLimiter(5);
+  const accountLimiter = new FailureLimiter(20);
+  const worker = new JobWorker(queue, handlers, logger);
+  const scheduler = new Scheduler(
+    [maintenanceTask({ queue, sessions, limiters: [loginLimiter, accountLimiter], logger })],
+    logger,
+  );
 
   const app = createApp({
     config,
@@ -95,8 +130,8 @@ export async function startBursar(
       sessions,
       setupCode,
       // 5 failures per client and 20 for the account per 15 minutes; sessions stay valid.
-      limiter: new FailureLimiter(5),
-      accountLimiter: new FailureLimiter(20),
+      limiter: loginLimiter,
+      accountLimiter,
       secureCookies: config.publicUrl.protocol === "https:",
       now: Date.now,
       // CF-Connecting-IP is set by Cloudflare's edge; any other client could forge it.
@@ -105,6 +140,8 @@ export async function startBursar(
         getConnInfo(c).remote.address ||
         "unknown",
     },
+    routers,
+    publicRouters,
   });
 
   const server = serve({ fetch: app.fetch, port: config.port, hostname: config.host });
@@ -118,6 +155,8 @@ export async function startBursar(
   return {
     port,
     close: async () => {
+      // Open event streams would keep server.close() waiting for the panel to disconnect.
+      shutdown.abort();
       await scheduler.stop();
       await worker.stop();
       await new Promise<void>((resolve) => server.close(() => resolve()));

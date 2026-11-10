@@ -1,4 +1,5 @@
 import path from "node:path";
+import { Hono } from "hono";
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from "jose";
 import { pino } from "pino";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -7,8 +8,9 @@ import { FailureLimiter } from "../auth/rate-limit";
 import type { AuthDeps } from "../auth/routes";
 import { SessionStore } from "../auth/sessions";
 import { SetupCode } from "../auth/setup-code";
+import { createTestApp, type TestApp } from "../test/app";
 import { createTestDatabase, type TestDatabase } from "../test/db";
-import { API_BODY_LIMIT_BYTES, createApp } from "./app";
+import { API_BODY_LIMIT_BYTES, type AppEnv, createApp } from "./app";
 
 const ORIGIN = "https://bursar.example.test";
 const config = { publicUrl: new URL(ORIGIN), cfAccess: null, webDistDir: null };
@@ -217,5 +219,155 @@ describe("createApp with Cloudflare Access", () => {
     const part = (value: object) => Buffer.from(JSON.stringify(value)).toString("base64url");
     const unsigned = `${part({ alg: "none" })}.${part({ iss: `https://${TEAM}`, aud: AUDIENCE })}.`;
     expect((await app.request("/api/nope", bearer(unsigned))).status).toBe(403);
+  });
+});
+
+describe("createApp routers and Cache-Control", () => {
+  let t: TestDatabase;
+  let ta: TestApp;
+
+  const sample = new Hono<AppEnv>();
+  sample.get("/ping", (c) => c.json({ pong: true }));
+  sample.post("/echo", async (c) => c.json({ received: await c.req.json() }));
+  sample.get("/cached", (c) => {
+    c.header("Cache-Control", "max-age=5");
+    return c.json({ cached: true });
+  });
+  const open = new Hono<AppEnv>();
+  open.get("/hello", (c) => c.json({ hello: "world" }));
+
+  beforeEach(async () => {
+    t = createTestDatabase();
+    ta = await createTestApp({
+      database: t,
+      routers: [{ prefix: "/api/sample", router: sample }],
+      publicRouters: [{ prefix: "/api/open", router: open }],
+    });
+  });
+  afterEach(() => t.dispose());
+
+  it("mounts routers behind the session and public routers without it", async () => {
+    expect((await ta.app.request("/api/sample/ping")).status).toBe(401);
+    expect((await ta.app.request("/api/open/hello")).status).toBe(200);
+    expect(await ta.json("/api/sample/ping")).toMatchObject({ status: 200, body: { pong: true } });
+  });
+
+  it("keeps the auth routes working next to public routers", async () => {
+    const status = await ta.app.request("/api/auth/status");
+    expect(await status.json()).toEqual({ setupRequired: false, authenticated: false });
+  });
+
+  it("still answers unknown paths under a mounted prefix with the JSON 404", async () => {
+    expect(await ta.json("/api/sample/missing")).toMatchObject({
+      status: 404,
+      body: { error: "Not found" },
+    });
+  });
+
+  it("checks the Origin for mounted routers", async () => {
+    const res = await ta.app.request("/api/sample/echo", {
+      method: "POST",
+      headers: { cookie: ta.cookie, "content-type": "application/json" },
+      body: "{}",
+    });
+    expect(res.status).toBe(403);
+  });
+
+  it("sets Cache-Control: no-store on every kind of /api response", async () => {
+    const bigBody = JSON.stringify({ filler: "x".repeat(API_BODY_LIMIT_BYTES) });
+    const responses: [string, Response][] = [
+      ["me", await ta.app.request("/api/me", { headers: { cookie: ta.cookie } })],
+      ["unauthenticated", await ta.app.request("/api/me")],
+      ["auth status", await ta.app.request("/api/auth/status")],
+      ["public router", await ta.app.request("/api/open/hello")],
+      ["router", await ta.app.request("/api/sample/ping", { headers: { cookie: ta.cookie } })],
+      ["404", await ta.app.request("/api/nope", { headers: { cookie: ta.cookie } })],
+      [
+        "foreign origin",
+        await ta.app.request("/api/sample/echo", {
+          method: "POST",
+          headers: { origin: "https://evil.test", cookie: ta.cookie },
+        }),
+      ],
+      [
+        "oversized body",
+        await ta.app.request("/api/sample/echo", {
+          method: "POST",
+          headers: {
+            origin: ta.origin,
+            cookie: ta.cookie,
+            "content-type": "application/json",
+            "content-length": String(Buffer.byteLength(bigBody)),
+          },
+          body: bigBody,
+        }),
+      ],
+    ];
+    expect(responses.map(([, res]) => res.status)).toEqual([
+      200, 401, 200, 200, 200, 404, 403, 413,
+    ]);
+    for (const [name, res] of responses) {
+      expect(res.headers.get("cache-control"), name).toBe("no-store");
+    }
+  });
+
+  it("sets no-store on the login response that carries the session cookie", async () => {
+    const res = await ta.app.request("/api/auth/login", {
+      method: "POST",
+      headers: { origin: ta.origin, "content-type": "application/json" },
+      body: JSON.stringify({ password: "wrong password", code: "000000" }),
+    });
+    expect(res.status).not.toBe(200);
+    expect(res.headers.get("cache-control")).toBe("no-store");
+  });
+
+  it("keeps a Cache-Control header that a route sets itself", async () => {
+    const res = await ta.app.request("/api/sample/cached", { headers: { cookie: ta.cookie } });
+    expect(res.headers.get("cache-control")).toBe("max-age=5");
+  });
+
+  it("leaves non-API responses alone", async () => {
+    const res = await ta.app.request("/healthz");
+    expect(res.headers.get("cache-control")).toBeNull();
+  });
+});
+
+describe("createTestApp", () => {
+  let t: TestDatabase;
+  beforeEach(() => {
+    t = createTestDatabase();
+  });
+  afterEach(() => t.dispose());
+
+  it("returns a working owner session and a JSON helper", async () => {
+    const ta = await createTestApp({ database: t });
+    expect(ta.cookie).toMatch(/^bursar_session=[\w-]+$/);
+    expect(ta.origin).toBe("https://bursar.example.test");
+    expect(await ta.json("/api/me")).toMatchObject({ status: 200, body: { authenticated: true } });
+    expect(ta.sessions.peek(ta.cookie.slice("bursar_session=".length))).not.toBeNull();
+  });
+
+  it("adds origin, content-type and the cookie to mutating calls and parses empty bodies", async () => {
+    const echo = new Hono<AppEnv>();
+    echo.post("/", async (c) => c.json({ received: await c.req.json() }, 201));
+    echo.delete("/", (c) => c.body(null, 204));
+    const ta = await createTestApp({
+      database: t,
+      routers: [{ prefix: "/api/echo", router: echo }],
+    });
+    const created = await ta.json("/api/echo", { method: "POST", body: { a: 1 } });
+    expect(created).toMatchObject({ status: 201, body: { received: { a: 1 } } });
+    expect(created.headers.get("content-type")).toContain("application/json");
+    expect(await ta.json("/api/echo", { method: "DELETE" })).toMatchObject({
+      status: 204,
+      body: null,
+    });
+  });
+
+  it("honours an injected clock", async () => {
+    let now = Date.UTC(2026, 10, 9, 9, 0, 0);
+    const ta = await createTestApp({ database: t, now: () => now });
+    now += 8 * 24 * 60 * 60_000;
+    expect((await ta.json("/api/me")).status).toBe(401);
   });
 });

@@ -51,6 +51,7 @@ export class FailureLimiter {
     private readonly maxFailures = 5,
     private readonly windowMs = 15 * 60_000,
     private readonly now: () => number = Date.now,
+    private readonly maxEntries = 10_000,
   ) {}
 
   isBlocked(key: string): boolean {
@@ -66,7 +67,7 @@ export class FailureLimiter {
   tryConsume(key: string): boolean {
     const entry = this.current(key);
     if (!entry) {
-      this.failures.set(key, { count: 1, startedAt: this.now() });
+      this.insert(key);
       return true;
     }
     if (entry.count >= this.maxFailures) return false;
@@ -77,11 +78,36 @@ export class FailureLimiter {
   recordFailure(key: string): void {
     const entry = this.current(key);
     if (entry) entry.count += 1;
-    else this.failures.set(key, { count: 1, startedAt: this.now() });
+    else this.insert(key);
   }
 
   reset(key: string): void {
     this.failures.delete(key);
+  }
+
+  /** Removes every window that has expired and returns how many were removed. */
+  sweep(): number {
+    let removed = 0;
+    for (const [key, entry] of this.failures) {
+      if (this.now() - entry.startedAt >= this.windowMs) {
+        this.failures.delete(key);
+        removed += 1;
+      }
+    }
+    return removed;
+  }
+
+  /**
+   * Starts a window for a new key. Past `maxEntries` the oldest window is dropped (a Map iterates
+   * in insertion order and a window is only inserted when it starts), so a flood of distinct keys
+   * cannot grow memory without bound.
+   */
+  private insert(key: string): void {
+    if (this.failures.size >= this.maxEntries) {
+      const oldest = this.failures.keys().next();
+      if (!oldest.done) this.failures.delete(oldest.value);
+    }
+    this.failures.set(key, { count: 1, startedAt: this.now() });
   }
 
   private current(key: string): Window | undefined {

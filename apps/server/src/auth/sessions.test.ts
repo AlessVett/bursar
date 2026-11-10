@@ -53,6 +53,39 @@ describe("SessionStore", () => {
     expect(JSON.stringify(rows)).not.toContain(token);
   });
 
+  it("peek validates a token without touching last_seen_at or the expiry", () => {
+    const token = store.create(null);
+    const [before] = t.db.select().from(authSessions).all();
+    now += 10 * 60_000;
+    expect(store.peek(token)).toBe(before?.id);
+    const [after] = t.db.select().from(authSessions).all();
+    expect(after?.lastSeenAt.getTime()).toBe(before?.lastSeenAt.getTime());
+    expect(after?.expiresAt.getTime()).toBe(before?.expiresAt.getTime());
+    // validate, by contrast, slides both.
+    expect(store.validate(token)).toBe(before?.id);
+    const [slid] = t.db.select().from(authSessions).all();
+    expect(slid?.lastSeenAt.getTime()).toBe(now);
+    expect(slid?.expiresAt.getTime()).toBe(now + SESSION_IDLE_MS);
+  });
+
+  it("peek rejects unknown, revoked and expired tokens", () => {
+    const token = store.create(null);
+    expect(store.peek("unknown")).toBeNull();
+    now += SESSION_IDLE_MS + 1;
+    expect(store.peek(token)).toBeNull();
+    const revoked = store.create(null);
+    store.revoke(revoked);
+    expect(store.peek(revoked)).toBeNull();
+  });
+
+  it("peek does not keep an idle session alive", () => {
+    const token = store.create(null);
+    now += SESSION_IDLE_MS - 1_000;
+    expect(store.peek(token)).not.toBeNull();
+    now += 2_000;
+    expect(store.peek(token)).toBeNull();
+  });
+
   it("purges expired sessions and keeps valid ones", () => {
     const expired = store.create(null);
     now += SESSION_IDLE_MS / 2;

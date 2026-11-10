@@ -67,4 +67,54 @@ describe("FailureLimiter", () => {
     now = 1_000;
     expect(limiter.tryConsume("ip")).toBe(true);
   });
+
+  describe("sweep and size cap", () => {
+    it("sweeps expired windows and keeps live ones", () => {
+      let now = 0;
+      const limiter = new FailureLimiter(1, 1_000, () => now);
+      limiter.recordFailure("old-1");
+      limiter.recordFailure("old-2");
+      now = 600;
+      limiter.recordFailure("fresh");
+      now = 1_000;
+      expect(limiter.sweep()).toBe(2);
+      expect(limiter.isBlocked("fresh")).toBe(true);
+      expect(limiter.sweep()).toBe(0);
+      now = 1_600;
+      expect(limiter.sweep()).toBe(1);
+    });
+
+    it("evicts the oldest window when a new key arrives beyond maxEntries", () => {
+      let now = 0;
+      const limiter = new FailureLimiter(1, 60_000, () => now, 3);
+      for (const key of ["k1", "k2", "k3", "k4"]) {
+        limiter.recordFailure(key);
+        now += 1;
+      }
+      expect(limiter.isBlocked("k1")).toBe(false);
+      expect(["k2", "k3", "k4"].map((key) => limiter.isBlocked(key))).toEqual([true, true, true]);
+      expect(limiter.tryConsume("k5")).toBe(true);
+      expect(limiter.isBlocked("k2")).toBe(false);
+      expect(["k3", "k4", "k5"].map((key) => limiter.isBlocked(key))).toEqual([true, true, true]);
+    });
+
+    it("does not evict anything when an existing key is charged again", () => {
+      const limiter = new FailureLimiter(3, 60_000, () => 0, 2);
+      limiter.recordFailure("a");
+      limiter.recordFailure("b");
+      limiter.recordFailure("a");
+      limiter.recordFailure("b");
+      expect(limiter.tryConsume("a")).toBe(true);
+      expect(limiter.tryConsume("b")).toBe(true);
+      expect(limiter.tryConsume("a")).toBe(false);
+    });
+
+    it("defaults to 10,000 entries", () => {
+      const limiter = new FailureLimiter(1, 60_000, () => 0);
+      for (let i = 0; i < 10_001; i += 1) limiter.recordFailure(`key-${i}`);
+      expect(limiter.isBlocked("key-0")).toBe(false);
+      expect(limiter.isBlocked("key-1")).toBe(true);
+      expect(limiter.isBlocked("key-10000")).toBe(true);
+    });
+  });
 });

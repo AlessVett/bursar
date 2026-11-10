@@ -32,16 +32,7 @@ export class SessionStore {
 
   validate(token: string): number | null {
     const now = this.now();
-    const row = this.db
-      .select()
-      .from(authSessions)
-      .where(
-        and(
-          eq(authSessions.tokenHash, hashToken(token)),
-          gt(authSessions.expiresAt, new Date(now)),
-        ),
-      )
-      .get();
+    const row = this.find(token, now);
     if (!row) return null;
     if (now - row.lastSeenAt.getTime() >= TOUCH_INTERVAL_MS) {
       this.db
@@ -53,11 +44,32 @@ export class SessionStore {
     return row.id;
   }
 
+  /**
+   * Like `validate`, but never slides the expiry: long-lived readers (the SSE heartbeat) can ask
+   * whether a session still exists without keeping it alive.
+   */
+  peek(token: string): number | null {
+    return this.find(token, this.now())?.id ?? null;
+  }
+
   revoke(token: string): void {
     this.db
       .delete(authSessions)
       .where(eq(authSessions.tokenHash, hashToken(token)))
       .run();
+  }
+
+  private find(token: string, now: number) {
+    return this.db
+      .select()
+      .from(authSessions)
+      .where(
+        and(
+          eq(authSessions.tokenHash, hashToken(token)),
+          gt(authSessions.expiresAt, new Date(now)),
+        ),
+      )
+      .get();
   }
 
   purgeExpired(): number {
