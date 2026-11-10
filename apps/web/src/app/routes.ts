@@ -76,7 +76,7 @@ export const ROUTES: readonly RouteDef[] = [
   route("account", "/accounts/:accountId", Wallet, null, "accounts", true),
   route("connect", "/connect", LinkIcon, null, "accounts", true),
   route("connectCallback", "/connect/callback", LinkIcon, null, "accounts", true),
-  route("transactions", "/transactions", ArrowLeftRight, "money", null, false),
+  route("transactions", "/transactions", ArrowLeftRight, "money", null, true),
   route("documents", "/documents", FileText, "knowledge", null, false),
   route("reports", "/reports", ChartColumn, "knowledge", null, false),
   route("chat", "/chat", MessagesSquare, "agents", null, false),

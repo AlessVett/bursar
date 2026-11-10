@@ -21,4 +21,8 @@ export const PAGE_LOADERS: Partial<Record<RouteId, PageLoader>> = {
     import("../pages/ConnectCallbackPage").then((module) => ({
       Component: module.ConnectCallbackPage,
     })),
+  transactions: () =>
+    import("../pages/TransactionsPage").then((module) => ({
+      Component: module.TransactionsPage,
+    })),
 };

@@ -31,6 +31,7 @@ describe("AppShell", () => {
       .getAllByRole("link")
       .map((link) => link.textContent ?? "");
     expect(labels.some((label) => label.startsWith("Home"))).toBe(true);
+    expect(labels.some((label) => label.startsWith("Transactions"))).toBe(true);
     expect(labels.some((label) => label.startsWith("Documents"))).toBe(false);
     expect(within(nav).queryByText("Agents")).toBeNull();
     expect(await screen.findByRole("heading", { level: 1 })).toBeTruthy();

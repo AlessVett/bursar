@@ -1,3 +1,4 @@
+import type { SearchResponse } from "@bursar/shared";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -48,6 +49,19 @@ function optionTitles(): string[] {
   return screen
     .queryAllByRole("option")
     .map((option) => option.querySelector("span span")?.textContent ?? "");
+}
+
+function stubTransactionSearch(transactions: SearchResponse["transactions"]) {
+  const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const url = new URL(String(input), "http://localhost");
+    const found = url.pathname === "/api/search";
+    return new Response(
+      JSON.stringify(found ? { accounts: [], transactions } : { error: "Not found" }),
+      { status: found ? 200 : 404, headers: { "content-type": "application/json" } },
+    );
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
 }
 
 describe("CommandPalette", () => {
@@ -106,9 +120,9 @@ describe("CommandPalette", () => {
   });
 
   it("shows the empty text with typographic quotes and closes on Escape", async () => {
+    stubTransactionSearch([]);
     renderPalette();
     fireEvent.change(input(), { target: { value: "xyz" } });
-    // The accounts source loads the connections first, so the empty text follows the fetch.
     expect(await screen.findByText("No results for “xyz”")).toBeTruthy();
     expect(screen.getByText("Try a name, a bank or the last digits of an IBAN.")).toBeTruthy();
     expect(screen.getByText("↑↓ navigate · ↵ open · esc close · 0 results")).toBeTruthy();
@@ -122,5 +136,33 @@ describe("CommandPalette", () => {
     fireEvent.change(input(), { target: { value: "attivita" } });
     expect(optionTitles()).toEqual(["Attività"]);
     expect(screen.getByText("↑↓ naviga · ↵ apri · esc chiudi · 1 risultato")).toBeTruthy();
+  });
+
+  it("finds transactions by counterparty through the search API and opens the drawer link", async () => {
+    const fetchMock = stubTransactionSearch([
+      {
+        id: 55,
+        counterparty: "Caffè Centrale",
+        date: "2026-11-07",
+        amountMinor: -350,
+        currency: "EUR",
+        accountName: "Conto corrente",
+      },
+    ]);
+    const { router } = renderPalette();
+    fireEvent.change(input(), { target: { value: "c" } });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(fetchMock.mock.calls.some(([url]) => String(url).startsWith("/api/search"))).toBe(false);
+    fireEvent.change(input(), { target: { value: "Caffè" } });
+    const option = await screen.findByRole("option", { name: /Caffè Centrale/ });
+    expect(option.textContent).toContain("Conto corrente · 7 Nov 2026");
+    expect(option.textContent).not.toContain("3.50");
+    expect(fetchMock.mock.calls.map(([url]) => String(url))).toContain("/api/search?q=caffe");
+    fireEvent.keyDown(input(), { key: "Enter" });
+    await waitFor(() =>
+      expect(`${router.state.location.pathname}${router.state.location.search}`).toBe(
+        "/transactions?tx=55",
+      ),
+    );
   });
 });

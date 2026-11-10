@@ -243,13 +243,15 @@
     "resultsLabel": "Risultati",
     "groups": {
       "pages": "Pagine",
-      "accounts": "Conti"
+      "accounts": "Conti",
+      "transactions": "Movimenti"
     },
     "empty": "Nessun risultato per “{{query}}”",
     "emptyHint": "Prova con un nome, una banca o le ultime cifre di un IBAN.",
     "footer_one": "↑↓ naviga · ↵ apri · esc chiudi · {{count}} risultato",
     "footer_many": "↑↓ naviga · ↵ apri · esc chiudi · {{count}} di risultati",
-    "footer_other": "↑↓ naviga · ↵ apri · esc chiudi · {{count}} risultati"
+    "footer_other": "↑↓ naviga · ↵ apri · esc chiudi · {{count}} risultati",
+    "transactionSubtitle": "{{account}} · {{date}}"
   },
   "userMenu": {
     "open": "Apri il menu utente",
@@ -999,5 +1001,112 @@
         "description": "Il server non ha risposto come previsto. Controlla l'elenco dei conti: se la banca non compare, ricomincia."
       }
     }
+  },
+  "transactions": {
+    "aggregate": {
+      "label": "Flusso di cassa del periodo selezionato",
+      "in": "Entrate",
+      "out": "Uscite",
+      "net": "Netto",
+      "filterIn": "Mostra solo le entrate",
+      "filterOut": "Mostra solo le uscite",
+      "showAll": "Mostra entrate e uscite",
+      "range": "{{from}} – {{to}}",
+      "summary": "Flusso di cassa dal {{from}} al {{to}}: entrate {{in}}, uscite {{out}}, netto {{net}}.",
+      "currency": "Valuta",
+      "mixedNote": "I totali sono per valuta, senza conversione. Ogni riga mantiene la propria valuta."
+    },
+    "tabs": {
+      "label": "Direzione dei movimenti",
+      "all": "Tutti",
+      "in": "Entrate",
+      "out": "Uscite",
+      "pending": "In attesa"
+    },
+    "filters": {
+      "toggle": "Filtri",
+      "toggleCount": "Filtri · {{active}}",
+      "searchLabel": "Cerca nei movimenti",
+      "searchPlaceholder": "Cerca controparte, descrizione o importo",
+      "account": "Conto",
+      "allAccounts": "Tutti i conti",
+      "accountOption": "{{name}} · {{bank}}",
+      "removedAccountOption": "{{name}} · {{bank}} (scollegato)",
+      "unknownAccount": "Conto non disponibile",
+      "period": "Periodo",
+      "from": "Dal",
+      "to": "Al"
+    },
+    "periods": {
+      "30d": "Ultimi 30 giorni",
+      "90d": "Ultimi 90 giorni",
+      "12m": "Ultimi 12 mesi",
+      "all": "Tutto il periodo",
+      "custom": "Intervallo personalizzato"
+    },
+    "chips": {
+      "search": "Ricerca: “{{q}}”",
+      "account": "Conto: {{name}}",
+      "period": "Periodo: {{label}}",
+      "rangeFrom": "dal {{date}}",
+      "rangeTo": "fino al {{date}}"
+    },
+    "results_one": "{{shown}} risultato su {{total}}",
+    "results_many": "{{shown}} risultati su {{total}}",
+    "results_other": "{{shown}} risultati su {{total}}",
+    "table": {
+      "caption": "Movimenti",
+      "date": "Data",
+      "counterparty": "Controparte",
+      "description": "Descrizione",
+      "account": "Conto",
+      "amount": "Importo"
+    },
+    "pending": "In attesa",
+    "booked": "Contabilizzato",
+    "noCounterparty": "Nessuna controparte",
+    "empty": {
+      "filterTitle": "Nessun movimento corrisponde ai filtri",
+      "filterDescription": "Prova con un’altra ricerca, un altro conto o un altro periodo.",
+      "periodTitle": "Nessun movimento in questo periodo",
+      "periodDescription": "I movimenti più vecchi ci sono ancora: allarga il periodo per vederli.",
+      "showAllPeriods": "Mostra tutti i periodi",
+      "trueTitle": "Ancora nessun movimento",
+      "trueDescription": "Bursar mostra i movimenti dopo la prima sincronizzazione di un conto collegato. Se hai appena collegato una banca, la prima sincronizzazione potrebbe essere ancora in corso.",
+      "openAccounts": "Apri i conti",
+      "pendingTitle": "Niente in attesa",
+      "pendingDescription": "Tutto a posto: ogni movimento di questa vista è contabilizzato."
+    },
+    "error": {
+      "title": "Impossibile caricare i movimenti",
+      "description": "Il server non ha risposto. I tuoi dati sono al sicuro: riprova tra poco.",
+      "retry": "Riprova"
+    },
+    "drawer": {
+      "title": "Movimento",
+      "loading": "Caricamento del movimento",
+      "notFound": "Questo movimento non esiste o è stato rimosso",
+      "notFoundDescription": "Potrebbe appartenere a un conto i cui movimenti sono stati eliminati.",
+      "error": "Impossibile caricare il movimento",
+      "retry": "Riprova",
+      "pendingNote": "La banca non ha ancora contabilizzato questo movimento: importo e data possono ancora cambiare.",
+      "details": "Dettagli",
+      "bookingDate": "Data di contabilizzazione",
+      "valueDate": "Data valuta",
+      "transactionDate": "Data dell’operazione",
+      "counterpartyAccount": "Conto della controparte",
+      "account": "Conto",
+      "accountAndBank": "{{account}} · {{bank}}",
+      "bankCode": "Codice della banca",
+      "merchantCategoryCode": "Codice categoria esercente",
+      "balanceAfter": "Saldo dopo il movimento",
+      "reference": "Riferimento della banca",
+      "copyReference": "Copia il riferimento della banca",
+      "referenceCopied": "Il riferimento della banca è negli appunti.",
+      "firstSeen": "Rilevato la prima volta",
+      "remittance": "Causale",
+      "openAccount": "Apri il conto"
+    },
+    "seeAllForAccount": "Vedi tutti in Movimenti"
   }
 }

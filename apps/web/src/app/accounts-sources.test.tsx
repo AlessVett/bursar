@@ -90,8 +90,12 @@ describe("accounts palette source", () => {
     }),
   ];
 
-  it("is registered after the pages source with a limit of six", () => {
-    expect(PALETTE_SOURCES.map((candidate) => candidate.id)).toEqual(["pages", "accounts"]);
+  it("is registered after the pages source and before transactions, with a limit of six", () => {
+    expect(PALETTE_SOURCES.map((candidate) => candidate.id)).toEqual([
+      "pages",
+      "accounts",
+      "transactions",
+    ]);
     expect(source.limit).toBe(6);
     expect(source.minQueryLength).toBe(2);
   });

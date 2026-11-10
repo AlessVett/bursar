@@ -238,12 +238,14 @@
     "resultsLabel": "Results",
     "groups": {
       "pages": "Pages",
-      "accounts": "Accounts"
+      "accounts": "Accounts",
+      "transactions": "Transactions"
     },
     "empty": "No results for “{{query}}”",
     "emptyHint": "Try a name, a bank or the last digits of an IBAN.",
     "footer_one": "↑↓ navigate · ↵ open · esc close · {{count}} result",
-    "footer_other": "↑↓ navigate · ↵ open · esc close · {{count}} results"
+    "footer_other": "↑↓ navigate · ↵ open · esc close · {{count}} results",
+    "transactionSubtitle": "{{account}} · {{date}}"
   },
   "userMenu": {
     "open": "Open the user menu",
@@ -958,5 +960,111 @@
         "description": "The server did not answer as expected. Check the list of accounts: if the bank is missing, start again."
       }
     }
+  },
+  "transactions": {
+    "aggregate": {
+      "label": "Cash flow of the selected period",
+      "in": "In",
+      "out": "Out",
+      "net": "Net",
+      "filterIn": "Show inflows only",
+      "filterOut": "Show outflows only",
+      "showAll": "Show every direction",
+      "range": "{{from}} – {{to}}",
+      "summary": "Cash flow from {{from}} to {{to}}: in {{in}}, out {{out}}, net {{net}}.",
+      "currency": "Currency",
+      "mixedNote": "Totals are per currency, with no conversion. Each row keeps its own currency."
+    },
+    "tabs": {
+      "label": "Transaction direction",
+      "all": "All",
+      "in": "Inflows",
+      "out": "Outflows",
+      "pending": "Pending"
+    },
+    "filters": {
+      "toggle": "Filters",
+      "toggleCount": "Filters · {{active}}",
+      "searchLabel": "Search transactions",
+      "searchPlaceholder": "Search counterparty, description or amount",
+      "account": "Account",
+      "allAccounts": "All accounts",
+      "accountOption": "{{name}} · {{bank}}",
+      "removedAccountOption": "{{name}} · {{bank}} (disconnected)",
+      "unknownAccount": "Unavailable account",
+      "period": "Period",
+      "from": "From",
+      "to": "To"
+    },
+    "periods": {
+      "30d": "Last 30 days",
+      "90d": "Last 90 days",
+      "12m": "Last 12 months",
+      "all": "All time",
+      "custom": "Custom range"
+    },
+    "chips": {
+      "search": "Search: “{{q}}”",
+      "account": "Account: {{name}}",
+      "period": "Period: {{label}}",
+      "rangeFrom": "from {{date}}",
+      "rangeTo": "until {{date}}"
+    },
+    "results_one": "{{shown}} result of {{total}}",
+    "results_other": "{{shown}} results of {{total}}",
+    "table": {
+      "caption": "Transactions",
+      "date": "Date",
+      "counterparty": "Counterparty",
+      "description": "Description",
+      "account": "Account",
+      "amount": "Amount"
+    },
+    "pending": "Pending",
+    "booked": "Booked",
+    "noCounterparty": "No counterparty",
+    "empty": {
+      "filterTitle": "No transactions match the filters",
+      "filterDescription": "Try a different search, account or period.",
+      "periodTitle": "No transactions in this period",
+      "periodDescription": "Older transactions are still there: widen the period to see them.",
+      "showAllPeriods": "Show all periods",
+      "trueTitle": "No transactions yet",
+      "trueDescription": "Bursar shows transactions after the first sync of a connected account. If you connected a bank a moment ago, the first sync may still be running.",
+      "openAccounts": "Open accounts",
+      "pendingTitle": "Nothing pending",
+      "pendingDescription": "All good: every transaction in this view is booked."
+    },
+    "error": {
+      "title": "Transactions could not be loaded",
+      "description": "The server did not answer. Your data is safe: try again in a moment.",
+      "retry": "Try again"
+    },
+    "drawer": {
+      "title": "Transaction",
+      "loading": "Loading the transaction",
+      "notFound": "This transaction does not exist or was removed",
+      "notFoundDescription": "It may belong to an account whose transactions were purged.",
+      "error": "The transaction could not be loaded",
+      "retry": "Try again",
+      "pendingNote": "The bank has not booked this transaction yet: its amount and date may still change.",
+      "details": "Details",
+      "bookingDate": "Booking date",
+      "valueDate": "Value date",
+      "transactionDate": "Transaction date",
+      "counterpartyAccount": "Counterparty account",
+      "account": "Account",
+      "accountAndBank": "{{account}} · {{bank}}",
+      "bankCode": "Bank code",
+      "merchantCategoryCode": "Merchant category code",
+      "balanceAfter": "Balance after",
+      "reference": "Bank reference",
+      "copyReference": "Copy bank reference",
+      "referenceCopied": "The bank reference is on your clipboard.",
+      "firstSeen": "First seen",
+      "remittance": "Remittance information",
+      "openAccount": "Open account"
+    },
+    "seeAllForAccount": "See all in Transactions"
   }
 }

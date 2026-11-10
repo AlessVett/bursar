@@ -679,7 +679,7 @@ describe("AccountDetailPage overview", () => {
 });
 
 describe("AccountDetailPage transactions", () => {
-  it("lists the latest transactions and has no link to the full list until it exists", async () => {
+  it("lists the latest transactions and links to the full list of the account", async () => {
     renderPage("/accounts/1?tab=transactions");
     const table = await screen.findByRole("table", { name: "Latest transactions of this account" });
     await within(table).findByText("Mercato Verde");
@@ -693,7 +693,8 @@ describe("AccountDetailPage transactions", () => {
     const request = callsTo("GET", "/api/transactions")[0];
     expect(request?.search.get("accountId")).toBe("1");
     expect(request?.search.get("pageSize")).toBe("20");
-    expect(document.querySelector('a[href^="/transactions"]')).toBeNull();
+    const seeAll = screen.getByRole("link", { name: "See all in Transactions" });
+    expect(seeAll.getAttribute("href")).toBe("/transactions?accountId=1&period=all");
   });
 
   it("shows the absolute date of a transaction in its title", async () => {

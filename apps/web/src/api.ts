@@ -16,6 +16,7 @@ import type {
   PurgeResponse,
   RemovalPreview,
   RenewConnectionRequest,
+  SearchResponse,
   SettingsResponse,
   SetupConfirmRequest,
   SetupStartRequest,
@@ -23,6 +24,7 @@ import type {
   StartConnectionRequest,
   StartConnectionResponse,
   SyncQueuedResponse,
+  TransactionDetail,
   TransactionListResponse,
 } from "@bursar/shared";
 import { queryKeys } from "./lib/query-keys";
@@ -156,6 +158,9 @@ export const api = {
   /** Task 21 reuses this for the full list: `params` are the query-string fields of the API. */
   transactions: (params: Record<string, string>) =>
     request<TransactionListResponse>("GET", `/api/transactions?${new URLSearchParams(params)}`),
+  transaction: (id: number) => request<TransactionDetail>("GET", `/api/transactions/${id}`),
+  search: (q: string) =>
+    request<SearchResponse>("GET", `/api/search?${new URLSearchParams({ q }).toString()}`),
   bankStatus: () => request<BankStatusResponse>("GET", "/api/banks/status"),
   aspsps: (country: string) =>
     request<AspspListResponse>("GET", `/api/banks/aspsps?country=${encodeURIComponent(country)}`),

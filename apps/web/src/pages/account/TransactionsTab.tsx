@@ -1,8 +1,10 @@
 import type { LocalDate, TransactionItem } from "@bursar/shared";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeftRight, TriangleAlert } from "lucide-react";
+import { ArrowLeftRight, ArrowRight, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
 import { api } from "../../api";
+import { buildPath } from "../../app/routes";
 import { Button, EmptyState, InlineEmpty, Money, StatusPill } from "../../components/ui";
 import { type Column, DataTable } from "../../components/ui/DataTable";
 import { useFormatters } from "../../lib/format";
@@ -21,8 +23,7 @@ function TransactionDate({ date }: { date: LocalDate }) {
 }
 
 /**
- * The latest 20 transactions of the account. The link to the full list is added by the task that
- * ships the Transactions page.
+ * The latest 20 transactions of the account, with the link to the account's full list.
  */
 export function TransactionsTab({ accountId }: { accountId: number }) {
   const { t } = useTranslation();
@@ -115,6 +116,15 @@ export function TransactionsTab({ accountId }: { accountId: number }) {
           {t("account.transactions.showingLatest", { shown, count: total })}
         </p>
       ) : null}
+      <div className="mt-3 flex justify-end">
+        <Link
+          to={buildPath("transactions", {}, { accountId: String(accountId), period: "all" })}
+          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-semibold text-primary hover:underline max-sm:min-h-11"
+        >
+          {t("transactions.seeAllForAccount")}
+          <ArrowRight aria-hidden size={16} strokeWidth={1.75} />
+        </Link>
+      </div>
     </div>
   );
 }

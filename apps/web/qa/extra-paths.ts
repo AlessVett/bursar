@@ -69,4 +69,29 @@ export const QA_EXTRA_PATHS: QaExtraPath[] = [
     auth: true,
     note: "Account detail: disconnected account, no actions",
   },
+  {
+    path: "/transactions?tab=pending",
+    auth: true,
+    note: "Transactions: pending tab (pending pills, or the positive empty state)",
+  },
+  {
+    path: "/transactions?tab=out&period=90d",
+    auth: true,
+    note: "Transactions: outflows over 90 days with the period chip and the results line",
+  },
+  {
+    path: "/transactions?q=zzzz-no-match",
+    auth: true,
+    note: "Transactions: filter-empty state with Clear filters",
+  },
+  {
+    path: "/transactions?tx=1",
+    auth: true,
+    note: "Transactions: detail drawer open on the first seeded transaction",
+  },
+  {
+    path: "/transactions?accountId=1&period=all",
+    auth: true,
+    note: 'Transactions: one account over all time (Account detail "See all" link)',
+  },
 ];
