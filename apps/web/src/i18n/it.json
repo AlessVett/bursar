@@ -826,5 +826,178 @@
       "enabled": "Conto riattivato",
       "enabledDetail": "{{account}} tornerà ad aggiornarsi e rientra nei totali."
     }
+  },
+  "connect": {
+    "action": "Collega una banca",
+    "title": "Collega una banca",
+    "subtitle": "Collega un conto in sola lettura. Bastano circa due minuti.",
+    "loading": "Controllo la connessione bancaria…",
+    "retry": "Riprova",
+    "back": "Indietro",
+    "statusError": {
+      "title": "Non è stato possibile controllare le connessioni bancarie",
+      "description": "Il server non risponde. Riprova tra un momento."
+    },
+    "steps": {
+      "label": "Passaggi",
+      "country": "Paese",
+      "bank": "Banca",
+      "consent": "Accesso"
+    },
+    "notConfigured": {
+      "title": "Le connessioni bancarie non sono ancora configurate",
+      "description": "Bursar ha bisogno delle credenziali Enable Banking (un ID applicazione e una chiave privata) per elencare le banche. Segui docs/enable-banking.md, riavvia Bursar e torna qui."
+    },
+    "inactive": {
+      "title": "L'applicazione Enable Banking non è attiva",
+      "description": "Finché l'applicazione non è attiva non si può collegare nessuna banca. Nel Control Panel di Enable Banking attivala oppure collega i tuoi conti (modalità limitata), poi ricarica questa pagina."
+    },
+    "redirectNotAllowed": {
+      "title": "L'indirizzo di ritorno non è consentito",
+      "description": "Aggiungi questo indirizzo agli URL di reindirizzamento dell'applicazione nel Control Panel di Enable Banking, poi riprova:",
+      "descriptionNoUrl": "Aggiungi l'indirizzo /api/banks/callback di Bursar agli URL di reindirizzamento dell'applicazione nel Control Panel di Enable Banking, poi riprova."
+    },
+    "country": {
+      "title": "Dov'è la tua banca?",
+      "description": "Le banche sono elencate per paese. Scegli il paese in cui è intestato il conto.",
+      "label": "Paese",
+      "choose": "Scegli un paese",
+      "continue": "Scegli la banca"
+    },
+    "bank": {
+      "title": "Scegli la tua banca",
+      "inCountry": "Banche in {{country}}",
+      "changeCountry": "Cambia paese",
+      "searchLabel": "Cerca una banca",
+      "searchPlaceholder": "Cerca per nome della banca",
+      "results_one": "{{count}} banca",
+      "results_many": "{{count}} di banche",
+      "results_other": "{{count}} banche",
+      "maxDays_one": "fino a {{count}} giorno",
+      "maxDays_many": "fino a {{count}} di giorni",
+      "maxDays_other": "fino a {{count}} giorni",
+      "beta": "Beta",
+      "betaHint": "Beta: la connessione con questa banca è recente e potrebbe essere instabile.",
+      "noMatch": {
+        "title": "Nessuna banca corrisponde a “{{query}}”",
+        "description": "Controlla l'ortografia o prova con un nome più corto."
+      },
+      "clearSearch": "Mostra tutte le banche",
+      "empty": {
+        "title": "Nessuna banca disponibile in questo paese",
+        "description": "Prova con un altro paese."
+      },
+      "listError": {
+        "title": "Non è stato possibile caricare le banche",
+        "description": "Enable Banking non ha risposto. Riprova tra qualche minuto.",
+        "retry": "Riprova"
+      }
+    },
+    "consent": {
+      "title": "Scegli per quanto tempo vale l'accesso",
+      "description": "Dopo questa data la banca chiede di confermare di nuovo il consenso. Puoi rinnovarlo prima che scada.",
+      "durationLabel": "Durata dell'accesso",
+      "option_one": "{{count}} giorno · fino al {{date}}",
+      "option_many": "{{count}} di giorni · fino al {{date}}",
+      "option_other": "{{count}} giorni · fino al {{date}}",
+      "endsOn": "L'accesso termina il {{date}}. Rinnovalo prima di quella data per non interrompere gli aggiornamenti.",
+      "cappedHint_one": "{{bank}} consente al massimo {{count}} giorno di accesso.",
+      "cappedHint_many": "{{bank}} consente al massimo {{count}} di giorni di accesso.",
+      "cappedHint_other": "{{bank}} consente al massimo {{count}} giorni di accesso.",
+      "readOnly": {
+        "title": "Accesso in sola lettura",
+        "body": "Bursar legge saldi e movimenti. Non può fare pagamenti né spostare denaro.",
+        "redirect": "Confermerai sulla pagina di {{bank}}. Bursar non vede mai le tue credenziali bancarie.",
+        "revoke": "Puoi scollegare la banca in qualsiasi momento da Conti."
+      },
+      "start": "Continua su {{bank}}"
+    },
+    "errors": {
+      "notConfigured": {
+        "title": "Le connessioni bancarie non sono configurate",
+        "detail": "Aggiungi le credenziali Enable Banking: vedi docs/enable-banking.md."
+      },
+      "unknownBank": {
+        "title": "Questa banca non è più disponibile",
+        "detail": "Scegli un'altra banca dall'elenco."
+      },
+      "redirectNotAllowed": {
+        "title": "L'indirizzo di ritorno non è consentito",
+        "detail": "Aggiungilo agli URL di reindirizzamento dell'applicazione nel Control Panel di Enable Banking."
+      },
+      "wrongBank": {
+        "title": "Non è stato possibile avviare la banca",
+        "detail": "L'elenco delle banche potrebbe essere cambiato. Scegli di nuovo la banca."
+      },
+      "bank": {
+        "title": "La banca non ha avviato il collegamento",
+        "detail": "Riprova tra qualche minuto."
+      },
+      "generic": {
+        "title": "Non è stato possibile avviare il collegamento",
+        "detail": "Controlla la connessione e riprova."
+      }
+    },
+    "callback": {
+      "pending": {
+        "title": "Sto completando il collegamento…",
+        "description": "Bursar sta raccogliendo i conti che hai condiviso. Servono pochi secondi."
+      },
+      "connected": {
+        "title": "Banca collegata",
+        "description": "{{bank}} è collegata in sola lettura."
+      },
+      "renewed": {
+        "title": "Consenso rinnovato",
+        "description": "L'accesso a {{bank}} è stato prolungato. Lo storico è stato conservato."
+      },
+      "accountsFound_one": "{{count}} conto trovato",
+      "accountsFound_many": "{{count}} di conti trovati",
+      "accountsFound_other": "{{count}} conti trovati",
+      "syncStarted": "Prima sincronizzazione avviata: i movimenti compaiono entro pochi minuti.",
+      "openAccounts": "Apri i conti",
+      "tryAgain": "Riprova",
+      "startAgain": "Ricomincia",
+      "noAccounts": {
+        "title": "Nessun conto condiviso",
+        "description": "{{bank}} non ha condiviso nessun conto con Bursar. Con un'applicazione Enable Banking in modalità limitata si vedono solo i conti collegati nel Control Panel.",
+        "step1": "Apri il Control Panel di Enable Banking e vai ai conti collegati dell'applicazione.",
+        "step2": "Collega ogni conto che vuoi usare, con l'identificativo mostrato dalla banca.",
+        "step3": "Torna qui e collega di nuovo la banca, autorizzando quegli stessi conti."
+      },
+      "denied": {
+        "title": "Hai annullato dalla banca",
+        "description": "Non è stato collegato nulla e Bursar non ha ricevuto nessun dato."
+      },
+      "failed": {
+        "title": "Non è stato possibile collegare la banca",
+        "generic": "La banca ha segnalato un errore e il collegamento non è stato completato. Riprova; se continua a fallire, controlla il Control Panel di Enable Banking.",
+        "codes": {
+          "EXPIRED_AUTHORIZATION_CODE": "Il codice di autorizzazione della banca è scaduto prima di poter essere usato. Ricomincia e completa i passaggi dalla banca senza pause.",
+          "WRONG_AUTHORIZATION_CODE": "Il codice di autorizzazione della banca non è valido. Ricomincia il collegamento.",
+          "ALREADY_AUTHORIZED": "Questa autorizzazione è già stata usata. Ricomincia il collegamento.",
+          "ASPSP_ERROR": "La banca ha risposto con un errore. Riprova tra qualche minuto.",
+          "ASPSP_TIMEOUT": "La banca non ha risposto in tempo. Riprova tra qualche minuto.",
+          "ASPSP_RATE_LIMIT_EXCEEDED": "La banca ha ricevuto troppe richieste. Riprova tra qualche ora.",
+          "NO_ACCOUNTS_ADDED": "Nell'applicazione Enable Banking non risulta collegato nessun conto. Collegali nel Control Panel e riprova."
+        }
+      },
+      "stateInvalid": {
+        "title": "Questo link è scaduto o è già stato usato",
+        "description": "Per sicurezza ogni collegamento si può completare una sola volta, entro 30 minuti. Ricomincia dall'inizio."
+      },
+      "missing": {
+        "title": "Qui manca la risposta della banca",
+        "description": "Questa pagina si apre al ritorno dalla banca. Se sei arrivato qui per caso, avvia un nuovo collegamento."
+      },
+      "unavailable": {
+        "title": "Le connessioni bancarie non sono configurate",
+        "description": "Aggiungi le credenziali Enable Banking (vedi docs/enable-banking.md) e riprova."
+      },
+      "error": {
+        "title": "Non è stato possibile completare il collegamento",
+        "description": "Il server non ha risposto come previsto. Controlla l'elenco dei conti: se la banca non compare, ricomincia."
+      }
+    }
   }
 }

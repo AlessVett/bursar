@@ -2,9 +2,13 @@ import type {
   AccountDetailResponse,
   AccountPatch,
   AccountSummary,
+  AspspListResponse,
   AuthStatus,
   BalanceHistoryResponse,
+  BankStatusResponse,
   CashFlowResponse,
+  CompleteConnectionRequest,
+  CompleteConnectionResponse,
   ConnectionsResponse,
   DisconnectResponse,
   HomeSummary,
@@ -16,6 +20,7 @@ import type {
   SetupConfirmRequest,
   SetupStartRequest,
   SetupStartResponse,
+  StartConnectionRequest,
   StartConnectionResponse,
   SyncQueuedResponse,
   TransactionListResponse,
@@ -151,6 +156,13 @@ export const api = {
   /** Task 21 reuses this for the full list: `params` are the query-string fields of the API. */
   transactions: (params: Record<string, string>) =>
     request<TransactionListResponse>("GET", `/api/transactions?${new URLSearchParams(params)}`),
+  bankStatus: () => request<BankStatusResponse>("GET", "/api/banks/status"),
+  aspsps: (country: string) =>
+    request<AspspListResponse>("GET", `/api/banks/aspsps?country=${encodeURIComponent(country)}`),
+  startConnection: (body: StartConnectionRequest) =>
+    request<StartConnectionResponse>("POST", "/api/connections", body),
+  completeConnection: (body: CompleteConnectionRequest) =>
+    request<CompleteConnectionResponse>("POST", "/api/connections/complete", body),
 };
 
 /**

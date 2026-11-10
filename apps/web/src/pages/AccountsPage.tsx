@@ -12,6 +12,7 @@ import { ConnectionCard } from "./accounts/ConnectionCard";
 import { DisconnectDialog } from "./accounts/DisconnectDialog";
 import { PurgeDialog } from "./accounts/PurgeDialog";
 import { RemovedAccounts } from "./accounts/RemovedAccounts";
+import { ConnectBankButton } from "./connect/ConnectBankButton";
 
 const SKELETON_WIDTHS = ["w-48", "w-64", "w-40"] as const;
 
@@ -96,6 +97,7 @@ export function AccountsPage() {
           icon={Landmark}
           title={t("accounts.empty.title")}
           description={t("accounts.empty.body")}
+          action={<ConnectBankButton />}
         />
       </Card>
     );
@@ -144,6 +146,7 @@ export function AccountsPage() {
         title={t("routes.accounts.title")}
         count={data ? accountCount : undefined}
         subtitle={t("accounts.subtitle")}
+        actions={<ConnectBankButton />}
       />
       {content}
 

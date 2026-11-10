@@ -15,4 +15,10 @@ export const PAGE_LOADERS: Partial<Record<RouteId, PageLoader>> = {
     import("../pages/AccountDetailPage").then((module) => ({
       Component: module.AccountDetailPage,
     })),
+  connect: () =>
+    import("../pages/ConnectPage").then((module) => ({ Component: module.ConnectPage })),
+  connectCallback: () =>
+    import("../pages/ConnectCallbackPage").then((module) => ({
+      Component: module.ConnectCallbackPage,
+    })),
 };

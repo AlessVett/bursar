@@ -18,6 +18,7 @@ import { useFormatters } from "../lib/format";
 import { queryKeys } from "../lib/query-keys";
 import { amountTone } from "../lib/tones";
 import { useUrlState } from "../lib/url-state";
+import { ConnectBankButton } from "./connect/ConnectBankButton";
 import { AccountFreshnessList } from "./home/AccountFreshnessList";
 import { AlertList } from "./home/AlertList";
 import { Greeting } from "./home/Greeting";
@@ -338,7 +339,6 @@ export function HomePage() {
       <HomeSkeleton />
     );
   } else if (!summary.data.hasConnections) {
-    // Task 20 adds the "Connect a bank" action here when /connect ships.
     body = (
       <Cascade index={1}>
         <EmptyState
@@ -346,6 +346,7 @@ export function HomePage() {
           icon={Landmark}
           title={t("home.empty.title")}
           description={t("home.empty.description")}
+          action={<ConnectBankButton />}
         />
       </Cascade>
     );

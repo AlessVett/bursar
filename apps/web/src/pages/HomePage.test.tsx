@@ -261,7 +261,7 @@ describe("HomePage", () => {
     ).toBeTruthy();
   });
 
-  it("explains what Bursar does when no bank is connected, with no button yet", async () => {
+  it("explains what Bursar does when no bank is connected, with a button to connect one", async () => {
     stubApi({
       "/api/summary": () =>
         json(summary({ hasConnections: false, accounts: [], balances: [], cashflow30d: null })),
@@ -271,6 +271,9 @@ describe("HomePage", () => {
     expect(screen.getByText(/It only reads: it cannot make payments or move money\./)).toBeTruthy();
     expect(screen.queryByRole("region", { name: "Key figures" })).toBeNull();
     expect(screen.queryAllByRole("button")).toHaveLength(0);
+    expect(screen.getByRole("link", { name: "Connect a bank" }).getAttribute("href")).toBe(
+      "/connect",
+    );
   });
 
   it("shows an error state with a retry instead of invented data", async () => {

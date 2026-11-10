@@ -192,6 +192,9 @@ describe("AccountsPage", () => {
     ]);
     expect(screen.getByRole("heading", { level: 1 }).parentElement?.textContent).toBe("Accounts5");
 
+    expect(screen.getByRole("link", { name: "Connect a bank" }).getAttribute("href")).toBe(
+      "/connect",
+    );
     const harbor = await region("Harbor Credit");
     expect(within(harbor).getByText("Expired")).toBeTruthy();
     expect(within(harbor).getByText("Consent expired 3 days ago")).toBeTruthy();
@@ -543,7 +546,9 @@ describe("AccountsPage", () => {
     expect(await screen.findByText("No bank connected yet")).toBeTruthy();
     expect(screen.getByText(/only reads balances and transactions from your bank/)).toBeTruthy();
     expect(screen.getByText(/cannot make payments or move money/)).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /Connect a bank/ })).toBeNull();
+    const connectLinks = screen.getAllByRole("link", { name: "Connect a bank" });
+    expect(connectLinks).toHaveLength(2);
+    expect(connectLinks[0]?.getAttribute("href")).toBe("/connect");
     expect(screen.queryByRole("heading", { level: 2 })).toBeNull();
   });
 

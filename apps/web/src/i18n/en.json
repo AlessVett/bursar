@@ -790,5 +790,173 @@
       "enabled": "Account enabled",
       "enabledDetail": "{{account}} will be updated again and counted in the totals."
     }
+  },
+  "connect": {
+    "action": "Connect a bank",
+    "title": "Connect a bank",
+    "subtitle": "Link an account with read-only access. It takes about two minutes.",
+    "loading": "Checking the bank connection…",
+    "retry": "Try again",
+    "back": "Back",
+    "statusError": {
+      "title": "Bank connections could not be checked",
+      "description": "The server did not answer. Try again in a moment."
+    },
+    "steps": {
+      "label": "Steps",
+      "country": "Country",
+      "bank": "Bank",
+      "consent": "Access"
+    },
+    "notConfigured": {
+      "title": "Bank connections are not set up yet",
+      "description": "Bursar needs Enable Banking credentials (an application ID and a private key) before it can list banks. Follow docs/enable-banking.md, restart Bursar and come back here."
+    },
+    "inactive": {
+      "title": "The Enable Banking application is not active",
+      "description": "No bank can be connected until the application is active. In the Enable Banking Control Panel, activate it or link your own accounts (restricted mode), then reload this page."
+    },
+    "redirectNotAllowed": {
+      "title": "The return address is not allowed",
+      "description": "Add this address to the redirect URLs of the application in the Enable Banking Control Panel, then try again:",
+      "descriptionNoUrl": "Add Bursar's /api/banks/callback address to the redirect URLs of the application in the Enable Banking Control Panel, then try again."
+    },
+    "country": {
+      "title": "Where is your bank?",
+      "description": "Banks are listed by country. Choose the country where your account is held.",
+      "label": "Country",
+      "choose": "Choose a country",
+      "continue": "Choose a bank"
+    },
+    "bank": {
+      "title": "Choose your bank",
+      "inCountry": "Banks in {{country}}",
+      "changeCountry": "Change country",
+      "searchLabel": "Search banks",
+      "searchPlaceholder": "Search by bank name",
+      "results_one": "{{count}} bank",
+      "results_other": "{{count}} banks",
+      "maxDays_one": "up to {{count}} day",
+      "maxDays_other": "up to {{count}} days",
+      "beta": "Beta",
+      "betaHint": "Beta: the connection to this bank is new and may be unstable.",
+      "noMatch": {
+        "title": "No bank matches “{{query}}”",
+        "description": "Check the spelling or try a shorter name."
+      },
+      "clearSearch": "Show all banks",
+      "empty": {
+        "title": "No banks are available in this country",
+        "description": "Try another country."
+      },
+      "listError": {
+        "title": "The banks could not be loaded",
+        "description": "Enable Banking did not answer. Try again in a few minutes.",
+        "retry": "Try again"
+      }
+    },
+    "consent": {
+      "title": "Choose how long access lasts",
+      "description": "After this date the bank asks you to confirm the consent again. You can renew it before it ends.",
+      "durationLabel": "Access duration",
+      "option_one": "{{count}} day · until {{date}}",
+      "option_other": "{{count}} days · until {{date}}",
+      "endsOn": "Access ends on {{date}}. Renew it before then to keep the updates coming.",
+      "cappedHint_one": "{{bank}} allows at most {{count}} day of access.",
+      "cappedHint_other": "{{bank}} allows at most {{count}} days of access.",
+      "readOnly": {
+        "title": "Read-only access",
+        "body": "Bursar reads balances and transactions. It cannot make payments or move money.",
+        "redirect": "You will confirm on the page of {{bank}}. Bursar never sees your bank credentials.",
+        "revoke": "You can disconnect the bank at any time from Accounts."
+      },
+      "start": "Continue to {{bank}}"
+    },
+    "errors": {
+      "notConfigured": {
+        "title": "Bank connections are not set up",
+        "detail": "Add the Enable Banking credentials: see docs/enable-banking.md."
+      },
+      "unknownBank": {
+        "title": "This bank is no longer available",
+        "detail": "Choose another bank from the list."
+      },
+      "redirectNotAllowed": {
+        "title": "The return address is not allowed",
+        "detail": "Add it to the redirect URLs of the application in the Enable Banking Control Panel."
+      },
+      "wrongBank": {
+        "title": "The bank could not be started",
+        "detail": "The bank list may have changed. Choose the bank again."
+      },
+      "bank": {
+        "title": "The bank could not start the connection",
+        "detail": "Try again in a few minutes."
+      },
+      "generic": {
+        "title": "The connection could not be started",
+        "detail": "Check your connection and try again."
+      }
+    },
+    "callback": {
+      "pending": {
+        "title": "Finishing the connection…",
+        "description": "Bursar is collecting the accounts you shared. This takes a few seconds."
+      },
+      "connected": {
+        "title": "Bank connected",
+        "description": "{{bank}} is linked with read-only access."
+      },
+      "renewed": {
+        "title": "Consent renewed",
+        "description": "Access to {{bank}} was extended. Your history is kept."
+      },
+      "accountsFound_one": "{{count}} account found",
+      "accountsFound_other": "{{count}} accounts found",
+      "syncStarted": "Initial sync started: transactions appear in a few minutes.",
+      "openAccounts": "Open accounts",
+      "tryAgain": "Try again",
+      "startAgain": "Start again",
+      "noAccounts": {
+        "title": "No accounts were shared",
+        "description": "{{bank}} did not share any account with Bursar. With an Enable Banking application in restricted mode only the accounts linked in the Control Panel are visible.",
+        "step1": "Open the Enable Banking Control Panel and go to the linked accounts of the application.",
+        "step2": "Link every account you want to use, with the identifier your bank shows.",
+        "step3": "Come back here and connect the bank again, authorising those same accounts."
+      },
+      "denied": {
+        "title": "You cancelled at the bank",
+        "description": "Nothing was connected and Bursar received no data."
+      },
+      "failed": {
+        "title": "The bank could not be connected",
+        "generic": "The bank reported an error and the connection was not completed. Try again; if it keeps failing, check the Enable Banking Control Panel.",
+        "codes": {
+          "EXPIRED_AUTHORIZATION_CODE": "The authorisation code from the bank expired before it could be used. Start again and finish the steps at the bank without pausing.",
+          "WRONG_AUTHORIZATION_CODE": "The authorisation code from the bank is not valid. Start the connection again.",
+          "ALREADY_AUTHORIZED": "This authorisation was already used. Start the connection again.",
+          "ASPSP_ERROR": "The bank answered with an error. Try again in a few minutes.",
+          "ASPSP_TIMEOUT": "The bank did not answer in time. Try again in a few minutes.",
+          "ASPSP_RATE_LIMIT_EXCEEDED": "The bank received too many requests. Try again in a few hours.",
+          "NO_ACCOUNTS_ADDED": "No account is linked to the Enable Banking application. Link them in the Control Panel and try again."
+        }
+      },
+      "stateInvalid": {
+        "title": "This link has expired or was already used",
+        "description": "For safety each connection can be completed once, within 30 minutes. Start again from the beginning."
+      },
+      "missing": {
+        "title": "There is no bank response to complete",
+        "description": "This page opens when you return from your bank. If you landed here by chance, start a new connection."
+      },
+      "unavailable": {
+        "title": "Bank connections are not set up",
+        "description": "Add the Enable Banking credentials (see docs/enable-banking.md) and try again."
+      },
+      "error": {
+        "title": "The connection could not be completed",
+        "description": "The server did not answer as expected. Check the list of accounts: if the bank is missing, start again."
+      }
+    }
   }
 }

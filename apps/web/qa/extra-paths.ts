@@ -13,6 +13,26 @@ export const QA_EXTRA_PATHS: QaExtraPath[] = [
   { path: "/qa-unknown-page", auth: true, note: "Not-found page inside the app shell" },
   { path: "/login?expired=1", auth: false, note: "Login after the session expired" },
   {
+    path: "/connect?step=bank&country=IT",
+    auth: true,
+    note: "Connect wizard: searchable bank list, initials fallback and beta badge",
+  },
+  {
+    path: "/connect?step=consent&country=IT&bank=Banca%20Esempio",
+    auth: true,
+    note: "Connect wizard: consent duration, end date and read-only reassurance",
+  },
+  {
+    path: "/connect/callback?state=invalid-state-value-000",
+    auth: true,
+    note: "Callback with an unknown state: expired or already used link",
+  },
+  {
+    path: "/connect/callback?error=access_denied&state=invalid-state-value-000",
+    auth: true,
+    note: "Callback with a cancelled authorisation and an unknown state",
+  },
+  {
     path: "/accounts/999999",
     auth: true,
     note: "Account detail: not found (missing or purged id)",
