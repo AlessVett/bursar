@@ -2,10 +2,13 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync } fr
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { initCommand, runCli, USAGE } from "./cli";
+import { bankingCommand, initCommand, runCli, USAGE } from "./cli";
+import { deriveKey } from "./crypto";
 import { openDatabase, runMigrations } from "./db";
+import { FinanceRepository } from "./finance/repository";
 import { databasePassphrase, seedBackupRows } from "./test/backup";
 import { MIGRATIONS_DIR } from "./test/db";
+import { DAY_MS, NOW, TIME_ZONE } from "./test/finance";
 
 describe("bursar init", () => {
   let dir: string;
@@ -173,5 +176,188 @@ describe("bursar backup and restore", () => {
     const file = path.join(dir, "master_key");
     expect(await cli(["init", "--out", file])).toBe(0);
     expect(existsSync(file)).toBe(true);
+  });
+});
+
+describe("bursar banking status", () => {
+  const masterKey = Buffer.alloc(32, 5);
+  const env = {
+    BURSAR_PUBLIC_URL: "https://bursar.example.test",
+    TZ: TIME_ZONE,
+    BURSAR_MASTER_KEY: masterKey.toString("base64"),
+    BURSAR_MIGRATIONS_DIR: MIGRATIONS_DIR,
+  };
+  const IBAN = "IT60X0542811101000000123456";
+  let dir: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), "bursar-cli-"));
+  });
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+
+  function seed(): void {
+    const database = openDatabase(
+      path.join(dir, "bursar.db"),
+      deriveKey(masterKey, "database").toString("hex"),
+    );
+    runMigrations(database.db, MIGRATIONS_DIR);
+    const repo = new FinanceRepository(database.db, () => NOW);
+    const connection = repo.createConnection({
+      aspspName: "Banca Esempio",
+      aspspCountry: "IT",
+      providerSessionId: "session-1",
+      validUntil: NOW + 100 * DAY_MS,
+      renewedAt: NOW - DAY_MS,
+    });
+    const account = repo.createAccount({
+      connectionId: connection,
+      identificationHash: "hash-1",
+      currency: "EUR",
+      iban: IBAN,
+      maskedIdentifier: "IT60 •••• •••• 3456",
+      last4: "3456",
+      nickname: "Rainy day fund",
+      lastSyncedAt: NOW - 3_600_000,
+    });
+    for (const [index, status] of (["booked", "booked", "pending"] as const).entries()) {
+      repo.insertTransaction({
+        accountId: account,
+        providerReference: null,
+        fingerprint: `fp-${index}`,
+        status,
+        bookingDate: null,
+        valueDate: null,
+        transactionDate: null,
+        sortDate: "2026-11-01",
+        amountMinor: -12_345_678,
+        currency: "EUR",
+        counterparty: "Private Counterparty",
+        counterpartyAccount: null,
+        remittance: "Private remittance",
+        bankCode: null,
+        merchantCategoryCode: null,
+        balanceAfterMinor: null,
+        searchText: "private counterparty private remittance",
+        rawJson: "{}",
+        missingCount: 0,
+        firstSeenAt: NOW,
+        lastSeenAt: NOW,
+      });
+    }
+    repo.createConnection({
+      aspspName: "Removed Bank",
+      aspspCountry: "DE",
+      providerSessionId: "session-2",
+      validUntil: NOW + DAY_MS,
+      removedAt: NOW,
+    });
+    database.close();
+  }
+
+  const run = (args: string[]) => {
+    const lines: string[] = [];
+    const code = bankingCommand(
+      args,
+      (line) => lines.push(line),
+      env,
+      () => NOW,
+    );
+    return { code, output: lines.join("\n") };
+  };
+
+  it("prints connections and accounts as masked JSON", () => {
+    seed();
+    const { code, output } = run(["status", "--data-dir", dir]);
+    expect(code).toBe(0);
+    expect(JSON.parse(output)).toEqual({
+      connections: [
+        {
+          id: 1,
+          bank: "Banca Esempio",
+          country: "IT",
+          status: "active",
+          validUntil: new Date(NOW + 100 * DAY_MS).toISOString(),
+          renewedAt: new Date(NOW - DAY_MS).toISOString(),
+          accounts: [
+            {
+              id: 1,
+              masked: "IT60 •••• •••• 3456",
+              currency: "EUR",
+              status: "active",
+              transactions: 3,
+              pending: 1,
+              lastSyncedAt: new Date(NOW - 3_600_000).toISOString(),
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  it("never prints an IBAN, a name, an amount or transaction text", () => {
+    seed();
+    const { output } = run(["status", "--data-dir", dir]);
+    expect(output).not.toContain(IBAN);
+    expect(output).not.toContain("IT60X05");
+    expect(output).not.toContain("Rainy");
+    expect(output).not.toContain("Private");
+    expect(output).not.toContain("12345678");
+    // Any run of five or more digits would be IBAN, amount or identifier material.
+    expect(output).not.toMatch(/\d{5,}/u);
+    expect(output.split("\n")).toHaveLength(1);
+  });
+
+  it("reports an empty installation", () => {
+    const database = openDatabase(
+      path.join(dir, "bursar.db"),
+      deriveKey(masterKey, "database").toString("hex"),
+    );
+    runMigrations(database.db, MIGRATIONS_DIR);
+    database.close();
+    const { code, output } = run(["status", "--data-dir", dir]);
+    expect(code).toBe(0);
+    expect(JSON.parse(output)).toEqual({ connections: [] });
+  });
+
+  it("fails without creating a database when there is none", () => {
+    const { code, output } = run(["status", "--data-dir", dir]);
+    expect(code).toBe(1);
+    expect(output).toContain("No database found");
+    expect(existsSync(path.join(dir, "bursar.db"))).toBe(false);
+  });
+
+  it("reports an unreadable database without echoing the key", () => {
+    seed();
+    const wrongKey = Buffer.alloc(32, 9).toString("base64");
+    const lines: string[] = [];
+    const code = bankingCommand(
+      ["status", "--data-dir", dir],
+      (line) => lines.push(line),
+      { ...env, BURSAR_MASTER_KEY: wrongKey },
+      () => NOW,
+    );
+    expect(code).toBe(1);
+    expect(lines.join("\n")).toMatch(/Cannot open encrypted database/);
+    expect(lines.join("\n")).not.toContain(wrongKey);
+  });
+
+  it("names the broken settings, never their values, when the configuration is invalid", () => {
+    const lines: string[] = [];
+    const code = bankingCommand(
+      ["status"],
+      (line) => lines.push(line),
+      { BURSAR_MASTER_KEY: "not-a-key" },
+      () => NOW,
+    );
+    expect(code).toBe(1);
+    expect(lines.join("\n")).toContain("Invalid configuration");
+    expect(lines.join("\n")).not.toContain("not-a-key");
+  });
+
+  it("prints the usage for an unknown subcommand or a missing directory", () => {
+    expect(run([]).code).toBe(2);
+    expect(run(["balance"]).code).toBe(2);
+    expect(run(["status", "--data-dir"])).toMatchObject({ code: 2 });
+    expect(run(["status", "--data-dir"]).output).toContain("bursar banking status");
   });
 });

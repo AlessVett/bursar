@@ -6,6 +6,7 @@ import { Writable } from "node:stream";
 import {
   type BackupRunItem,
   backupStatusResponseSchema,
+  type HomeSummary,
   type SettingsResponse,
   type SetupStartResponse,
 } from "@bursar/shared";
@@ -294,6 +295,33 @@ describe("startBursar", () => {
         backupTarget: "s3",
       });
     });
+  });
+
+  it("serves the finance read API to a signed-in session only", async () => {
+    let token: string | null = null;
+    const { base } = await boot({}, undefined, {
+      seed: async (ctx) => {
+        token = (await seedQa(ctx, { owner: true })).sessionToken;
+      },
+    });
+    expect((await fetch(`${base}/api/summary`)).status).toBe(401);
+
+    const headers = { cookie: `bursar_session=${token}` };
+    const response = await fetch(`${base}/api/summary`, { headers });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    const summary = (await response.json()) as HomeSummary;
+    expect(summary.hasConnections).toBe(true);
+    expect(summary.alerts.map((alert) => alert.kind)).toContain("backup_local_only");
+    for (const route of [
+      "/api/connections",
+      "/api/accounts/1",
+      "/api/transactions",
+      "/api/cashflow",
+      "/api/search?q=an",
+    ]) {
+      expect((await fetch(`${base}${route}`, { headers })).status, route).toBe(200);
+    }
   });
 });
 

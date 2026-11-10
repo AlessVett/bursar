@@ -28,6 +28,7 @@ import { syncHealthTask } from "./finance/health-task";
 import { ConnectionLifecycle, deleteSessionJobHandler } from "./finance/lifecycle";
 import { lifecycleRoutes } from "./finance/lifecycle-routes";
 import { FinanceRepository } from "./finance/repository";
+import { financeRoutes } from "./finance/routes";
 import { syncAccountHandler, unconfiguredSyncHandler } from "./finance/sync";
 import { syncRoutes } from "./finance/sync-routes";
 import { dailySyncTask } from "./finance/sync-task";
@@ -278,6 +279,22 @@ export async function startBursar(
       router: syncRoutes({ repo, queue, clientIp, timezone: config.timezone }),
     },
     { prefix: "/api", router: lifecycleRoutes({ lifecycle }) },
+    {
+      prefix: "/api",
+      router: financeRoutes({
+        db: database.db,
+        sqlite: database.sqlite,
+        queue,
+        timezone: config.timezone,
+        now: Date.now,
+        locale: () => settings.get().locale,
+        audit,
+        backup: () => {
+          const status = backups.status(1);
+          return { target: status.target, consecutiveFailures: status.consecutiveFailures };
+        },
+      }),
+    },
     { prefix: "/api/backups", router: backupRoutes({ service: backups, queue }) },
   ];
   const publicRouters: MountedRouter[] = [

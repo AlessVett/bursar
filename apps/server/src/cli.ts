@@ -1,6 +1,7 @@
 import { existsSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { effectiveConnectionStatus } from "@bursar/shared";
 import { AuditLog } from "./audit";
 import { listBackupSets } from "./backup/backup";
 import { LocalDirStore, type ObjectStore } from "./backup/object-store";
@@ -9,13 +10,15 @@ import { S3Store } from "./backup/s3-store";
 import { BackupService } from "./backup/service";
 import { type Config, ConfigError, loadConfig } from "./config";
 import { deriveKey, generateMasterKey } from "./crypto";
-import { openDatabase, runMigrations } from "./db";
+import { type OpenedDatabase, openDatabase, runMigrations } from "./db";
 import { EventBus } from "./events/bus";
+import { FinanceRepository } from "./finance/repository";
 import { JobQueue } from "./jobs/queue";
 import { NotificationService } from "./notifications/service";
 import { SettingsStore } from "./settings/store";
 
 const INIT_USAGE = "Usage: bursar init --out <path>";
+const BANKING_USAGE = "Usage: bursar banking status [--data-dir <dir>]";
 
 export const USAGE = [
   "Usage:",
@@ -23,6 +26,7 @@ export const USAGE = [
   "  bursar backup run",
   "  bursar backup list [--remote]",
   "  bursar restore --set <setId> --to <dir> [--from local|s3] [--force]",
+  "  bursar banking status [--data-dir <dir>]",
 ].join("\n");
 
 /** Exit code for a configuration problem, as in `index.ts`. */
@@ -217,12 +221,128 @@ export async function restoreCommand(
   }
 }
 
+export interface BankingStatusReport {
+  connections: {
+    id: number;
+    bank: string;
+    country: string;
+    status: string;
+    validUntil: string;
+    renewedAt: string | null;
+    accounts: {
+      id: number;
+      masked: string;
+      currency: string;
+      status: string;
+      transactions: number;
+      pending: number;
+      lastSyncedAt: string | null;
+    }[];
+  }[];
+}
+
+const iso = (epochMs: number | null): string | null =>
+  epochMs === null ? null : new Date(epochMs).toISOString();
+
+/**
+ * What `bursar banking status` prints: connections and accounts with masked identifiers and
+ * counts. No account names, nicknames, amounts or transaction text, and never a full IBAN.
+ */
+export function bankingStatus(
+  repo: FinanceRepository,
+  now: number,
+  timeZone: string,
+): BankingStatusReport {
+  return {
+    connections: repo.listConnections().map((connection) => ({
+      id: connection.id,
+      bank: connection.aspspName,
+      country: connection.aspspCountry,
+      status: effectiveConnectionStatus(connection.status, connection.validUntil, now, timeZone),
+      validUntil: new Date(connection.validUntil).toISOString(),
+      renewedAt: iso(connection.renewedAt),
+      accounts: repo.listAccounts({ connectionId: connection.id }).map((account) => {
+        const counts = repo.countTransactions(account.id);
+        return {
+          id: account.id,
+          masked: account.maskedIdentifier ?? `•••• ${account.last4 ?? "••••"}`,
+          currency: account.currency,
+          status: account.status,
+          transactions: counts.total,
+          pending: counts.pending,
+          lastSyncedAt: iso(account.lastSyncedAt),
+        };
+      }),
+    })),
+  };
+}
+
+/** `bursar banking status [--data-dir <dir>]`: prints the report as one line of JSON. */
+export function bankingCommand(
+  args: string[],
+  log: (line: string) => void = console.log,
+  env: Record<string, string | undefined> = process.env,
+  now: () => number = Date.now,
+): number {
+  const [subcommand, ...rest] = args;
+  if (subcommand !== "status") {
+    log(BANKING_USAGE);
+    return 2;
+  }
+  let dataDir: string | undefined;
+  const flag = rest.indexOf("--data-dir");
+  if (flag >= 0) {
+    dataDir = rest[flag + 1];
+    if (!dataDir) {
+      log(BANKING_USAGE);
+      return 2;
+    }
+  }
+
+  let config: ReturnType<typeof loadConfig>;
+  try {
+    config = loadConfig(dataDir ? { ...env, BURSAR_DATA_DIR: dataDir } : env);
+  } catch (error) {
+    if (error instanceof ConfigError) {
+      log(error.message);
+      return 1;
+    }
+    throw error;
+  }
+
+  const file = path.join(config.dataDir, "bursar.db");
+  if (!existsSync(file)) {
+    log(`No database found in ${config.dataDir}`);
+    return 1;
+  }
+  let database: OpenedDatabase;
+  try {
+    database = openDatabase(file, deriveKey(config.masterKey, "database").toString("hex"));
+  } catch (error) {
+    log(error instanceof Error ? error.message : String(error));
+    return 1;
+  }
+  try {
+    const report = bankingStatus(new FinanceRepository(database.db, now), now(), config.timezone);
+    log(JSON.stringify(report));
+    return 0;
+  } catch (error) {
+    log(
+      `Cannot read the banking status: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    return 1;
+  } finally {
+    database.close();
+  }
+}
+
 /** Dispatches `bursar <command> …`; returns the exit code. */
 export async function runCli(argv: string[], partial: Partial<CliContext> = {}): Promise<number> {
   const [command, ...rest] = argv;
   if (command === "init") return initCommand(rest, partial.log);
   if (command === "backup") return backupCommand(rest, partial);
   if (command === "restore") return restoreCommand(rest, partial);
+  if (command === "banking") return bankingCommand(rest, partial.log, partial.env);
   context(partial).error(USAGE);
   return 2;
 }
