@@ -3,7 +3,12 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Writable } from "node:stream";
-import type { SettingsResponse, SetupStartResponse } from "@bursar/shared";
+import {
+  type BackupRunItem,
+  backupStatusResponseSchema,
+  type SettingsResponse,
+  type SetupStartResponse,
+} from "@bursar/shared";
 import { pino } from "pino";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { generateTotpCode } from "./auth/totp";
@@ -266,16 +271,20 @@ describe("startBursar", () => {
       const privateKey = generateKeyPairSync("rsa", { modulusLength: 2048 })
         .privateKey.export({ type: "pkcs8", format: "pem" })
         .toString();
-      const { base, origin } = await boot({
-        EB_APPLICATION_ID: "8f1c2b7e-4d3a-4f6b-9a10-2c5d7e9b3a41",
-        EB_PRIVATE_KEY: privateKey,
-        SMTP_HOST: "smtp.example.test",
-        SMTP_FROM: "bursar@example.test",
-        BACKUP_S3_ENDPOINT: "https://s3.example.test",
-        BACKUP_S3_BUCKET: "bursar-backups",
-        BACKUP_S3_ACCESS_KEY_ID: "access-key-id-value",
-        BACKUP_S3_SECRET_KEY: "s3-secret-value-0123456789",
-      });
+      const { base, origin } = await boot(
+        {
+          EB_APPLICATION_ID: "8f1c2b7e-4d3a-4f6b-9a10-2c5d7e9b3a41",
+          EB_PRIVATE_KEY: privateKey,
+          SMTP_HOST: "smtp.example.test",
+          SMTP_FROM: "bursar@example.test",
+          BACKUP_S3_ENDPOINT: "https://s3.example.test",
+          BACKUP_S3_BUCKET: "bursar-backups",
+          BACKUP_S3_ACCESS_KEY_ID: "access-key-id-value",
+          BACKUP_S3_SECRET_KEY: "s3-secret-value-0123456789",
+        },
+        undefined,
+        { backupS3: null },
+      );
       const cookie = sessionOf(await completeSetup(base, origin));
       const response = await fetch(`${base}/api/settings`, { headers: { cookie } });
       const body = (await response.json()) as SettingsResponse;
@@ -436,5 +445,60 @@ describe("startBursar startup recovery and live events", () => {
     const closing = running.pop()?.close();
     await expect(closing).resolves.toBeUndefined();
     abort.abort();
+  });
+
+  it("fails backup runs left running by the previous process and serves the backup status", async () => {
+    withDatabase(({ sqlite }) => {
+      sqlite
+        .prepare(
+          "INSERT INTO backup_runs (trigger, status, target, started_at) VALUES ('manual', 'running', 'local', ?)",
+        )
+        .run(Date.now() - 60_000);
+    });
+    const lines: string[] = [];
+    const { base, origin } = await boot(lines);
+    const marked = lines
+      .map((line) => JSON.parse(line))
+      .find((l) => l.msg === "Marked backup runs interrupted by a restart as failed");
+    expect(marked).toMatchObject({ level: 40, failedBackupRuns: 1 });
+
+    const cookie = await signIn(base, origin);
+    expect((await fetch(`${base}/api/backups`)).status).toBe(401);
+    const response = await fetch(`${base}/api/backups`, { headers: { cookie } });
+    expect(response.status).toBe(200);
+    const status = backupStatusResponseSchema.parse(await response.json());
+    expect(status.target).toBe("local");
+    expect(status.runs.find((run) => run.trigger === "manual")).toMatchObject({
+      status: "failed",
+      errorMessage: "Interrupted by a restart",
+    });
+  });
+
+  it("runs a manual backup through the job worker into <dataDir>/backups", async () => {
+    const { base, origin } = await boot();
+    const cookie = await signIn(base, origin);
+    const pause = () => new Promise((resolve) => setTimeout(resolve, 100));
+    // Right after boot the nightly catch-up run may hold the backup slot: retry until accepted.
+    let accepted = false;
+    for (let i = 0; i < 50 && !accepted; i++) {
+      const response = await fetch(`${base}/api/backups/run`, {
+        method: "POST",
+        headers: { cookie, origin, "content-type": "application/json" },
+      });
+      accepted = response.status === 202;
+      if (!accepted) await pause();
+    }
+    expect(accepted).toBe(true);
+
+    let manual: BackupRunItem | undefined;
+    for (let i = 0; i < 50 && manual?.status !== "succeeded" && manual?.status !== "failed"; i++) {
+      await pause();
+      const response = await fetch(`${base}/api/backups`, { headers: { cookie } });
+      manual = backupStatusResponseSchema
+        .parse(await response.json())
+        .runs.find((run) => run.trigger === "manual");
+    }
+    expect(manual).toMatchObject({ status: "succeeded", target: "local" });
+    expect(existsSync(path.join(dir, "backups", manual?.setId ?? "", "manifest.json"))).toBe(true);
   });
 });

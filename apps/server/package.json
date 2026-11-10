@@ -17,6 +17,7 @@
     "@bursar/shared": "workspace:*",
     "@hono/node-server": "^2.1.6",
     "@node-rs/argon2": "^2.2.2",
+    "aws4fetch": "1.0.20",
     "better-sqlite3": "npm:better-sqlite3-multiple-ciphers@^13.0.3",
     "better-sqlite3-multiple-ciphers": "^13.0.3",
     "drizzle-orm": "^0.45.4",

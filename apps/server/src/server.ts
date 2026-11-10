@@ -8,6 +8,11 @@ import { OwnerStore } from "./auth/owner";
 import { FailureLimiter } from "./auth/rate-limit";
 import { SessionStore } from "./auth/sessions";
 import { SetupCode } from "./auth/setup-code";
+import type { ObjectStore } from "./backup/object-store";
+import { backupRoutes } from "./backup/routes";
+import { S3Store } from "./backup/s3-store";
+import { BackupService } from "./backup/service";
+import { backupJobHandler, backupTask } from "./backup/task";
 import { type Config, isLoopbackHost } from "./config";
 import { deriveKey } from "./crypto";
 import { type BursarDb, openDatabase, runMigrations, type Sqlite } from "./db";
@@ -30,7 +35,7 @@ import { createApp, type MountedRouter } from "./http/app";
 import { createClientIpResolver } from "./http/client-ip";
 import { eventsRoute } from "./http/events";
 import { JobQueue } from "./jobs/queue";
-import { DELETE_SESSION_JOB, EMAIL_JOB, SYNC_ACCOUNT_JOB } from "./jobs/types";
+import { BACKUP_JOB, DELETE_SESSION_JOB, EMAIL_JOB, SYNC_ACCOUNT_JOB } from "./jobs/types";
 import { type JobHandler, JobWorker } from "./jobs/worker";
 import { maintenanceTask } from "./maintenance";
 import { emailJobHandler } from "./notifications/email-job";
@@ -67,6 +72,8 @@ export interface StartOverrides {
   mailer?: Mailer | null;
   /** Tests and the QA server inject a client (`FakeEnableBanking`); `null` disables banking. */
   bankingClient?: EnableBankingApi | null;
+  /** `null` forces local-only backups; omit it to use `config.backup.s3`. Tests pass `null`. */
+  backupS3?: ObjectStore | null;
 }
 
 export async function startBursar(
@@ -171,6 +178,49 @@ export async function startBursar(
     settings,
     emailEnabled: () => mailer !== null,
   });
+  const backups = new BackupService({
+    sqlite: database.sqlite,
+    db: database.db,
+    masterKey: config.masterKey,
+    config: config.backup,
+    s3:
+      overrides.backupS3 !== undefined
+        ? overrides.backupS3
+        : config.backup.s3
+          ? new S3Store(config.backup.s3)
+          : null,
+    notifications,
+    bus,
+    audit,
+    timezone: config.timezone,
+  });
+  // Single process: a backup run still marked running was cut off by the previous process.
+  const failedBackupRuns = backups.failStaleRuns();
+  if (failedBackupRuns > 0) {
+    logger.warn({ failedBackupRuns }, "Marked backup runs interrupted by a restart as failed");
+  }
+  if (backups.target() === "local") {
+    logger.warn(
+      { dir: config.backup.dir },
+      "No S3 backup target: backups stay on this host only (set BACKUP_S3_*)",
+    );
+  }
+  handlers.set(BACKUP_JOB, backupJobHandler(backups));
+  bus.subscribe((event) => {
+    if (event.type !== "backup.finished") return;
+    const run = backups.status(1).runs[0];
+    if (event.status === "succeeded") {
+      logger.info(
+        { setId: run?.setId, sizeBytes: run?.sizeBytes, target: run?.target },
+        "Backup finished",
+      );
+    } else {
+      logger.error(
+        { setId: run?.setId, target: run?.target, error: run?.errorMessage },
+        "Backup failed",
+      );
+    }
+  });
   handlers.set(
     EMAIL_JOB,
     emailJobHandler({ service: notifications, mailer, settings, publicUrl: config.publicUrl }),
@@ -228,6 +278,7 @@ export async function startBursar(
       router: syncRoutes({ repo, queue, clientIp, timezone: config.timezone }),
     },
     { prefix: "/api", router: lifecycleRoutes({ lifecycle }) },
+    { prefix: "/api/backups", router: backupRoutes({ service: backups, queue }) },
   ];
   const publicRouters: MountedRouter[] = [
     { prefix: "/api/banks/callback", router: bankCallbackRoutes() },
@@ -256,6 +307,7 @@ export async function startBursar(
         logger,
       }),
       syncHealthTask({ repo, notifications, settings, timezone: config.timezone, now: Date.now }),
+      backupTask({ queue, settings, db: database.db, timezone: config.timezone }),
     ],
     logger,
   );

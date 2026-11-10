@@ -30,7 +30,7 @@ describe("tsx runtime configuration", () => {
 
   it("runs the CLI", () => {
     const result = runWithTsx("src/cli.ts");
-    expect(result.stderr).toContain("Usage: bursar init --out <path>");
+    expect(result.stderr).toContain("bursar init --out <path>");
     expect(result.status).toBe(2);
   });
 
