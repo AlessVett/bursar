@@ -5,6 +5,7 @@ export * from "./dates";
 export * from "./events";
 export * from "./finance";
 export * from "./iban";
+export * from "./lifecycle";
 export * from "./money";
 export * from "./notifications";
 export * from "./settings";

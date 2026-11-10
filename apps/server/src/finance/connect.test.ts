@@ -32,6 +32,7 @@ import {
   ConnectService,
   type ConnectServiceDeps,
 } from "./connect";
+import { deleteSessionDedupeKey } from "./lifecycle";
 import { FinanceRepository } from "./repository";
 
 const START = Date.parse("2026-11-09T10:00:00.000Z");
@@ -469,7 +470,7 @@ describe("ConnectService", () => {
         {
           type: DELETE_SESSION_JOB,
           payload: { providerSessionId: testSessionId(1) },
-          dedupeKey: null,
+          dedupeKey: deleteSessionDedupeKey(testSessionId(1)),
           status: "queued",
         },
       ]);

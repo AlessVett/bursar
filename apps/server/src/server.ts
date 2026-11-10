@@ -18,6 +18,10 @@ import { EventBus } from "./events/bus";
 import { bankCallbackRoutes } from "./finance/callback";
 import { ConnectService } from "./finance/connect";
 import { connectRoutes } from "./finance/connect-routes";
+import { consentTask } from "./finance/consent-task";
+import { syncHealthTask } from "./finance/health-task";
+import { ConnectionLifecycle, deleteSessionJobHandler } from "./finance/lifecycle";
+import { lifecycleRoutes } from "./finance/lifecycle-routes";
 import { FinanceRepository } from "./finance/repository";
 import { syncAccountHandler, unconfiguredSyncHandler } from "./finance/sync";
 import { syncRoutes } from "./finance/sync-routes";
@@ -26,7 +30,7 @@ import { createApp, type MountedRouter } from "./http/app";
 import { createClientIpResolver } from "./http/client-ip";
 import { eventsRoute } from "./http/events";
 import { JobQueue } from "./jobs/queue";
-import { EMAIL_JOB, SYNC_ACCOUNT_JOB } from "./jobs/types";
+import { DELETE_SESSION_JOB, EMAIL_JOB, SYNC_ACCOUNT_JOB } from "./jobs/types";
 import { type JobHandler, JobWorker } from "./jobs/worker";
 import { maintenanceTask } from "./maintenance";
 import { emailJobHandler } from "./notifications/email-job";
@@ -143,6 +147,8 @@ export async function startBursar(
             baseUrl: ebConfig.apiBaseUrl,
           })
         : null;
+  const lifecycle = new ConnectionLifecycle({ repo, api: ebApi, queue, bus, audit });
+  handlers.set(DELETE_SESSION_JOB, deleteSessionJobHandler({ api: ebApi }));
   const aspsps = ebApi ? new AspspCache(ebApi) : null;
   const connect =
     ebApi && aspsps
@@ -221,6 +227,7 @@ export async function startBursar(
       prefix: "/api",
       router: syncRoutes({ repo, queue, clientIp, timezone: config.timezone }),
     },
+    { prefix: "/api", router: lifecycleRoutes({ lifecycle }) },
   ];
   const publicRouters: MountedRouter[] = [
     { prefix: "/api/banks/callback", router: bankCallbackRoutes() },
@@ -239,6 +246,16 @@ export async function startBursar(
         cleanups: [{ name: "auth-requests", run: () => repo.purgeExpiredAuthRequests() }],
       }),
       dailySyncTask({ repo, queue, settings, timezone: config.timezone, logger }),
+      consentTask({
+        repo,
+        api: ebApi,
+        notifications,
+        bus,
+        timezone: config.timezone,
+        now: Date.now,
+        logger,
+      }),
+      syncHealthTask({ repo, notifications, settings, timezone: config.timezone, now: Date.now }),
     ],
     logger,
   );

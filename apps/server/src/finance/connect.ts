@@ -24,13 +24,7 @@ import type {
 } from "../eb/schemas";
 import type { EventBus } from "../events/bus";
 import type { JobQueue } from "../jobs/queue";
-import {
-  DELETE_SESSION_JOB,
-  deleteSessionPayloadSchema,
-  SYNC_ACCOUNT_JOB,
-  syncAccountPayloadSchema,
-  syncDedupeKey,
-} from "../jobs/types";
+import { SYNC_ACCOUNT_JOB, syncAccountPayloadSchema, syncDedupeKey } from "../jobs/types";
 import type { SettingsStore } from "../settings/store";
 import {
   type AccountFields,
@@ -38,6 +32,7 @@ import {
   type MappableAccount,
   mapAccounts,
 } from "./account-mapping";
+import { enqueueSessionDeletion } from "./lifecycle";
 import type { AccountRow, AuthRequestRow, ConnectionRow, FinanceRepository } from "./repository";
 
 /** How long the owner has to finish the consent at the bank (spec §6.3). */
@@ -328,10 +323,7 @@ export class ConnectService {
     try {
       await this.deps.api.deleteSession(providerSessionId);
     } catch {
-      this.deps.queue.enqueue(
-        DELETE_SESSION_JOB,
-        deleteSessionPayloadSchema.parse({ providerSessionId }),
-      );
+      enqueueSessionDeletion(this.deps.queue, providerSessionId, this.now());
     }
   }
 
@@ -456,10 +448,7 @@ export class ConnectService {
     });
     if (connection.providerSessionId !== session.session_id) {
       // Closing the old consent never blocks the owner: the worker does it.
-      this.deps.queue.enqueue(
-        DELETE_SESSION_JOB,
-        deleteSessionPayloadSchema.parse({ providerSessionId: connection.providerSessionId }),
-      );
+      enqueueSessionDeletion(this.deps.queue, connection.providerSessionId, this.now());
     }
     const accountIds = orderedIds(session.accounts, ids);
     const syncsQueued = this.enqueueSyncs(accountIds);

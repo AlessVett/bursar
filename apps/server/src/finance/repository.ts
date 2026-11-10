@@ -152,6 +152,14 @@ export class FinanceRepository {
     if (result.changes === 0) throw new Error(`Connection ${id} does not exist`);
   }
 
+  /**
+   * Deletes a connection row; its pending `bank_auth_requests` cascade. Throws (foreign key) while
+   * accounts still reference it, so callers delete or purge the accounts first.
+   */
+  deleteConnection(id: number): boolean {
+    return this.db.delete(bankConnections).where(eq(bankConnections.id, id)).run().changes > 0;
+  }
+
   // Accounts
 
   createAccount(input: NewAccount): number {
