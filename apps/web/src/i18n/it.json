@@ -129,6 +129,7 @@
       "clear": "Annulla la selezione",
       "error": "Non è stato possibile caricare il flusso di cassa in {{currency}}.",
       "retry": "Riprova",
+      "empty": "Nessun movimento in {{currency}} negli ultimi 30 giorni.",
       "loading": "Caricamento del flusso di cassa…"
     },
     "accounts": {

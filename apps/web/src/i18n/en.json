@@ -125,6 +125,7 @@
       "clear": "Clear selection",
       "error": "The cash flow in {{currency}} could not be loaded.",
       "retry": "Try again",
+      "empty": "No transactions in {{currency}} in the last 30 days.",
       "loading": "Loading the cash flow…"
     },
     "accounts": {

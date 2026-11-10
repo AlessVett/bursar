@@ -200,8 +200,21 @@ function HomeContent({
     enabled: base !== null && currency !== "" && !isDefault,
   });
   const cashflow: CashFlowResponse | null = isDefault ? base : (other.data ?? null);
+  // A 204 (no transactions in this currency for the window) is a success with null data:
+  // show an empty state and zeroed figures, not the loading skeleton.
+  const emptyOther = !isDefault && other.isSuccess && other.data === null;
+  const kpiCashflow: CashFlowResponse | null =
+    cashflow ??
+    (emptyOther && base
+      ? {
+          ...base,
+          currency,
+          buckets: [],
+          totals: { inMinor: 0, outMinor: 0, netMinor: 0, count: 0 },
+        }
+      : null);
   const mixed = currencies.length > 1;
-  const currencyParam = mixed && cashflow ? cashflow.currency : null;
+  const currencyParam = mixed && kpiCashflow ? kpiCashflow.currency : null;
   const selected = cashflow?.buckets.find((bucket) => bucket.date === url.day) ?? null;
 
   return (
@@ -210,7 +223,7 @@ function HomeContent({
         <div className="flex flex-col gap-2">
           <KpiRow
             balances={summary.balances}
-            cashflow={cashflow}
+            cashflow={kpiCashflow}
             currencyParam={currencyParam}
             highlightNegativeNet={highlightNegativeNet}
           />
@@ -260,6 +273,8 @@ function HomeContent({
                   onClear={() => setUrl({ day: "" })}
                 />
               </>
+            ) : emptyOther ? (
+              <InlineEmpty title={t("home.cashflow.empty", { currency })} />
             ) : other.isError ? (
               <div className="flex flex-col items-start gap-3">
                 <InlineEmpty icon={TriangleAlert} title={t("home.cashflow.error", { currency })} />

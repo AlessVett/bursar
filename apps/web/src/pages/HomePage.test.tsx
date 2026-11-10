@@ -344,4 +344,30 @@ describe("HomePage", () => {
       .find((url) => url.startsWith("/api/cashflow"));
     expect(cashflowCall).toBe("/api/cashflow?currency=USD&from=2026-10-11&to=2026-11-09");
   });
+
+  it("shows an empty state, not the skeleton, when the other currency has no transactions", async () => {
+    stubApi({
+      "/api/summary": () =>
+        json(
+          summary({
+            balances: [
+              { currency: "EUR", amountMinor: 742_050, accountCount: 2 },
+              { currency: "USD", amountMinor: 120_000, accountCount: 1 },
+            ],
+            cashflow30d: cashflowFor("EUR", ["EUR", "USD"], EUR_ACTIVITY),
+          }),
+        ),
+      "/api/cashflow": () => new Response(null, { status: 204 }),
+    });
+    renderHome();
+
+    const currency = await screen.findByRole("group", { name: "Currency" });
+    fireEvent.click(within(currency).getByRole("button", { name: "USD" }));
+
+    expect(await screen.findByText("No transactions in USD in the last 30 days.")).toBeTruthy();
+    expect(screen.queryByText("Loading the cash flow…")).toBeNull();
+    expect(screen.getByRole("link", { name: /^In, last 30 days/ }).getAttribute("href")).toBe(
+      "/transactions?tab=in&currency=USD",
+    );
+  });
 });
