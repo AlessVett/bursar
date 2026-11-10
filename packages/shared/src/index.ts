@@ -1,5 +1,6 @@
 export * from "./auth";
 export * from "./banks";
+export * from "./connect";
 export * from "./dates";
 export * from "./events";
 export * from "./finance";

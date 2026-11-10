@@ -198,6 +198,40 @@ describe("startBursar", () => {
     expect(running).toHaveLength(0);
   });
 
+  it("serves the public bank callback and keeps the connection routes behind the session", async () => {
+    const { base, origin } = await boot();
+    const callback = await fetch(
+      `${base}/api/banks/callback?state=abcdefghijklmnop0123&code=0f1e2d3c&next=%2F%2Fevil.example.test`,
+      { redirect: "manual" },
+    );
+    expect(callback.status).toBe(303);
+    expect(callback.headers.get("location")).toBe(
+      "/connect/callback?state=abcdefghijklmnop0123&code=0f1e2d3c",
+    );
+    expect(callback.headers.get("cache-control")).toBe("no-store");
+    expect(callback.headers.get("referrer-policy")).toBe("no-referrer");
+
+    const body = JSON.stringify({ state: "abcdefghijklmnop0123", code: "0f1e2d3c" });
+    const anonymous = await fetch(`${base}/api/connections/complete`, {
+      method: "POST",
+      headers: { origin, "content-type": "application/json" },
+      body,
+    });
+    expect(anonymous.status).toBe(401);
+
+    const cookie = (await completeSetup(base, origin)).split(";")[0] ?? "";
+    const start = await fetch(`${base}/api/connections`, {
+      method: "POST",
+      headers: { origin, cookie, "content-type": "application/json" },
+      body: JSON.stringify({ aspspName: "Banca Esempio", aspspCountry: "IT" }),
+    });
+    expect(start.status).toBe(503);
+    expect(await start.json()).toEqual({
+      error: "Enable Banking is not configured",
+      code: "banking_not_configured",
+    });
+  });
+
   describe("settings API", () => {
     const sessionOf = (setCookie: string) => /bursar_session=[^;]+/.exec(setCookie)?.[0] ?? "";
 

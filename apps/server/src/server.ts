@@ -16,6 +16,9 @@ import { AspspCache } from "./eb/aspsp-cache";
 import { type EnableBankingApi, EnableBankingClient } from "./eb/client";
 import { bankRoutes } from "./eb/routes";
 import { EventBus } from "./events/bus";
+import { bankCallbackRoutes } from "./finance/callback";
+import { ConnectService } from "./finance/connect";
+import { connectRoutes } from "./finance/connect-routes";
 import { FinanceRepository } from "./finance/repository";
 import { createApp, type MountedRouter } from "./http/app";
 import { eventsRoute } from "./http/events";
@@ -138,6 +141,20 @@ export async function startBursar(
           })
         : null;
   const aspsps = ebApi ? new AspspCache(ebApi) : null;
+  const connect =
+    ebApi && aspsps
+      ? new ConnectService({
+          repo,
+          api: ebApi,
+          aspsps,
+          queue,
+          bus,
+          audit,
+          settings,
+          publicUrl: config.publicUrl,
+          timezone: config.timezone,
+        })
+      : null;
   const notifications = new NotificationService({
     db: database.db,
     queue,
@@ -180,14 +197,25 @@ export async function startBursar(
       prefix: "/api/banks",
       router: bankRoutes({ api: ebApi, aspsps, publicUrl: config.publicUrl }),
     },
+    { prefix: "/api/connections", router: connectRoutes({ service: connect }) },
   ];
-  const publicRouters: MountedRouter[] = [];
+  const publicRouters: MountedRouter[] = [
+    { prefix: "/api/banks/callback", router: bankCallbackRoutes() },
+  ];
 
   const loginLimiter = new FailureLimiter(5);
   const accountLimiter = new FailureLimiter(20);
   const worker = new JobWorker(queue, handlers, logger);
   const scheduler = new Scheduler(
-    [maintenanceTask({ queue, sessions, limiters: [loginLimiter, accountLimiter], logger })],
+    [
+      maintenanceTask({
+        queue,
+        sessions,
+        limiters: [loginLimiter, accountLimiter],
+        logger,
+        cleanups: [{ name: "auth-requests", run: () => repo.purgeExpiredAuthRequests() }],
+      }),
+    ],
     logger,
   );
 
