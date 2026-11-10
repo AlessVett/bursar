@@ -209,6 +209,43 @@ describe("bankRoutes", () => {
     expect(logoFetch).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps the strict logo CSP when served through the real app", async () => {
+    const database = createTestDatabase();
+    try {
+      const api = stubApi({
+        listAspsps: async () => ASPSPS,
+        getApplication: async () => APPLICATION,
+      });
+      const t = await createTestApp({
+        database,
+        routers: [
+          {
+            prefix: "/api/banks",
+            router: bankRoutes({
+              api,
+              aspsps: new AspspCache(api),
+              publicUrl: PUBLIC_URL,
+              fetchLogo: imageFetch(png),
+            }),
+          },
+        ],
+      });
+      const res = await t.app.request("/api/banks/logo?country=IT&name=Northwind%20Bank", {
+        headers: { cookie: t.cookie },
+      });
+      expect(res.status).toBe(200);
+      expect(res.headers.get("content-type")).toBe("image/png");
+      expect(res.headers.get("content-security-policy")).toBe(
+        "default-src 'none'; style-src 'unsafe-inline'",
+      );
+      expect(res.headers.get("x-content-type-options")).toBe("nosniff");
+      const status = await t.json("/api/banks/status");
+      expect(status.headers.get("content-security-policy")).toContain("default-src 'self'");
+    } finally {
+      database.dispose();
+    }
+  });
+
   it("never fetches a client-supplied URL", async () => {
     const logoFetch = imageFetch(png);
     const { app } = configured({ logoFetch });

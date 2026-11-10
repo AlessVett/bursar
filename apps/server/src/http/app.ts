@@ -9,6 +9,9 @@ import { accessGuard } from "./access";
 import { originCheck } from "./origin";
 import { webAppHandler } from "./static";
 
+/** Path of the bank logo proxy, served with a stricter Content-Security-Policy. */
+export const BANK_LOGO_PATH = "/api/banks/logo";
+
 export type AppEnv = { Variables: { sessionId: number } };
 
 /** Maximum /api request body: requests are small JSON documents. Uploads get their own limit. */
@@ -35,22 +38,27 @@ export interface AppDeps {
 export function createApp(deps: AppDeps): Hono<AppEnv> {
   const app = new Hono<AppEnv>();
 
-  app.use(
-    "*",
-    secureHeaders({
-      contentSecurityPolicy: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
-        styleSrc: ["'self'"],
-        imgSrc: ["'self'", "data:"],
-        connectSrc: ["'self'"],
-        fontSrc: ["'self'"],
-        objectSrc: ["'none'"],
-        baseUri: ["'self'"],
-        formAction: ["'self'"],
-        frameAncestors: ["'none'"],
-      },
-    }),
+  const pageHeaders = secureHeaders({
+    contentSecurityPolicy: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'"],
+      imgSrc: ["'self'", "data:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"],
+    },
+  });
+  // The bank logo proxy serves untrusted third-party images: it gets the strictest policy (the
+  // same one the route declares), because secureHeaders overwrites whatever a route sets.
+  const logoHeaders = secureHeaders({
+    contentSecurityPolicy: { defaultSrc: ["'none'"], styleSrc: ["'unsafe-inline'"] },
+  });
+  app.use("*", (c, next) =>
+    c.req.path === BANK_LOGO_PATH ? logoHeaders(c, next) : pageHeaders(c, next),
   );
 
   app.use("*", async (c, next) => {
