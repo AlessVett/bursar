@@ -4925,7 +4925,7 @@ The owner sets a GitHub Actions budget of $0 with "stop usage" under Billing →
 ## M0 exit checklist (spec §14)
 
 - [x] Login works on the public hostname behind Access (Task 16 Step 6).
-- [ ] CI green on GitHub-hosted runners (Task 17 Step 4).
+- [x] CI green on GitHub-hosted runners (Task 17 Step 4).
 - [x] Gates recorded: V1 (`0001`), V2 local and host (`0002`), V3 (`0003`).
 - [x] Memory usage of the idle app recorded (Tasks 12 and 16).
 
@@ -4958,4 +4958,4 @@ Production host (Task 16, Docker Compose with the `tunnel` profile, Cloudflare A
 - The owner completed the first run behind Access (setup code, password, TOTP); the setup code file is gone.
 - Memory: app 174 MiB of 3 GiB after the first deploy and 49 MiB of 3 GiB idle after the restart; cloudflared 37–38 MiB of 128 MiB.
 
-Open: CI green on GitHub-hosted runners (Task 17), after the repository is published.
+Publication (Task 17): history scan clean (gitleaks 52 commits, single noreply author, no private identifiers); `main` fast-forwarded and pushed to the public repository. The first push of the default branch started no run (no diff for `paths-ignore`), so `workflow_dispatch` was added; the push of that change ran CI on `ubuntu-latest`: every step passed (lint, typecheck, migrations check, tests shared 3/3, web 4/4, server 200/200, build, gitleaks 53 commits with no leaks), job time 39 s.
