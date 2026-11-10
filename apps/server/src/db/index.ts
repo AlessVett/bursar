@@ -29,6 +29,7 @@ export function openDatabase(file: string, passphrase: string): OpenedDatabase {
     sqlite.pragma("journal_mode = WAL");
     sqlite.pragma("foreign_keys = ON");
     sqlite.pragma("busy_timeout = 5000");
+    sqlite.pragma("temp_store = MEMORY");
   } catch (error) {
     sqlite.close();
     const reason = error instanceof Error ? error.message : String(error);

@@ -1,4 +1,5 @@
 import type { SeedContext } from "../server";
+import { seedBanking } from "./seed-banking";
 
 /**
  * Writes deterministic QA data into a freshly migrated database. Seeders are synchronous, use
@@ -7,4 +8,4 @@ import type { SeedContext } from "../server";
 export type QaSeeder = (ctx: SeedContext) => void;
 
 /** Seeders run in order by `seedQa`. Later tasks append theirs (Task 6: `seedBanking`). */
-export const QA_SEEDERS: QaSeeder[] = [];
+export const QA_SEEDERS: QaSeeder[] = [seedBanking];
