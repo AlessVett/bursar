@@ -49,4 +49,32 @@ describe("panel serving", () => {
   it("keeps API 404s as JSON", async () => {
     expect((await app.request("/api/unknown")).status).toBe(404);
   });
+
+  it("answers 404 for a missing hashed asset instead of the panel", async () => {
+    const res = await app.request("/assets/missing-0123abcd.js");
+    expect(res.status).toBe(404);
+    expect(res.headers.get("content-type")).toContain("text/plain");
+    expect(await res.text()).not.toContain("<title>panel</title>");
+  });
+
+  it("answers 404 for any missing path whose last segment has a file extension", async () => {
+    for (const route of ["/favicon.ico", "/robots.txt", "/accounts/report.pdf"]) {
+      const res = await app.request(route);
+      expect(res.status, route).toBe(404);
+    }
+  });
+
+  it("keeps the panel fallback for client routes without an extension", async () => {
+    for (const route of ["/transactions", "/accounts/12", "/connect/callback?state=a.b"]) {
+      const res = await app.request(route);
+      expect(res.status, route).toBe(200);
+      expect(await res.text()).toContain("<title>panel</title>");
+    }
+  });
+
+  it("serves file bodies from memory after the first read", async () => {
+    expect(await (await app.request("/assets/app.js")).text()).toBe("console.log(1)");
+    writeFileSync(path.join(dir, "assets", "app.js"), "console.log(2)");
+    expect(await (await app.request("/assets/app.js")).text()).toBe("console.log(1)");
+  });
 });
