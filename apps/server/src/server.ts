@@ -4,6 +4,7 @@ import path from "node:path";
 import { serve } from "@hono/node-server";
 import { getConnInfo } from "@hono/node-server/conninfo";
 import type { Logger } from "pino";
+import { AuditLog } from "./audit";
 import { OwnerStore } from "./auth/owner";
 import { FailureLimiter } from "./auth/rate-limit";
 import { SessionStore } from "./auth/sessions";
@@ -19,6 +20,8 @@ import { JobQueue } from "./jobs/queue";
 import { type JobHandler, JobWorker } from "./jobs/worker";
 import { maintenanceTask } from "./maintenance";
 import { Scheduler } from "./scheduler";
+import { settingsRoutes } from "./settings/routes";
+import { SettingsStore } from "./settings/store";
 
 export interface RunningBursar {
   port: number;
@@ -85,6 +88,8 @@ export async function startBursar(
     ),
   );
   const repo = new FinanceRepository(database.db);
+  const audit = new AuditLog(database.db);
+  const settings = new SettingsStore(database.db);
   const queue = new JobQueue(database.sqlite, Date.now, (job) =>
     logger.error({ jobId: job.id, type: job.type }, "Job payload is not valid JSON; failed"),
   );
@@ -103,6 +108,21 @@ export async function startBursar(
   const shutdown = new AbortController();
   const routers: MountedRouter[] = [
     { prefix: "/api/events", router: eventsRoute({ bus, sessions, signal: shutdown.signal }) },
+    {
+      prefix: "/api/settings",
+      router: settingsRoutes({
+        store: settings,
+        audit,
+        bus,
+        system: {
+          timezone: config.timezone,
+          publicUrl: config.publicUrl.origin,
+          enableBankingConfigured: config.enableBanking !== null,
+          smtpConfigured: config.smtp !== null,
+          backupTarget: config.backup.s3 ? "s3" : "local",
+        },
+      }),
+    },
   ];
   const publicRouters: MountedRouter[] = [];
 

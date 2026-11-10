@@ -1,8 +1,9 @@
+import { generateKeyPairSync } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Writable } from "node:stream";
-import type { SetupStartResponse } from "@bursar/shared";
+import type { SettingsResponse, SetupStartResponse } from "@bursar/shared";
 import { pino } from "pino";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { generateTotpCode } from "./auth/totp";
@@ -195,6 +196,61 @@ describe("startBursar", () => {
       }),
     ).rejects.toThrow("seed failed");
     expect(running).toHaveLength(0);
+  });
+
+  describe("settings API", () => {
+    const sessionOf = (setCookie: string) => /bursar_session=[^;]+/.exec(setCookie)?.[0] ?? "";
+
+    it("serves and updates the settings behind the session, with the system facts", async () => {
+      const { base, origin } = await boot({ TZ: "Europe/Rome" });
+      expect((await fetch(`${base}/api/settings`)).status).toBe(401);
+      const cookie = sessionOf(await completeSetup(base, origin));
+
+      const before = await fetch(`${base}/api/settings`, { headers: { cookie } });
+      expect(before.status).toBe(200);
+      const body = (await before.json()) as SettingsResponse;
+      expect(body.values.consentDays).toBe(180);
+      expect(body.system).toEqual({
+        timezone: "Europe/Rome",
+        publicUrl: "http://127.0.0.1",
+        enableBankingConfigured: false,
+        smtpConfigured: false,
+        backupTarget: "local",
+      });
+
+      const patched = await fetch(`${base}/api/settings`, {
+        method: "PATCH",
+        headers: { origin, cookie, "content-type": "application/json" },
+        body: JSON.stringify({ consentDays: 90 }),
+      });
+      expect(patched.status).toBe(200);
+      const after = await fetch(`${base}/api/settings`, { headers: { cookie } });
+      expect(((await after.json()) as SettingsResponse).values.consentDays).toBe(90);
+    });
+
+    it("reports the configured integrations", async () => {
+      const privateKey = generateKeyPairSync("rsa", { modulusLength: 2048 })
+        .privateKey.export({ type: "pkcs8", format: "pem" })
+        .toString();
+      const { base, origin } = await boot({
+        EB_APPLICATION_ID: "8f1c2b7e-4d3a-4f6b-9a10-2c5d7e9b3a41",
+        EB_PRIVATE_KEY: privateKey,
+        SMTP_HOST: "smtp.example.test",
+        SMTP_FROM: "bursar@example.test",
+        BACKUP_S3_ENDPOINT: "https://s3.example.test",
+        BACKUP_S3_BUCKET: "bursar-backups",
+        BACKUP_S3_ACCESS_KEY_ID: "access-key-id-value",
+        BACKUP_S3_SECRET_KEY: "s3-secret-value-0123456789",
+      });
+      const cookie = sessionOf(await completeSetup(base, origin));
+      const response = await fetch(`${base}/api/settings`, { headers: { cookie } });
+      const body = (await response.json()) as SettingsResponse;
+      expect(body.system).toMatchObject({
+        enableBankingConfigured: true,
+        smtpConfigured: true,
+        backupTarget: "s3",
+      });
+    });
   });
 });
 

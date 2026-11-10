@@ -25,12 +25,29 @@ const SECRET_KEYS = [
   'headers["set-cookie"]',
   "headers.authorization",
   'headers["cf-access-jwt-assertion"]',
+  // Enable Banking and backups. `code` is deliberately absent: log lines carry provider error
+  // codes under `errorCode`/`code`. Code that handles the authorisation code or `state` never
+  // logs them, and uses these names if an object holding them could reach a logger.
+  "privateKeyPem",
+  "secretAccessKey",
+  "providerSessionId",
+  "provider_session_id",
+  "session_id",
+  "authorizationCode",
+  "stateToken",
+  "iban",
+  'headers["psu-ip-address"]',
 ];
 
 const REDACT_PATHS = SECRET_KEYS.flatMap((key) => [key, `*.${key}`]);
 
+/** Smallest PEM line worth scrubbing on its own (body lines are 64 characters). */
+const MIN_PEM_LINE_LENGTH = 16;
+
 /** The loaded secret values to scrub from every log line, in the encodings they may appear in. */
-export function configSecrets(config: Pick<Config, "masterKey" | "claude">): string[] {
+export function configSecrets(
+  config: Pick<Config, "masterKey" | "claude" | "enableBanking" | "smtp" | "backup">,
+): string[] {
   const values = [
     // Unpadded, so the scrubber matches both the padded and the unpadded spelling.
     config.masterKey.toString("base64").replace(/=+$/, ""),
@@ -38,6 +55,19 @@ export function configSecrets(config: Pick<Config, "masterKey" | "claude">): str
     config.masterKey.toString("hex"),
   ];
   if (config.claude) values.push(config.claude.value);
+  if (config.enableBanking) {
+    const pem = config.enableBanking.privateKeyPem;
+    values.push(pem);
+    // A multi-line key is often logged line by line or re-wrapped, so scrub each body line too.
+    for (const line of pem.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (trimmed.length >= MIN_PEM_LINE_LENGTH && !trimmed.startsWith("-----")) {
+        values.push(trimmed);
+      }
+    }
+  }
+  if (config.smtp?.password) values.push(config.smtp.password);
+  if (config.backup.s3) values.push(config.backup.s3.secretAccessKey);
   return values;
 }
 

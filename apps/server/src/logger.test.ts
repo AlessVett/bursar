@@ -1,6 +1,15 @@
+import { generateKeyPairSync } from "node:crypto";
 import { Writable } from "node:stream";
 import { describe, expect, it } from "vitest";
+import type { Config } from "./config";
 import { configSecrets, createLogger } from "./logger";
+
+const NO_INTEGRATIONS = {
+  claude: null,
+  enableBanking: null,
+  smtp: null,
+  backup: { dir: "/data/backups", s3: null },
+} satisfies Pick<Config, "claude" | "enableBanking" | "smtp" | "backup">;
 
 function capture() {
   const lines: string[] = [];
@@ -89,6 +98,7 @@ describe("configSecrets", () => {
     const masterKey = Buffer.alloc(32, 7);
     const secrets = configSecrets({
       masterKey,
+      ...NO_INTEGRATIONS,
       claude: { envName: "CLAUDE_CODE_OAUTH_TOKEN", value: "oauth-credential-value" },
     });
     const { sink, output } = capture();
@@ -111,6 +121,127 @@ describe("configSecrets", () => {
   });
 
   it("works without a Claude credential", () => {
-    expect(configSecrets({ masterKey: Buffer.alloc(32, 1), claude: null })).toHaveLength(3);
+    expect(configSecrets({ masterKey: Buffer.alloc(32, 1), ...NO_INTEGRATIONS })).toHaveLength(3);
+  });
+
+  describe("integration secrets", () => {
+    const pem = generateKeyPairSync("rsa", { modulusLength: 2048 })
+      .privateKey.export({ type: "pkcs8", format: "pem" })
+      .toString()
+      .trim();
+    const pemLines = pem.split("\n");
+    const s3Secret = "s3-secret-value-0123456789";
+    const smtpPassword = "smtp-password-value";
+    const secrets = configSecrets({
+      masterKey: Buffer.alloc(32, 7),
+      claude: null,
+      enableBanking: {
+        applicationId: "8f1c2b7e-4d3a-4f6b-9a10-2c5d7e9b3a41",
+        privateKeyPem: pem,
+        apiBaseUrl: "https://api.enablebanking.com",
+      },
+      smtp: {
+        host: "smtp.example.test",
+        port: 587,
+        security: "starttls",
+        user: "mailer",
+        password: smtpPassword,
+        from: "bursar@example.test",
+      },
+      backup: {
+        dir: "/data/backups",
+        s3: {
+          endpoint: new URL("https://s3.example.test"),
+          region: "auto",
+          bucket: "bursar-backups",
+          prefix: "bursar",
+          accessKeyId: "access-key-id-value",
+          secretAccessKey: s3Secret,
+        },
+      },
+    });
+
+    it("adds the PEM, each of its body lines, the SMTP password and the S3 secret", () => {
+      expect(secrets).toContain(pem);
+      expect(secrets).toContain(pemLines[1]);
+      expect(secrets).not.toContain(pemLines[0]);
+      expect(secrets).not.toContain(pemLines.at(-1));
+      expect(secrets).toContain(smtpPassword);
+      expect(secrets).toContain(s3Secret);
+    });
+
+    it("scrubs the whole PEM, a single PEM line and a re-wrapped PEM from a log line", () => {
+      const { sink, output } = capture();
+      const logger = createLogger("info", sink, secrets);
+      logger.info({ dump: pem, oneLine: pem.replaceAll("\n", " "), line: pemLines[2] }, "key");
+      logger.warn(`failed with ${pemLines[3]} in the middle`);
+      for (const line of pemLines.slice(1, -1)) expect(output()).not.toContain(line);
+      expect(output()).toContain("[redacted]");
+    });
+
+    it("scrubs the SMTP password and the S3 secret wherever they appear", () => {
+      const { sink, output } = capture();
+      const logger = createLogger("info", sink, secrets);
+      logger.error({ err: new Error(`AUTH failed for ${smtpPassword}`) }, `s3 said ${s3Secret}`);
+      expect(output()).not.toContain(smtpPassword);
+      expect(output()).not.toContain(s3Secret);
+    });
+
+    it("skips an unset SMTP password", () => {
+      const withoutPassword = configSecrets({
+        masterKey: Buffer.alloc(32, 7),
+        ...NO_INTEGRATIONS,
+        smtp: {
+          host: "localhost",
+          port: 1025,
+          security: "none",
+          user: null,
+          password: null,
+          from: "bursar@example.test",
+        },
+      });
+      expect(withoutPassword).toHaveLength(3);
+    });
+  });
+});
+
+describe("redaction of banking identifiers", () => {
+  it("redacts provider session ids, authorisation codes, state tokens and IBANs by field name", () => {
+    const { sink, output } = capture();
+    createLogger("info", sink).info(
+      {
+        providerSessionId: "field-session-1",
+        provider_session_id: "field-session-2",
+        session_id: "field-session-3",
+        authorizationCode: "field-auth-code",
+        stateToken: "field-state-token",
+        iban: "FIELDIBAN0000000000",
+        privateKeyPem: "field-private-key",
+        secretAccessKey: "field-s3-secret",
+        nested: {
+          providerSessionId: "nested-session-1",
+          iban: "NESTEDIBAN000000000",
+          authorizationCode: "nested-auth-code",
+          stateToken: "nested-state-token",
+        },
+        request: { headers: { "psu-ip-address": "203.0.113.9", accept: "application/json" } },
+        headers: { "psu-ip-address": "203.0.113.10" },
+        keep: "visible",
+      },
+      "banking",
+    );
+    expect(output()).not.toMatch(/field-|nested-|FIELDIBAN|NESTEDIBAN|203\.0\.113/);
+    expect(output()).toContain("visible");
+    expect(output()).toContain("application/json");
+  });
+
+  it("keeps provider error codes: the generic code key is not redacted", () => {
+    const { sink, output } = capture();
+    createLogger("info", sink).warn(
+      { errorCode: "ASPSP_RATE_LIMIT_EXCEEDED", code: "WRONG_ASPSP_PROVIDED", status: 429 },
+      "provider error",
+    );
+    expect(output()).toContain("ASPSP_RATE_LIMIT_EXCEEDED");
+    expect(output()).toContain("WRONG_ASPSP_PROVIDED");
   });
 });
