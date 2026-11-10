@@ -24,7 +24,10 @@
     "manualSecret": "Chiave per l'inserimento manuale",
     "code": "Codice di autenticazione",
     "confirmFailed": "Codice non valido. Controlla l'ora del telefono e riprova.",
-    "confirm": "Completa il setup"
+    "confirm": "Completa il setup",
+    "passwordHint": "Almeno {{min}} caratteri.",
+    "tooMany": "Troppi tentativi. Attendi 15 minuti e riprova.",
+    "qrFailed": "Non è stato possibile disegnare il QR code. Aggiungi l'account nell'app di autenticazione con la chiave per l'inserimento manuale qui sotto."
   },
   "login": {
     "title": "Accedi",
@@ -32,12 +35,9 @@
     "code": "Codice di autenticazione",
     "submit": "Accedi",
     "failed": "Password o codice errati.",
-    "tooMany": "Troppi tentativi. Attendi 15 minuti e riprova."
-  },
-  "home": {
-    "welcome": "Bursar è pronto",
-    "empty": "Non hai ancora collegato conti o caricato documenti.",
-    "logout": "Esci"
+    "tooMany": "Troppi tentativi. Attendi 15 minuti e riprova.",
+    "intro": "Inserisci la password e il codice a 6 cifre dell'app di autenticazione.",
+    "sessionExpired": "La sessione è scaduta, accedi di nuovo."
   },
   "theme": {
     "label": "Tema",
@@ -54,10 +54,11 @@
     "toggle": "Nascondi gli importi",
     "on": "Modalità privacy attiva",
     "off": "Modalità privacy disattivata",
-    "onDetail": "Importi e cifre degli IBAN sono nascosti in questo browser.",
-    "offDetail": "Importi e cifre degli IBAN tornano visibili.",
+    "onDetail": "Importi e cifre degli IBAN sono nascosti in questo browser. Premi {{shortcut}} per mostrarli.",
+    "offDetail": "Importi e cifre degli IBAN sono di nuovo visibili. Premi {{shortcut}} per nasconderli.",
     "maskedAmount": "Importo nascosto",
-    "maskedIban": "IBAN nascosto dalla modalità privacy"
+    "maskedIban": "IBAN nascosto dalla modalità privacy",
+    "show": "Mostra gli importi"
   },
   "feedback": {
     "region": "Notifiche",
@@ -86,5 +87,154 @@
     "ibanDetail": "L’IBAN completo è negli appunti.",
     "failed": "Copia non riuscita",
     "failedDetail": "Il browser ha bloccato l’accesso agli appunti."
+  },
+  "home": {
+    "greeting": {
+      "morning": "Buongiorno",
+      "afternoon": "Buon pomeriggio",
+      "evening": "Buonasera"
+    }
+  },
+  "routes": {
+    "home": {
+      "title": "Home",
+      "description": "Panoramica di saldi, flussi e avvisi",
+      "keywords": "panoramica cruscotto riepilogo inizio"
+    },
+    "accounts": {
+      "title": "Conti",
+      "description": "Collegamenti bancari e conti",
+      "keywords": "banche saldi iban consenso collegamenti"
+    },
+    "account": {
+      "title": "Conto",
+      "description": "Saldo, flussi e sincronizzazioni di un conto",
+      "keywords": "conto dettaglio saldo"
+    },
+    "connect": {
+      "title": "Collega una banca",
+      "description": "Collega un conto in sola lettura",
+      "keywords": "aggiungi banca collega consenso"
+    },
+    "connectCallback": {
+      "title": "Collegamento bancario",
+      "description": "Esito dell'autorizzazione della banca",
+      "keywords": "esito autorizzazione ritorno"
+    },
+    "transactions": {
+      "title": "Movimenti",
+      "description": "Tutte le entrate e le uscite dei tuoi conti",
+      "keywords": "pagamenti transazioni spese entrate cerca"
+    },
+    "settings": {
+      "title": "Impostazioni",
+      "description": "Lingua, banche, notifiche e backup",
+      "keywords": "preferenze opzioni backup email lingua"
+    },
+    "documents": {
+      "title": "Documenti",
+      "description": "Estratti conto, fatture e altri file",
+      "keywords": "file pdf estratti fatture"
+    },
+    "reports": {
+      "title": "Report",
+      "description": "Report periodici sulle tue finanze",
+      "keywords": "report analisi riepilogo mese"
+    },
+    "chat": {
+      "title": "Chat",
+      "description": "Fai domande sulle tue finanze",
+      "keywords": "assistente domande conversazione"
+    },
+    "agents": {
+      "title": "Agenti",
+      "description": "Agenti e loro proposte",
+      "keywords": "automazione proposte approvazioni"
+    },
+    "activity": {
+      "title": "Attività",
+      "description": "Cronologia di esecuzioni, messaggi ed eventi di audit",
+      "keywords": "registro storico cronologia audit"
+    }
+  },
+  "nav": {
+    "label": "Navigazione principale",
+    "open": "Apri il menu",
+    "close": "Chiudi il menu",
+    "collapse": "Comprimi la barra laterale",
+    "expand": "Espandi la barra laterale",
+    "groups": {
+      "money": "Denaro",
+      "knowledge": "Archivio",
+      "agents": "Agenti"
+    },
+    "needsAction_one": "{{count}} elemento richiede attenzione",
+    "needsAction_many": "{{count}} di elementi richiedono attenzione",
+    "needsAction_other": "{{count}} elementi richiedono attenzione"
+  },
+  "shell": {
+    "skipToContent": "Vai al contenuto",
+    "breadcrumb": "Percorso",
+    "back": "Indietro",
+    "retry": "Riprova"
+  },
+  "palette": {
+    "title": "Cerca in Bursar",
+    "open": "Cerca pagine e dati",
+    "trigger": "Cerca…",
+    "inputLabel": "Cerca",
+    "placeholder": "Cerca pagine, conti, movimenti…",
+    "resultsLabel": "Risultati",
+    "groups": {
+      "pages": "Pagine"
+    },
+    "empty": "Nessun risultato per “{{query}}”",
+    "emptyHint": "Prova con un nome, una banca o le ultime cifre di un IBAN.",
+    "footer_one": "↑↓ naviga · ↵ apri · esc chiudi · {{count}} risultato",
+    "footer_many": "↑↓ naviga · ↵ apri · esc chiudi · {{count}} di risultati",
+    "footer_other": "↑↓ naviga · ↵ apri · esc chiudi · {{count}} risultati"
+  },
+  "userMenu": {
+    "open": "Apri il menu utente",
+    "title": "Preferenze",
+    "theme": "Tema",
+    "themes": {
+      "system": "Sistema",
+      "light": "Chiaro",
+      "dark": "Scuro"
+    },
+    "density": "Densità",
+    "densities": {
+      "compact": "Compatta",
+      "comfortable": "Comoda"
+    },
+    "signOut": "Esci"
+  },
+  "notifications": {
+    "popover": {
+      "title": "Notifiche",
+      "bellUnread_one": "Notifiche: {{count}} non letta",
+      "bellUnread_many": "Notifiche: {{count}} di non lette",
+      "bellUnread_other": "Notifiche: {{count}} non lette",
+      "newCount_one": "{{count}} nuova",
+      "newCount_many": "{{count}} di nuove",
+      "newCount_other": "{{count}} nuove",
+      "markAllRead": "Segna tutte come lette",
+      "unread": "Non letta",
+      "emptyTitle": "Nessuna notifica",
+      "emptyBody": "Qui compaiono i promemoria sui consensi e i problemi di sincronizzazione."
+    }
+  },
+  "errors": {
+    "crash": {
+      "title": "Qualcosa non ha funzionato",
+      "body": "Questa pagina si è interrotta. Ricaricala o torna alla Home."
+    },
+    "notFound": {
+      "title": "Pagina non trovata",
+      "body": "Questo indirizzo non corrisponde a nessuna pagina di Bursar."
+    },
+    "reload": "Ricarica la pagina",
+    "backHome": "Torna alla Home"
   }
 }

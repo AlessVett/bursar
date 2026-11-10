@@ -24,7 +24,10 @@
     "manualSecret": "Manual entry key",
     "code": "Authenticator code",
     "confirmFailed": "The code is not valid. Check the time on your phone and try again.",
-    "confirm": "Finish setup"
+    "confirm": "Finish setup",
+    "passwordHint": "At least {{min}} characters.",
+    "tooMany": "Too many attempts. Wait 15 minutes and try again.",
+    "qrFailed": "The QR code could not be drawn. Add the account in your authenticator app with the manual entry key below."
   },
   "login": {
     "title": "Sign in",
@@ -32,12 +35,9 @@
     "code": "Authenticator code",
     "submit": "Sign in",
     "failed": "Wrong password or code.",
-    "tooMany": "Too many attempts. Wait 15 minutes and try again."
-  },
-  "home": {
-    "welcome": "Bursar is ready",
-    "empty": "No bank accounts or documents yet.",
-    "logout": "Sign out"
+    "tooMany": "Too many attempts. Wait 15 minutes and try again.",
+    "intro": "Enter your password and the 6-digit code from your authenticator app.",
+    "sessionExpired": "Your session expired, sign in again."
   },
   "theme": {
     "label": "Theme",
@@ -54,10 +54,11 @@
     "toggle": "Hide amounts",
     "on": "Privacy mode on",
     "off": "Privacy mode off",
-    "onDetail": "Amounts and IBAN digits are hidden in this browser.",
-    "offDetail": "Amounts and IBAN digits are visible again.",
+    "onDetail": "Amounts and IBAN digits are hidden in this browser. Press {{shortcut}} to show them.",
+    "offDetail": "Amounts and IBAN digits are visible again. Press {{shortcut}} to hide them.",
     "maskedAmount": "Amount hidden",
-    "maskedIban": "IBAN hidden by privacy mode"
+    "maskedIban": "IBAN hidden by privacy mode",
+    "show": "Show amounts"
   },
   "feedback": {
     "region": "Notifications",
@@ -86,5 +87,150 @@
     "ibanDetail": "The full IBAN is on your clipboard.",
     "failed": "Copy failed",
     "failedDetail": "Your browser blocked access to the clipboard."
+  },
+  "home": {
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    }
+  },
+  "routes": {
+    "home": {
+      "title": "Home",
+      "description": "Overview of balances, cash flow and alerts",
+      "keywords": "overview dashboard summary start"
+    },
+    "accounts": {
+      "title": "Accounts",
+      "description": "Bank connections and accounts",
+      "keywords": "banks balances iban consent connections"
+    },
+    "account": {
+      "title": "Account",
+      "description": "Balance, cash flow and sync history of an account",
+      "keywords": "account detail balance"
+    },
+    "connect": {
+      "title": "Connect a bank",
+      "description": "Link a bank account with read-only access",
+      "keywords": "add bank link connect consent"
+    },
+    "connectCallback": {
+      "title": "Bank connection",
+      "description": "Result of the bank authorisation",
+      "keywords": "callback authorisation result"
+    },
+    "transactions": {
+      "title": "Transactions",
+      "description": "Every inflow and outflow across your accounts",
+      "keywords": "payments movements spending income search"
+    },
+    "settings": {
+      "title": "Settings",
+      "description": "Language, banking, notifications and backups",
+      "keywords": "preferences options backup email language"
+    },
+    "documents": {
+      "title": "Documents",
+      "description": "Statements, invoices and other files",
+      "keywords": "files pdf statements invoices"
+    },
+    "reports": {
+      "title": "Reports",
+      "description": "Periodic reports on your finances",
+      "keywords": "report analysis summary month"
+    },
+    "chat": {
+      "title": "Chat",
+      "description": "Ask questions about your finances",
+      "keywords": "assistant questions conversation"
+    },
+    "agents": {
+      "title": "Agents",
+      "description": "Agents and their proposals",
+      "keywords": "automation proposals approvals"
+    },
+    "activity": {
+      "title": "Activity",
+      "description": "Timeline of runs, messages and audit events",
+      "keywords": "log history timeline audit"
+    }
+  },
+  "nav": {
+    "label": "Main navigation",
+    "open": "Open the menu",
+    "close": "Close the menu",
+    "collapse": "Collapse the sidebar",
+    "expand": "Expand the sidebar",
+    "groups": {
+      "money": "Money",
+      "knowledge": "Knowledge",
+      "agents": "Agents"
+    },
+    "needsAction_one": "{{count}} item needs attention",
+    "needsAction_other": "{{count}} items need attention"
+  },
+  "shell": {
+    "skipToContent": "Skip to content",
+    "breadcrumb": "Breadcrumb",
+    "back": "Back",
+    "retry": "Try again"
+  },
+  "palette": {
+    "title": "Search Bursar",
+    "open": "Search pages and records",
+    "trigger": "Search…",
+    "inputLabel": "Search",
+    "placeholder": "Search pages, accounts, transactions…",
+    "resultsLabel": "Results",
+    "groups": {
+      "pages": "Pages"
+    },
+    "empty": "No results for “{{query}}”",
+    "emptyHint": "Try a name, a bank or the last digits of an IBAN.",
+    "footer_one": "↑↓ navigate · ↵ open · esc close · {{count}} result",
+    "footer_other": "↑↓ navigate · ↵ open · esc close · {{count}} results"
+  },
+  "userMenu": {
+    "open": "Open the user menu",
+    "title": "Preferences",
+    "theme": "Theme",
+    "themes": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "density": "Density",
+    "densities": {
+      "compact": "Compact",
+      "comfortable": "Comfortable"
+    },
+    "signOut": "Sign out"
+  },
+  "notifications": {
+    "popover": {
+      "title": "Notifications",
+      "bellUnread_one": "Notifications: {{count}} unread",
+      "bellUnread_other": "Notifications: {{count}} unread",
+      "newCount_one": "{{count}} new",
+      "newCount_other": "{{count}} new",
+      "markAllRead": "Mark all as read",
+      "unread": "Unread",
+      "emptyTitle": "No notifications",
+      "emptyBody": "Consent reminders and sync problems appear here."
+    }
+  },
+  "errors": {
+    "crash": {
+      "title": "Something went wrong",
+      "body": "This page stopped working. Reload it, or go back to Home."
+    },
+    "notFound": {
+      "title": "Page not found",
+      "body": "This address does not match any page in Bursar."
+    },
+    "reload": "Reload the page",
+    "backHome": "Back to Home"
   }
 }

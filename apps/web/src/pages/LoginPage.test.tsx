@@ -1,29 +1,17 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { RequireAuth } from "../app/RequireAuth";
 import i18n from "../i18n";
+import { renderRoutes, stubApi } from "../test/router";
 import { LoginPage } from "./LoginPage";
 
-function renderPage() {
-  const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
-  return render(
-    <QueryClientProvider client={client}>
-      <LoginPage />
-    </QueryClientProvider>,
-  );
-}
-
-function stubFetch(status: number, body: unknown) {
-  const fetchMock = vi.fn(
-    async (_input: RequestInfo | URL, _init?: RequestInit) =>
-      new Response(JSON.stringify(body), {
-        status,
-        headers: { "content-type": "application/json" },
-      }),
-  );
-  vi.stubGlobal("fetch", fetchMock);
-  return fetchMock;
-}
+const routes = [
+  {
+    element: <RequireAuth area="auth" />,
+    children: [{ path: "/login", element: <LoginPage /> }],
+  },
+  { path: "*", element: <p>landed</p> },
+];
 
 function submit(password: string, code: string) {
   fireEvent.change(screen.getByLabelText("Password"), { target: { value: password } });
@@ -40,8 +28,15 @@ describe("LoginPage", () => {
   });
 
   it("posts the credentials and shows an error on 401", async () => {
-    const fetchMock = stubFetch(401, { error: "Invalid credentials" });
-    renderPage();
+    const fetchMock = stubApi({
+      "GET /api/auth/status": () => ({
+        status: 200,
+        body: { setupRequired: false, authenticated: false },
+      }),
+      "POST /api/auth/login": () => ({ status: 401, body: { error: "Invalid credentials" } }),
+    });
+    renderRoutes(routes, { initialEntries: ["/login"] });
+    await screen.findByLabelText("Password");
     submit("correct horse battery", "123456");
     expect((await screen.findByRole("alert")).textContent).toBe("Wrong password or code.");
     expect(fetchMock).toHaveBeenCalledWith(
@@ -54,11 +49,45 @@ describe("LoginPage", () => {
   });
 
   it("shows the lockout message on 429", async () => {
-    stubFetch(429, { error: "Too many attempts" });
-    renderPage();
+    stubApi({
+      "GET /api/auth/status": () => ({
+        status: 200,
+        body: { setupRequired: false, authenticated: false },
+      }),
+      "POST /api/auth/login": () => ({ status: 429, body: { error: "Too many attempts" } }),
+    });
+    renderRoutes(routes, { initialEntries: ["/login"] });
+    await screen.findByLabelText("Password");
     submit("whatever", "123456");
     expect((await screen.findByRole("alert")).textContent).toBe(
       "Too many attempts. Wait 15 minutes and try again.",
     );
+  });
+
+  it("shows the session-expired notice and returns to next after signing in", async () => {
+    let signedIn = false;
+    stubApi({
+      "GET /api/auth/status": () => ({
+        status: 200,
+        body: { setupRequired: false, authenticated: signedIn },
+      }),
+      "POST /api/auth/login": () => {
+        signedIn = true;
+        return { status: 200, body: { ok: true } };
+      },
+    });
+    const { router } = renderRoutes(routes, {
+      initialEntries: ["/login?expired=1&next=%2Fsettings%3Ftab%3Dbackups"],
+    });
+    expect((await screen.findByRole("status")).textContent).toBe(
+      "Your session expired, sign in again.",
+    );
+    submit("correct horse battery", "123456");
+    await waitFor(() =>
+      expect(`${router.state.location.pathname}${router.state.location.search}`).toBe(
+        "/settings?tab=backups",
+      ),
+    );
+    expect(await screen.findByText("landed")).toBeTruthy();
   });
 });
