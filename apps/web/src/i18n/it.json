@@ -1,9 +1,12 @@
 {
-  "app": { "name": "Bursar" },
+  "app": {
+    "name": "Bursar"
+  },
   "common": {
     "loading": "Caricamento…",
     "serverUnavailable": "Il server non risponde. Riprova tra poco.",
-    "language": "Lingua"
+    "language": "Lingua",
+    "cancel": "Annulla"
   },
   "setup": {
     "title": "Configura Bursar",
@@ -53,6 +56,35 @@
     "off": "Modalità privacy disattivata",
     "onDetail": "Importi e cifre degli IBAN sono nascosti in questo browser.",
     "offDetail": "Importi e cifre degli IBAN tornano visibili.",
-    "maskedAmount": "Importo nascosto"
+    "maskedAmount": "Importo nascosto",
+    "maskedIban": "IBAN nascosto dalla modalità privacy"
+  },
+  "feedback": {
+    "region": "Notifiche",
+    "dismiss": "Chiudi la notifica",
+    "saved": "Salvato",
+    "saving": "Salvataggio…"
+  },
+  "table": {
+    "range": "{{from}}–{{to}} di {{total}}",
+    "pageOf": "Pagina {{page}} di {{pages}}",
+    "previous": "Pagina precedente",
+    "next": "Pagina successiva",
+    "pagination": "Paginazione",
+    "sortBy": "Ordina per {{column}}",
+    "activeFilters": "Filtri attivi",
+    "removeFilter": "Rimuovi il filtro {{label}}",
+    "clearFilters": "Azzera i filtri",
+    "clearSearch": "Cancella la ricerca"
+  },
+  "dialog": {
+    "close": "Chiudi"
+  },
+  "copy": {
+    "iban": "Copia l’IBAN",
+    "done": "Copiato",
+    "ibanDetail": "L’IBAN completo è negli appunti.",
+    "failed": "Copia non riuscita",
+    "failedDetail": "Il browser ha bloccato l’accesso agli appunti."
   }
 }

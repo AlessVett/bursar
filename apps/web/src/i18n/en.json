@@ -1,9 +1,12 @@
 {
-  "app": { "name": "Bursar" },
+  "app": {
+    "name": "Bursar"
+  },
   "common": {
     "loading": "Loading…",
     "serverUnavailable": "The server is not reachable. Try again in a moment.",
-    "language": "Language"
+    "language": "Language",
+    "cancel": "Cancel"
   },
   "setup": {
     "title": "Set up Bursar",
@@ -53,6 +56,35 @@
     "off": "Privacy mode off",
     "onDetail": "Amounts and IBAN digits are hidden in this browser.",
     "offDetail": "Amounts and IBAN digits are visible again.",
-    "maskedAmount": "Amount hidden"
+    "maskedAmount": "Amount hidden",
+    "maskedIban": "IBAN hidden by privacy mode"
+  },
+  "feedback": {
+    "region": "Notifications",
+    "dismiss": "Dismiss notification",
+    "saved": "Saved",
+    "saving": "Saving…"
+  },
+  "table": {
+    "range": "{{from}}–{{to}} of {{total}}",
+    "pageOf": "Page {{page}} of {{pages}}",
+    "previous": "Previous page",
+    "next": "Next page",
+    "pagination": "Pagination",
+    "sortBy": "Sort by {{column}}",
+    "activeFilters": "Active filters",
+    "removeFilter": "Remove filter {{label}}",
+    "clearFilters": "Clear filters",
+    "clearSearch": "Clear search"
+  },
+  "dialog": {
+    "close": "Close"
+  },
+  "copy": {
+    "iban": "Copy IBAN",
+    "done": "Copied",
+    "ibanDetail": "The full IBAN is on your clipboard.",
+    "failed": "Copy failed",
+    "failedDetail": "Your browser blocked access to the clipboard."
   }
 }
