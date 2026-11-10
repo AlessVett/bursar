@@ -156,7 +156,9 @@ function displayName(
 
 /**
  * The preferred balance of each account, ranked among the balances of its latest fetch only: a
- * type the bank stopped reporting must not keep winning with an old figure.
+ * type the bank stopped reporting must not keep winning with an old figure. The latest fetch of
+ * every account is found once by a grouped scan and joined back: a per-row correlated subquery
+ * made the cost quadratic in the number of stored balance rows.
  */
 function loadPreferredBalances(deps: QueryDeps): Map<number, PreferredBalance> {
   const rows = all<{
@@ -168,12 +170,15 @@ function loadPreferredBalances(deps: QueryDeps): Map<number, PreferredBalance> {
     reference_date: LocalDate;
   }>(
     deps,
-    `SELECT account_id, balance_type, amount_minor, currency, as_of, reference_date FROM (
+    `WITH latest AS (
+       SELECT account_id, MAX(fetched_at) AS fetched_at FROM balances GROUP BY account_id
+     )
+     SELECT account_id, balance_type, amount_minor, currency, as_of, reference_date FROM (
        SELECT b.*, ROW_NUMBER() OVER (
          PARTITION BY b.account_id, b.balance_type
          ORDER BY b.reference_date DESC, b.as_of DESC, b.id DESC
        ) AS rn FROM balances b
-        WHERE b.fetched_at = (SELECT MAX(l.fetched_at) FROM balances l WHERE l.account_id = b.account_id)
+        JOIN latest l ON l.account_id = b.account_id AND l.fetched_at = b.fetched_at
      ) WHERE rn = 1`,
   );
   const byAccount = new Map<

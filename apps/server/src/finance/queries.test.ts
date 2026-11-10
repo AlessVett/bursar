@@ -341,6 +341,65 @@ describe("balanceHistory", () => {
     expect(summary?.balance).toMatchObject({ amountMinor: 20_000, type: "CLBD" });
   });
 
+  it("ranks each account against its own latest fetch", () => {
+    const first = fx.account(w.bankA, { last4: "3336" });
+    const second = fx.account(w.bankA, { last4: "3337" });
+    const stored = (account: number, type: string, amountMinor: number, day: string, at: number) =>
+      fx.repo.upsertBalance({
+        accountId: account,
+        balanceType: type,
+        amountMinor,
+        currency: "EUR",
+        referenceDate: day,
+        asOf: at,
+        fetchedAt: at,
+      });
+    // The first account was last fetched long ago, the second one an hour ago: neither fetch
+    // time may leak into the other account's ranking.
+    // Each account reports a stale preferred type (ITBD) and then only CLBD in its latest fetch.
+    stored(first, "ITBD", 1_000, "2026-09-20", NOW - 40 * DAY_MS);
+    stored(first, "CLBD", 2_000, "2026-10-02", NOW - 30 * DAY_MS);
+    stored(second, "ITBD", 7_000, "2026-11-01", NOW - 8 * DAY_MS);
+    stored(second, "CLBD", 9_000, TODAY, NOW - HOUR_MS);
+    const balances = new Map(
+      listConnectionsView(queryDeps(t))
+        .connections.flatMap((c) => c.accounts)
+        .map((a) => [a.id, a.balance]),
+    );
+    expect(balances.get(first)).toMatchObject({
+      amountMinor: 2_000,
+      type: "CLBD",
+      referenceDate: "2026-10-02",
+    });
+    expect(balances.get(second)).toMatchObject({
+      amountMinor: 9_000,
+      type: "CLBD",
+      referenceDate: TODAY,
+    });
+  });
+
+  it("keeps the newest reference date of a type reported twice in the latest fetch", () => {
+    const account = fx.account(w.bankA, { last4: "3338" });
+    for (const [amountMinor, referenceDate] of [
+      [3_000, "2026-11-08"],
+      [4_000, TODAY],
+    ] as const) {
+      fx.repo.upsertBalance({
+        accountId: account,
+        balanceType: "CLBD",
+        amountMinor,
+        currency: "EUR",
+        referenceDate,
+        asOf: NOW - HOUR_MS,
+        fetchedAt: NOW - HOUR_MS,
+      });
+    }
+    const summary = listConnectionsView(queryDeps(t))
+      .connections.flatMap((c) => c.accounts)
+      .find((a) => a.id === account);
+    expect(summary?.balance).toMatchObject({ amountMinor: 4_000, referenceDate: TODAY });
+  });
+
   it("supports the 90 and 365 day windows with consecutive days", () => {
     const deps = queryDeps(t);
     for (const days of [90, 365] as const) {
