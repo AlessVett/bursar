@@ -48,6 +48,8 @@ export function ConnectionTab({ detail }: { detail: AccountDetailResponse }) {
   const { account, connection } = detail;
 
   const consent = consentUrgency(connection.validUntil, now(), timeZone);
+  // A revoked connection or a removed account has no live consent: the chip would contradict the status.
+  const consentActive = connection.status !== "revoked" && account.status !== "removed";
   const states = accountActionStates(detail, now());
   const pausedUntil =
     account.rateLimitedUntil !== null && account.rateLimitedUntil > now()
@@ -79,11 +81,13 @@ export function ConnectionTab({ detail }: { detail: AccountDetailResponse }) {
           <Fact label={t("account.connection.validUntil")}>
             <span className="flex flex-wrap items-center gap-2">
               <span>{absolute(connection.validUntil)}</span>
-              <DeadlineChip
-                urgency={consent.urgency}
-                label={consentLabel(t, consent)}
-                title={absolute(connection.validUntil, true)}
-              />
+              {consentActive ? (
+                <DeadlineChip
+                  urgency={consent.urgency}
+                  label={consentLabel(t, consent)}
+                  title={absolute(connection.validUntil, true)}
+                />
+              ) : null}
             </span>
           </Fact>
           <Fact label={t("account.connection.connectedOn")}>{absolute(connection.createdAt)}</Fact>

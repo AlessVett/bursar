@@ -58,6 +58,7 @@ export function TransactionsTab({ accountId }: { accountId: number }) {
     {
       id: "counterparty",
       header: t("account.transactions.counterparty"),
+      className: "w-full max-w-0 md:w-auto md:max-w-xs",
       cell: (row) => (
         <div className="flex min-w-0 flex-col gap-1">
           <span className="truncate font-medium text-fg">{row.counterparty ?? "—"}</span>
