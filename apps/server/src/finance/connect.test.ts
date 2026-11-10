@@ -663,6 +663,51 @@ describe("ConnectService", () => {
       expect(auditRows().at(-1)?.details).toEqual({ accounts: 1, reattached: 1, syncsQueued: 1 });
     });
 
+    it("moves an account held by another live connection of the same bank instead of duplicating it", async () => {
+      const a = await connect([accountResource("current")]);
+      const b = await connect([accountResource("savings", { uid: testUid(12) })], 2);
+      const currentId = accountIdAt(a, 0);
+      const savingsId = accountIdAt(b, 0);
+      insertTransaction(currentId);
+      finishJobs();
+      now += HOUR_MS;
+
+      const result = await connect(
+        [
+          accountResource("current", { uid: testUid(21) }),
+          accountResource("savings", { uid: testUid(22) }),
+        ],
+        3,
+      );
+      expect(idsOf(result).sort()).toEqual([currentId, savingsId].sort());
+      const live = repo.listAccounts({}).filter((account) => account.status !== "removed");
+      expect(live).toHaveLength(2);
+      expect(repo.getAccount(currentId)?.connectionId).toBe(connectionIdOf(result));
+      expect(repo.countTransactions(currentId).total).toBe(1);
+    });
+
+    it("moves an account of a sibling connection when renewing another connection", async () => {
+      const a = await connect([accountResource("current")]);
+      const b = await connect([accountResource("savings", { uid: testUid(12) })], 2);
+      const currentId = accountIdAt(a, 0);
+      finishJobs();
+      now += HOUR_MS;
+
+      const result = await renew(
+        connectionIdOf(b),
+        [
+          accountResource("current", { uid: testUid(21) }),
+          accountResource("savings", { uid: testUid(22) }),
+        ],
+        3,
+      );
+      expect(result).toMatchObject({ outcome: "renewed", connectionId: connectionIdOf(b) });
+      expect(repo.listAccounts({}).filter((account) => account.status !== "removed")).toHaveLength(
+        2,
+      );
+      expect(repo.getAccount(currentId)?.connectionId).toBe(connectionIdOf(b));
+    });
+
     it("connects anew when the connection being renewed was removed meanwhile", async () => {
       const first = await connect([accountResource("current")]);
       const connectionId = connectionIdOf(first);

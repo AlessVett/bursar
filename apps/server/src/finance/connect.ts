@@ -480,16 +480,30 @@ export class ConnectService {
 
   /**
    * Adds bank accounts to a connection. An account that matches a `removed` account (disconnected
-   * earlier, transactions not purged) re-attaches that row so its history is kept.
+   * earlier, transactions not purged) or an account still held by another live connection of the
+   * same bank re-attaches that row, so its history is kept and it is never counted twice.
    */
   private attachAccounts(connectionId: number, resources: readonly EbAccountResource[]): Attached {
     const { repo } = this.deps;
+    const target = repo.getConnection(connectionId);
+    const heldByLiveSibling = (account: AccountRow): boolean => {
+      if (!target || account.connectionId === connectionId) return false;
+      const holder = repo.getConnection(account.connectionId);
+      return (
+        holder !== null &&
+        holder.removedAt === null &&
+        holder.aspspName === target.aspspName &&
+        holder.aspspCountry === target.aspspCountry
+      );
+    };
     const candidates = new Map<number, AccountRow>();
     for (const resource of resources) {
       const fields = accountFieldsFromResource(resource);
       const hashes = [resource.identification_hash, ...resource.identification_hashes];
       for (const account of repo.findAccountsByIdentity(hashes, fields.iban)) {
-        if (account.status === "removed") candidates.set(account.id, account);
+        if (account.status === "removed" || heldByLiveSibling(account)) {
+          candidates.set(account.id, account);
+        }
       }
     }
     const mapping = mapAccounts([...candidates.values()].map(toMappable), resources);
